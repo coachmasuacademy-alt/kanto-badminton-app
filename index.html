@@ -153,6 +153,27 @@
                     </div>
                 </nav>
 
+<div class="card mb-4 border-info">
+    <div class="card-header bg-info text-white fw-bold"><i class="bi bi-megaphone-fill"></i> 連絡事項の管理</div>
+    <div class="card-body">
+        <div class="row g-2">
+            <div class="col-md-3"><input type="date" class="form-control" v-model="adminNews.date"></div>
+            <div class="col-md-9"><input type="text" class="form-control" v-model="adminNews.title" placeholder="タイトル"></div>
+            <div class="col-12"><textarea class="form-control" v-model="adminNews.content" rows="3" placeholder="本文"></textarea></div>
+        </div>
+        <div class="mt-2">
+            <button class="btn btn-info text-white fw-bold" @click="addNews">投稿する</button>
+        </div>
+        <hr>
+        <h6 class="text-muted small">投稿済みリスト</h6>
+        <ul class="list-group">
+            <li v-for="(n, i) in newsList" :key="i" class="list-group-item d-flex justify-content-between align-items-center py-1">
+                <span class="small">{{ new Date(n.date).toLocaleDateString() }} : {{ n.title }}</span>
+                <button class="btn btn-sm btn-outline-danger" @click="deleteNews(i)">削除</button>
+            </li>
+        </ul>
+    </div>
+</div>
                 <div class="row g-3 mb-4">
                     <div class="col-md-3"><div class="card text-bg-primary h-100"><div class="card-body text-center"><h6 class="card-title opacity-75">登録大学数</h6><h2 class="card-text">{{ adminRecords.length }} <small class="fs-6">校</small></h2></div></div></div>
                     <div class="col-md-3"><div class="card text-bg-success h-100"><div class="card-body text-center"><h6 class="card-title opacity-75">総請求額 (概算)</h6><h2 class="card-text">¥{{ adminTotalRevenue.toLocaleString() }}</h2></div></div></div>
@@ -179,7 +200,8 @@
                                 <td>{{ rec.univ_id }}</td>
                                 <td class="univ-name-cell">{{ rec.univ_name }} <span class="badge bg-secondary ms-1" style="font-size:0.6rem">{{ rec.division }}部</span></td>
                                 <td class="money-cell fw-bold text-primary" :title="rec.cost_detail" style="cursor: help; text-decoration: underline dotted;">{{ formatMoney(rec.total_cost) }}</td>
-                                <td v-for="key in adminStatusKeys" :key="key" style="min-width: 100px;">
+                               
+ <td v-for="key in adminStatusKeys" :key="key" style="min-width: 100px;">
                                     <div :class="['status-badge', getAdminStatusClass(rec[key])]">
                                         <div v-if="rec[key].hasReceipt">
                                             <button class="btn btn-link p-0 text-decoration-none fw-bold" :class="rec[key].confirmed ? 'text-success' : 'text-white'" @click="showReceipt(rec, key)">
@@ -190,9 +212,14 @@
                                         <div v-else>-</div>
                                     </div>
                                 </td>
-                                <td style="max-width: 200px;"><div class="text-truncate small" :title="rec.memo">{{ rec.memo }}</div></td>
-                            </tr>
-                        </tbody>
+                                <td style="max-width: 200px;">
+            <div class="text-truncate small" :title="rec.memo">{{ rec.memo }}</div>
+            <button class="btn btn-sm btn-outline-danger mt-1 w-100" @click="sendAlertEmail(rec)">
+                <i class="bi bi-envelope"></i> 不備連絡
+            </button>
+        </td>
+    </tr>
+</tbody>
                     </table>
                 </div>
                 <div v-if="modal.show" class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
@@ -222,7 +249,9 @@
                 <div class="row">
                     <div class="col-md-3 col-lg-2 mb-4 no-print">
                         <div class="list-group menu-list shadow-sm">
+<button class="list-group-item list-group-item-action fw-bold" :class="{active: activeTab === 'home'}" @click="activeTab = 'home'"><i class="bi bi-house-door-fill"></i> ホーム (連絡事項)</button>
                             <div class="list-group-item bg-light fw-bold text-muted small">登録・申請メニュー</div>
+
                             <button class="list-group-item list-group-item-action fw-bold" :class="{active: activeTab === 'reg_fee'}" @click="activeTab = 'reg_fee'">① 連盟登録 & 春季リーグ</button>
                             <button class="list-group-item list-group-item-action mt-2" :class="{active: activeTab === 'add_reg'}" @click="activeTab = 'add_reg'">② 追加登録</button>
                             <button class="list-group-item list-group-item-action" :class="{active: activeTab === 'kanto_champ'}" @click="activeTab = 'kanto_champ'">③ 関東選手権</button>
@@ -241,6 +270,19 @@
                     <div class="col-md-9 col-lg-10 mb-5">
                         <div class="card shadow-sm main-content-card">
                             <div class="card-body p-4">
+<div v-if="activeTab === 'home'">
+        <h4 class="mb-4 text-primary"><i class="bi bi-info-circle-fill"></i> 連絡事項・ニュース</h4>
+        <div v-if="newsList.length === 0" class="alert alert-secondary">現在、連絡事項はありません。</div>
+        <div v-else class="list-group">
+            <div v-for="(news, idx) in newsList" :key="idx" class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1 fw-bold">{{ news.title }}</h5>
+                    <small class="text-muted">{{ new Date(news.date).toLocaleDateString() }}</small>
+                </div>
+                <p class="mb-1 mt-2" style="white-space: pre-wrap;">{{ news.content }}</p>
+            </div>
+        </div>
+    </div>
                                 
                                 <div v-if="activeTab === 'reg_fee'">
                                     <div class="d-flex justify-content-between align-items-center mb-3"><h4 class="text-primary"><i class="bi bi-people-fill"></i> ① 連盟登録 (初期) ＆ 春季リーグ</h4><button class="btn btn-sm btn-outline-secondary" @click="togglePasteMode('reg')"><i class="bi bi-clipboard"></i> Excelから貼り付け</button></div>
@@ -505,7 +547,8 @@
     </div>
 
     <script>
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbz_2sncd8CmMqzlk2Xxl46gHl2a8ioRwnI-8wT_ahKvQT5xRcBTcaLwWX4PUdnbHhR69g/exec";
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxG-4SjrrYNJ9evw_VI_eq7eanKxvzKtiWxGvMoeFCqrpUgbvLYOErGC7hTinSfzxNdFw/exec";
+
         const firebaseConfig = {
           apiKey: "AIzaSyASxcZep_OpFzc2EML2sUMRuK8rDJXv-cg",
           authDomain: "kanto-badminton-app.firebaseapp.com",
@@ -523,35 +566,45 @@
 
         createApp({
             data() {
-                return {
-                    user: null, isAdmin: false, authEmail: '', authPass: '', isRegisterMode: false, regGender: '1', 
-                    regForm: { univ_id: '' }, regError: '', regUnivName: '', searchQuery: '',
-                    isLoading: false, isSaving: false, isUploading: false,
-                    masterData: [], savedRecords: [], allPlayersList: [],
-                    activeTab: 'reg_fee',
-                    account: { newEmail: '', newPass: '' },
-                    form: { univ_id: '', univ_name: '', division: '3' },
-                    memo: '',
-                    entry: {
-                        reg_fee: { players: [], payment_id: '', receipt_url: '', is_paid_base: false }, 
-                        add_reg: { players: [], payment_id: '', receipt_url: '' },
-                        spring_league: { join: false }, 
-                        autumn_league: { join: false, payment_id: '', receipt_url: '' },
-                        kanto_champ: { s_a: [], s_b: [], d_a: [], d_b: [], m_a: [], m_b: [], payment_id: '', receipt_url: '' }, 
-                        east_japan: { team: 0, s: [], d: [], m: [], ops: 0, payment_id: '', receipt_url: '' },
-                        all_japan_champ: { s: [], d: [], m: [], ops_events: 0, payment_id: '', receipt_url: '' }, 
-                        all_japan_team: { join: false, team: 1, ops: 1, payment_id: '', receipt_url: '' }, 
-                        rookie: { team_a: 0, team_b: 0, s_a: [], s_b: [], d_a: [], d_b: [], payment_id: '', receipt_url: '' }
-                    },
-                    showPasteAreaReg: false, pasteTextReg: '', showPasteAreaAdd: false, pasteTextAdd: '',
+    return {
+        user: null, isAdmin: false, authEmail: '', authPass: '', isRegisterMode: false, regGender: '1', 
+        regForm: { univ_id: '' }, regError: '', regUnivName: '', searchQuery: '',
+        isLoading: false, isSaving: false, isUploading: false,
+        masterData: [], savedRecords: [], allPlayersList: [],
 
-                    adminFilterType: 'all',
-                    adminSearchQuery: '',
-                    adminStatusKeys: ['reg_fee', 'add_reg', 'kanto_champ', 'east_japan', 'autumn_league', 'all_japan_champ', 'all_japan_team', 'rookie'],
-                    modal: { show: false, univName: '', category: '', url: '' },
-                    receiptData: { show: false, amount: 0, title: '' }
-                }
-            },
+        // ★追加：ニュースデータを入れる配列
+        newsList: [],
+
+        // ★変更：初期画面を 'home' に変更
+        activeTab: 'home',
+
+        // ★追加：管理者用のニュース入力フォーム
+        adminNews: { date: '', title: '', content: '' },
+
+        account: { newEmail: '', newPass: '' },
+        form: { univ_id: '', univ_name: '', division: '3' },
+        memo: '',
+        entry: {
+            reg_fee: { players: [], payment_id: '', receipt_url: '', is_paid_base: false }, 
+            add_reg: { players: [], payment_id: '', receipt_url: '' },
+            spring_league: { join: false }, 
+            autumn_league: { join: false, payment_id: '', receipt_url: '' },
+            kanto_champ: { s_a: [], s_b: [], d_a: [], d_b: [], m_a: [], m_b: [], payment_id: '', receipt_url: '' }, 
+            east_japan: { team: 0, s: [], d: [], m: [], ops: 0, payment_id: '', receipt_url: '' },
+            all_japan_champ: { s: [], d: [], m: [], ops_events: 0, payment_id: '', receipt_url: '' }, 
+            all_japan_team: { join: false, team: 1, ops: 1, payment_id: '', receipt_url: '' }, 
+            rookie: { team_a: 0, team_b: 0, s_a: [], s_b: [], d_a: [], d_b: [], payment_id: '', receipt_url: '' }
+        },
+        showPasteAreaReg: false, pasteTextReg: '', showPasteAreaAdd: false, pasteTextAdd: '',
+
+        adminFilterType: 'all',
+        adminSearchQuery: '',
+        adminStatusKeys: ['reg_fee', 'add_reg', 'kanto_champ', 'east_japan', 'autumn_league', 'all_japan_champ', 'all_japan_team', 'rookie'],
+        modal: { show: false, univName: '', category: '', url: '' },
+        receiptData: { show: false, amount: 0, title: '' }
+    }
+},
+
             computed: {
                 filteredUnivList() {
                     if (!this.masterData.length) return [];
@@ -620,6 +673,7 @@
                     this.masterData = d.master; 
                     this.savedRecords = d.records; 
                     this.allPlayersList = d.players || []; 
+this.newsList = d.news || [];
                     this.isLoading = false;
                     
                     firebase.auth().onAuthStateChanged(u => { 
@@ -644,11 +698,16 @@
                 },
                 
                 uploadReceipt(event, category) {
-                    const file = event.target.files[0];
-                    if (!file) return;
-                    this.isUploading = true;
-                    const path = `receipts/${this.form.univ_id}/${category}_${Date.now()}`;
-                    const storageRef = firebase.storage().ref().child(path);
+    const file = event.target.files[0];
+    if (!file) return;
+    this.isUploading = true;
+    
+    // メタデータを追加
+    const metadata = { contentType: file.type }; // これを追加
+
+    const path = `receipts/${this.form.univ_id}/${category}_${Date.now()}`;
+    const storageRef = firebase.storage().ref().child(path);
+
                     storageRef.put(file).then(snapshot => snapshot.ref.getDownloadURL()).then(url => {
                         this.entry[category].receipt_url = url;
                         this.saveData(true);
@@ -718,86 +777,116 @@
                 logout() { if(this.isAdmin) { this.isAdmin = false; } else { firebase.auth().signOut(); } },
                 
                 initUserData(em) {
-                    const d = this.savedRecords.find(r=>r.email===em); if(d){
-                        this.form.univ_id=d.univ_id; this.form.univ_name=d.univ_name; this.form.division=d.division;
-                        if(d.memo) this.memo = d.memo;
+    const d = this.savedRecords.find(r => r.email === em);
+    if (d) {
+        // ★デバッグ用：スプレッドシートから届いた元のデータを表示
+        console.log("【デバッグ】スプレッドシート生データ:", d);
 
-                        const setAutoID = () => {
-                            this.entry.reg_fee.payment_id = this.form.univ_id + '01';
-                            this.entry.kanto_champ.payment_id = this.form.univ_id + '03';
-                            this.entry.east_japan.payment_id = this.form.univ_id + '04';
-                            this.entry.autumn_league.payment_id = this.form.univ_id + '05';
-                            this.entry.all_japan_champ.payment_id = this.form.univ_id + '06';
-                            this.entry.all_japan_team.payment_id = this.form.univ_id + '07';
-                            this.entry.rookie.payment_id = this.form.univ_id + '08';
-                            if (!this.entry.add_reg.payment_id) {
-                                const today = new Date();
-                                const mm = String(today.getMonth() + 1).padStart(2, '0');
-                                const dd = String(today.getDate()).padStart(2, '0');
-                                this.entry.add_reg.payment_id = `${this.form.univ_id}02-${mm}${dd}`;
-                            }
-                        };
+        this.form.univ_id = d.univ_id;
+        this.form.univ_name = d.univ_name;
+        this.form.division = d.division;
+        if (d.memo) this.memo = d.memo;
 
-                        try{
-                            const safeParse = (json, defaultVal) => {
-    // 既にオブジェクトとして届いている場合はそのまま返す
-    if (typeof json === 'object' && json !== null) return json;
-    try {
-        return json ? JSON.parse(json) : defaultVal;
-    } catch(e) {
-        console.error("データ読み込みエラー:", e);
-        return defaultVal;
+        const setAutoID = () => {
+            this.entry.reg_fee.payment_id = this.form.univ_id + '01';
+            this.entry.kanto_champ.payment_id = this.form.univ_id + '03';
+            this.entry.east_japan.payment_id = this.form.univ_id + '04';
+            this.entry.autumn_league.payment_id = this.form.univ_id + '05';
+            this.entry.all_japan_champ.payment_id = this.form.univ_id + '06';
+            this.entry.all_japan_team.payment_id = this.form.univ_id + '07';
+            this.entry.rookie.payment_id = this.form.univ_id + '08';
+            if (!this.entry.add_reg.payment_id) {
+                const today = new Date();
+                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                const dd = String(today.getDate()).padStart(2, '0');
+                this.entry.add_reg.payment_id = `${this.form.univ_id}02-${mm}${dd}`;
+            }
+        };
+
+        try {
+            const safeParse = (json, defaultVal) => {
+                // データが既に変換済みの場合は、そのまま使う
+                if (typeof json === 'object' && json !== null) return json;
+                try {
+                    // 文字列なら変換を試みる
+                    return json ? JSON.parse(json) : defaultVal;
+                } catch (e) {
+                    console.error("読み込みエラー:", e);
+                    return defaultVal;
+                }
+            };
+
+            // ★デバッグ用：連盟登録データの確認
+            console.log("【デバッグ】reg_fee(変換前):", d.reg_fee);
+
+            const rF = safeParse(d.reg_fee, {});
+
+            // ★デバッグ用：変換後のデータ確認（ここにURLが入っているか見たい）
+            console.log("【デバッグ】reg_fee(変換後):", rF);
+
+            this.entry.reg_fee.players = rF.players || [];
+            this.entry.reg_fee.receipt_url = rF.receipt_url || '';
+            this.entry.reg_fee.is_paid_base = !!rF.is_paid_base;
+
+            const aR = safeParse(d.add_reg, {});
+            this.entry.add_reg.players = aR.players || [];
+            this.entry.add_reg.payment_id = aR.payment_id || '';
+            this.entry.add_reg.receipt_url = aR.receipt_url || '';
+
+            const sL = safeParse(d.spring_league, {});
+            this.entry.spring_league.join = !!sL.join;
+
+            const aL = safeParse(d.autumn_league, {});
+            this.entry.autumn_league = {
+                join: !!aL.join,
+                receipt_url: aL.receipt_url || ''
+            };
+
+            const ajT = safeParse(d.all_japan_team, {});
+            this.entry.all_japan_team = {
+                join: !!ajT.join,
+                team: ajT.team || 1,
+                ops: ajT.ops || 1,
+                receipt_url: ajT.receipt_url || ''
+            };
+
+            const parseList = (jsonStr, isClass) => {
+                const obj = safeParse(jsonStr, {});
+                if (isClass) {
+                    if (obj.s) { obj.s_a = obj.s; delete obj.s; }
+                    if (obj.d) { obj.d_a = obj.d; delete obj.d; }
+                    if (obj.m) { obj.m_a = obj.m; delete obj.m; }
+                    if (!Array.isArray(obj.s_a)) obj.s_a = [];
+                    if (!Array.isArray(obj.s_b)) obj.s_b = [];
+                    if (!Array.isArray(obj.d_a)) obj.d_a = [];
+                    if (!Array.isArray(obj.d_b)) obj.d_b = [];
+                    if (!Array.isArray(obj.m_a)) obj.m_a = [];
+                    if (!Array.isArray(obj.m_b)) obj.m_b = [];
+                } else {
+                    if (!Array.isArray(obj.s)) obj.s = [];
+                    if (!Array.isArray(obj.d)) obj.d = [];
+                    if (!Array.isArray(obj.m)) obj.m = [];
+                }
+                obj.receipt_url = obj.receipt_url || '';
+                return obj;
+            };
+
+            this.entry.kanto_champ = parseList(d.kanto_champ, true);
+            this.entry.east_japan = parseList(d.east_japan, false);
+            this.entry.all_japan_champ = parseList(d.all_japan_champ, false);
+            this.entry.rookie = parseList(d.rookie, true);
+            if (this.entry.rookie.team) {
+                this.entry.rookie.team_a = this.entry.rookie.team;
+                delete this.entry.rookie.team;
+            }
+
+            setAutoID();
+
+        } catch (e) {
+            console.error("Data Parse Error", e);
+        }
     }
-};
-                            
-                            const rF = safeParse(d.reg_fee, {});
-                            this.entry.reg_fee.players = rF.players || [];
-                            this.entry.reg_fee.receipt_url = rF.receipt_url || '';
-                            this.entry.reg_fee.is_paid_base = !!rF.is_paid_base;
-
-                            const aR = safeParse(d.add_reg, {});
-                            this.entry.add_reg.players = aR.players || [];
-                            this.entry.add_reg.payment_id = aR.payment_id || ''; 
-                            this.entry.add_reg.receipt_url = aR.receipt_url || '';
-
-                            const sL = safeParse(d.spring_league, {});
-                            this.entry.spring_league.join = !!sL.join;
-
-                            const aL = safeParse(d.autumn_league, {});
-                            this.entry.autumn_league = { join: !!aL.join, receipt_url: aL.receipt_url || '' };
-
-                            const ajT = safeParse(d.all_japan_team, {});
-                            this.entry.all_japan_team = { join: !!ajT.join, team: ajT.team||1, ops: ajT.ops||1, receipt_url: ajT.receipt_url||'' };
-
-                            const parseList = (jsonStr, isClass) => {
-                                const obj = safeParse(jsonStr, {});
-                                if(isClass) {
-                                    if(obj.s) { obj.s_a = obj.s; delete obj.s; } 
-                                    if(obj.d) { obj.d_a = obj.d; delete obj.d; } 
-                                    if(obj.m) { obj.m_a = obj.m; delete obj.m; }
-                                    if(!Array.isArray(obj.s_a)) obj.s_a=[]; if(!Array.isArray(obj.s_b)) obj.s_b=[];
-                                    if(!Array.isArray(obj.d_a)) obj.d_a=[]; if(!Array.isArray(obj.d_b)) obj.d_b=[];
-                                    if(!Array.isArray(obj.m_a)) obj.m_a=[]; if(!Array.isArray(obj.m_b)) obj.m_b=[];
-                                } else { 
-                                    if (!Array.isArray(obj.s)) obj.s = []; 
-                                    if (!Array.isArray(obj.d)) obj.d = []; 
-                                    if (!Array.isArray(obj.m)) obj.m = []; 
-                                }
-                                obj.receipt_url = obj.receipt_url || '';
-                                return obj;
-                            };
-
-                            this.entry.kanto_champ = parseList(d.kanto_champ, true);
-                            this.entry.east_japan = parseList(d.east_japan, false);
-                            this.entry.all_japan_champ = parseList(d.all_japan_champ, false);
-                            this.entry.rookie = parseList(d.rookie, true);
-                            if(this.entry.rookie.team) { this.entry.rookie.team_a = this.entry.rookie.team; delete this.entry.rookie.team; }
-
-                            setAutoID();
-
-                        }catch(e){ console.error("Data Parse Error", e); }
-                    }
-                },
+},
                 
                 saveDataPayload() {
                     const p = { univ_id:this.form.univ_id, email:this.user.email, univ_name:this.form.univ_name, division:this.form.division, memo: this.memo,
@@ -881,6 +970,59 @@
                     }
                     if (amount === 0) { alert("支払金額が0円のため発行できません。"); return; }
                     this.receiptData.amount = amount; this.receiptData.title = title; this.receiptData.show = true;
+                },
+
+                // ニュース投稿
+                addNews() {
+                    if(!this.adminNews.date || !this.adminNews.title) return alert("日付とタイトルは必須です");
+                    this.newsList.unshift({ ...this.adminNews });
+                    this.saveNews();
+                    this.adminNews = { date: '', title: '', content: '' };
+                },
+                
+                // ニュース削除
+                deleteNews(index) {
+                    if(!confirm("削除しますか？")) return;
+                    this.newsList.splice(index, 1);
+                    this.saveNews();
+                },
+
+                // ニュース保存（GASへ送信）
+                saveNews() {
+                    const payload = { action: 'update_news', news_list: this.newsList };
+                    fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify(payload) })
+                        .then(r => r.json())
+                        .then(() => alert("連絡事項を更新しました"))
+                        .catch(e => alert("エラー: " + e.message));
+                },
+                
+                // 不備メール送信
+                sendAlertEmail(rec) {
+                    const reason = prompt(`${rec.univ_name} (${rec.raw_data.email}) へメールを送信します。\n\n不備の内容を入力してください：`);
+                    if (!reason) return;
+
+                    const body = `${rec.univ_name} バドミントン部 代表者様\n\n`
+                        + `関東学生バドミントン連盟です。\n`
+                        + `ご提出いただいた登録内容に以下の不備がありました。\n\n`
+                        + `【不備内容】\n${reason}\n\n`
+                        + `システムにログインし、修正・再申請をお願いいたします。\n`
+                        + `https://kanto-badminton-app.web.app/`;
+
+                    if (!confirm("以下の内容で送信しますか？\n\n" + body)) return;
+
+                    const payload = { 
+                        action: 'send_email', 
+                        to: rec.raw_data.email, 
+                        body: body 
+                    };
+
+                    fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify(payload) })
+                        .then(r => r.json())
+                        .then(d => {
+                            if(d.status === 'success') alert("送信しました");
+                            else alert("送信失敗: " + d.message);
+                        })
+                        .catch(e => alert("通信エラー"));
                 }
             }
         }).mount('#app');
