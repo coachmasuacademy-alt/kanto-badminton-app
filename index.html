@@ -33,10 +33,14 @@
         .bg-class-a { background-color: #0d6efd; }
         .bg-class-b { background-color: #198754; }
         .receipt-preview { max-width: 100%; max-height: 300px; border: 1px solid #ddd; border-radius: 4px; margin-top: 10px; }
-        .receipt-area { background-color: #fff; border: 1px dashed #ccc; padding: 15px; border-radius: 5px; margin-top: 15px; text-align: center; }
+        .receipt-area { background-color: #fff; border: 2px dashed #bbb; padding: 20px; border-radius: 8px; margin-top: 20px; text-align: center; }
         .save-area { margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6; text-align: center; }
 
-        /* 決算書用スタイル */
+        /* ステータスバッジ */
+        .badge-uploaded { background-color: #198754; color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.9rem; }
+        .badge-missing { background-color: #dc3545; color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.9rem; }
+
+        /* 決算書・領収書用スタイル */
         .report-container { background-color: white; padding: 40px; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .report-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; border: 2px solid #000; table-layout: fixed; }
         .report-table th, .report-table td { border: 1px solid #000; padding: 10px 15px; vertical-align: middle; word-wrap: break-word; }
@@ -52,6 +56,8 @@
         .status-none { background-color: #f8f9fa; color: #aaa; } 
         .status-waiting { background-color: #fff3cd; color: #856404; border-color: #ffeeba; } 
         .status-done { background-color: #d1e7dd; color: #0f5132; border-color: #badbcc; font-weight: bold; }
+        .status-pending { background-color: #fd7e14; color: white; border-color: #e87311; } 
+        .btn-approve { font-weight: bold; padding: 10px 30px; font-size: 1.1rem; }
         .receipt-modal-img { max-width: 100%; max-height: 80vh; object-fit: contain; }
         .table-admin th { background-color: #343a40; color: white; position: sticky; top: 0; z-index: 10; font-size: 0.85rem; white-space: nowrap; }
         .table-admin td { vertical-align: middle; font-size: 0.9rem; }
@@ -66,8 +72,45 @@
             .main-content-card { border: none !important; box-shadow: none !important; min-height: 0 !important; }
             .card-body { padding: 0 !important; }
             .report-container { border: none; box-shadow: none; padding: 0; }
-            .report-table th { background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; }
+            .report-table th { background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .page-break { page-break-before: always; }
+            
+            /* 領収書印刷設定 */
+            body > * { display: none !important; }
+            #receiptModal { display: block !important; position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 9999; }
+            #receiptModal .modal-dialog { margin: 0; max-width: 100%; }
+            #receiptModal .modal-content { border: none; box-shadow: none; }
+            #receiptModal .modal-header, #receiptModal .modal-footer { display: none !important; }
+            #receiptModal .modal-body { padding: 0; }
+            .receipt-layout { border: none; padding: 20px; }
+        }
+
+        /* 領収書・電子印鑑用スタイル */
+        .receipt-layout {
+            border: 4px double #333;
+            padding: 40px;
+            color: #000;
+            font-family: "Mincho", serif;
+            position: relative;
+            background: white;
+        }
+        .receipt-title { font-size: 2rem; text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; display: inline-block; padding: 0 20px; }
+        .receipt-amount { font-size: 2.5rem; font-weight: bold; text-align: center; margin: 20px 0; border-bottom: 1px solid #000; }
+        .receipt-detail { margin-top: 20px; font-size: 1.1rem; line-height: 1.8; }
+        .issuer-info { margin-top: 40px; text-align: right; position: relative; }
+        
+        .hanko-box {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 90px;
+            height: 90px;
+            opacity: 0.85;
+            transform: rotate(-2deg);
+            user-select: none;
+        }
+        @media print {
+            .hanko-box { opacity: 1; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
     </style>
 </head>
@@ -91,11 +134,10 @@
                             </div>
                             <div class="mb-3"><label class="form-label">メールアドレス</label><input type="text" v-model="authEmail" class="form-control" placeholder="admin または メールアドレス"></div>
                             <div class="mb-2"><label class="form-label">パスワード (6文字以上)</label><input type="password" v-model="authPass" class="form-control"></div>
-<div v-if="!isRegisterMode" class="text-end mb-4">
-    <a href="#" class="small text-decoration-none" @click.prevent="resetPassword">パスワードを忘れた場合はこちら</a>
-</div>
-<button v-if="!isRegisterMode" @click="login" class="btn btn-primary w-100 py-2">ログイン</button>
-
+                            <div v-if="!isRegisterMode" class="text-end mb-4">
+                                <a href="#" class="small text-decoration-none" @click.prevent="resetPassword">パスワードを忘れた場合はこちら</a>
+                            </div>
+                            <button v-if="!isRegisterMode" @click="login" class="btn btn-primary w-100 py-2">ログイン</button>
                             <button v-else @click="register" class="btn btn-success w-100 py-2" :disabled="!!regError || !regForm.univ_id">登録して開始</button>
                         </div>
                     </div>
@@ -112,16 +154,8 @@
                 </nav>
 
                 <div class="row g-3 mb-4">
-                    <div class="col-md-3">
-                        <div class="card text-bg-primary h-100">
-                            <div class="card-body text-center"><h6 class="card-title opacity-75">登録大学数</h6><h2 class="card-text">{{ adminRecords.length }} <small class="fs-6">校</small></h2></div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card text-bg-success h-100">
-                            <div class="card-body text-center"><h6 class="card-title opacity-75">総請求額 (概算)</h6><h2 class="card-text">¥{{ adminTotalRevenue.toLocaleString() }}</h2></div>
-                        </div>
-                    </div>
+                    <div class="col-md-3"><div class="card text-bg-primary h-100"><div class="card-body text-center"><h6 class="card-title opacity-75">登録大学数</h6><h2 class="card-text">{{ adminRecords.length }} <small class="fs-6">校</small></h2></div></div></div>
+                    <div class="col-md-3"><div class="card text-bg-success h-100"><div class="card-body text-center"><h6 class="card-title opacity-75">総請求額 (概算)</h6><h2 class="card-text">¥{{ adminTotalRevenue.toLocaleString() }}</h2></div></div></div>
                     <div class="col-md-6">
                         <div class="card h-100 border-secondary">
                             <div class="card-body">
@@ -139,15 +173,19 @@
 
                 <div class="table-responsive shadow-sm border rounded" style="max-height: 70vh;">
                     <table class="table table-hover table-admin mb-0">
-                        <thead>
-                            <tr><th>ID</th><th>大学名</th><th>請求合計</th><th>①連盟登録</th><th>②追加登録</th><th>③関東選手</th><th>④東日本</th><th>⑤秋季L</th><th>⑥インカレ</th><th>⑦対抗戦</th><th>⑧新人戦</th><th>備考・連絡</th></tr>
-                        </thead>
+                        <thead><tr><th>ID</th><th>大学名</th><th>請求合計</th><th>①連盟登録</th><th>②追加登録</th><th>③関東選手</th><th>④東日本</th><th>⑤秋季L</th><th>⑥インカレ</th><th>⑦対抗戦</th><th>⑧新人戦</th><th>備考・連絡</th></tr></thead>
                         <tbody>
                             <tr v-for="rec in filteredAdminRecords" :key="rec.univ_id">
-                                <td>{{ rec.univ_id }}</td><td class="univ-name-cell">{{ rec.univ_name }} <span class="badge bg-secondary ms-1" style="font-size:0.6rem">{{ rec.division }}部</span></td><td class="money-cell fw-bold text-primary">{{ formatMoney(rec.total_cost) }}</td>
+                                <td>{{ rec.univ_id }}</td>
+                                <td class="univ-name-cell">{{ rec.univ_name }} <span class="badge bg-secondary ms-1" style="font-size:0.6rem">{{ rec.division }}部</span></td>
+                                <td class="money-cell fw-bold text-primary" :title="rec.cost_detail" style="cursor: help; text-decoration: underline dotted;">{{ formatMoney(rec.total_cost) }}</td>
                                 <td v-for="key in adminStatusKeys" :key="key" style="min-width: 100px;">
                                     <div :class="['status-badge', getAdminStatusClass(rec[key])]">
-                                        <div v-if="rec[key].hasReceipt"><button class="btn btn-link p-0 text-decoration-none text-success fw-bold" @click="showReceipt(rec.univ_name, key, rec[key].receiptUrl)"><i class="bi bi-image"></i> 確認</button></div>
+                                        <div v-if="rec[key].hasReceipt">
+                                            <button class="btn btn-link p-0 text-decoration-none fw-bold" :class="rec[key].confirmed ? 'text-success' : 'text-white'" @click="showReceipt(rec, key)">
+                                                <i class="bi" :class="rec[key].confirmed ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill'"></i> {{ rec[key].confirmed ? '承認済' : '確認' }}
+                                            </button>
+                                        </div>
                                         <div v-else-if="rec[key].hasPaymentId"><span class="small">{{ rec[key].paymentId }}</span></div>
                                         <div v-else>-</div>
                                     </div>
@@ -157,7 +195,22 @@
                         </tbody>
                     </table>
                 </div>
-                <div v-if="modal.show" class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">{{ modal.univName }} - {{ getCategoryName(modal.category) }}</h5><button type="button" class="btn-close" @click="closeModal"></button></div><div class="modal-body text-center bg-dark"><img :src="modal.url" class="receipt-modal-img"></div><div class="modal-footer"><a :href="modal.url" target="_blank" class="btn btn-primary">別タブで開く</a><button type="button" class="btn btn-secondary" @click="closeModal">閉じる</button></div></div></div></div>
+                <div v-if="modal.show" class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header"><h5 class="modal-title">{{ modal.univName }} - {{ getCategoryName(modal.category) }}</h5><button type="button" class="btn-close" @click="closeModal"></button></div>
+                            <div class="modal-body text-center bg-dark"><img :src="modal.url" class="receipt-modal-img"></div>
+                            <div class="modal-footer justify-content-between">
+                                <div><a :href="modal.url" target="_blank" class="btn btn-outline-light btn-sm text-dark border-secondary">元画像を開く</a></div>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-secondary" @click="closeModal">閉じる</button>
+                                    <button v-if="!modal.targetRecord[modal.category].confirmed" class="btn btn-success btn-approve" @click="toggleApproval(true)"><i class="bi bi-check-lg"></i> 振込を確認・承認する</button>
+                                    <button v-else class="btn btn-outline-danger" @click="toggleApproval(false)">承認を取り消す</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div v-else>
@@ -190,309 +243,255 @@
                             <div class="card-body p-4">
                                 
                                 <div v-if="activeTab === 'reg_fee'">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <h4 class="text-primary"><i class="bi bi-people-fill"></i> ① 連盟登録 (初期) ＆ 春季リーグ</h4>
-                                        <button class="btn btn-sm btn-outline-secondary" @click="togglePasteMode('reg')"><i class="bi bi-clipboard"></i> Excelから貼り付け</button>
-                                    </div>
-                                    <div class="alert alert-secondary p-3 mb-4">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" v-model="entry.reg_fee.is_paid_base" id="baseFeeCheck">
-                                            <label class="form-check-label fw-bold" for="baseFeeCheck">年度初め納入金 (¥15,000) を支払う</label>
-                                        </div>
-                                        <div class="small text-muted ms-4 mt-1">※関東学連維持費(¥10,000) + 全日本学連加盟金(¥5,000) = ¥15,000</div>
-                                    </div>
-
+                                    <div class="d-flex justify-content-between align-items-center mb-3"><h4 class="text-primary"><i class="bi bi-people-fill"></i> ① 連盟登録 (初期) ＆ 春季リーグ</h4><button class="btn btn-sm btn-outline-secondary" @click="togglePasteMode('reg')"><i class="bi bi-clipboard"></i> Excelから貼り付け</button></div>
+                                    <div class="alert alert-secondary p-3 mb-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" v-model="entry.reg_fee.is_paid_base" id="baseFeeCheck"><label class="form-check-label fw-bold" for="baseFeeCheck">年度初め納入金 (¥15,000) を支払う</label></div><div class="small text-muted ms-4 mt-1">※関東学連維持費(¥10,000) + 全日本学連加盟金(¥5,000) = ¥15,000</div></div>
                                     <div v-if="showPasteAreaReg" class="mb-3 p-3 bg-light border rounded"><label class="small fw-bold">3列(姓, 名, NBA番号)をコピー＆ペースト</label><textarea class="form-control mb-2" v-model="pasteTextReg" rows="3" placeholder="山田	太郎	1234567890"></textarea><div class="text-end"><button class="btn btn-sm btn-primary" @click="processPaste('reg')">追加</button></div></div>
-                                    <div class="player-table-container bg-white rounded border mb-3">
-                                        <table class="table table-sm table-hover mb-0 align-middle"><thead class="table-sticky-head"><tr class="text-center"><th style="width:40px">No.</th><th>姓</th><th>名</th><th style="width:180px">NBA登録番号<br><span class="text-danger small">(10桁必須)</span></th><th style="width:250px" class="bg-light">登録費<br><span class="fee-detail-text">関東¥2,000 + 全日本¥2,000</span></th><th style="width:40px"></th></tr></thead>
-                                            <tbody><tr v-for="(player, idx) in entry.reg_fee.players" :key="idx"><td class="text-center">{{ idx + 1 }}</td><td class="input-cell"><input type="text" class="form-control form-control-sm border-0" v-model="player.last_name"></td><td class="input-cell"><input type="text" class="form-control form-control-sm border-0" v-model="player.first_name"></td><td><input type="text" class="form-control form-control-sm border-0 text-center" v-model="player.nba_id" maxlength="10" :class="{'is-invalid-custom': player.nba_id && !/^\d{10}$/.test(player.nba_id)}"></td><td class="text-center bg-light"><input type="checkbox" class="form-check-input" v-model="player.is_gakuren"></td><td class="text-center"><button class="btn btn-link text-danger p-0" @click="removePlayer('reg', idx)"><i class="bi bi-x-circle-fill"></i></button></td></tr><tr v-if="entry.reg_fee.players.length === 0"><td colspan="6" class="text-center py-5 text-muted">初期登録選手を入力してください</td></tr></tbody></table>
-                                    </div>
+                                    <div class="player-table-container bg-white rounded border mb-3"><table class="table table-sm table-hover mb-0 align-middle"><thead class="table-sticky-head"><tr class="text-center"><th style="width:40px">No.</th><th>姓</th><th>名</th><th style="width:180px">NBA登録番号<br><span class="text-danger small">(10桁必須)</span></th><th style="width:250px" class="bg-light">登録費<br><span class="fee-detail-text">関東¥2,000 + 全日本¥2,000</span></th><th style="width:40px"></th></tr></thead><tbody><tr v-for="(player, idx) in entry.reg_fee.players" :key="idx"><td class="text-center">{{ idx + 1 }}</td><td class="input-cell"><input type="text" class="form-control form-control-sm border-0" v-model="player.last_name"></td><td class="input-cell"><input type="text" class="form-control form-control-sm border-0" v-model="player.first_name"></td><td><input type="text" class="form-control form-control-sm border-0 text-center" v-model="player.nba_id" maxlength="10" :class="{'is-invalid-custom': player.nba_id && !/^\d{10}$/.test(player.nba_id)}"></td><td class="text-center bg-light"><input type="checkbox" class="form-check-input" v-model="player.is_gakuren"></td><td class="text-center"><button class="btn btn-link text-danger p-0" @click="removePlayer('reg', idx)"><i class="bi bi-x-circle-fill"></i></button></td></tr></tbody></table></div>
                                     <button class="btn btn-outline-primary mb-4" @click="addPlayer('reg')"><i class="bi bi-plus-lg"></i> 選手を追加</button>
-                                    <div class="card border-primary mb-4"><div class="card-header bg-primary text-white bg-opacity-75"><i class="bi bi-trophy-fill"></i> 春季リーグ戦 エントリー</div><div class="card-body">
-                                            <div class="d-flex align-items-center mb-2">
-                                                <div class="form-check form-switch me-4"><input class="form-check-input" type="checkbox" v-model="entry.spring_league.join" id="springJoin"><label class="form-check-label fw-bold" for="springJoin">春季リーグ戦に参加する</label></div>
-                                                <div v-if="entry.spring_league.join" class="d-flex align-items-center"><label class="me-2 small fw-bold">所属部:</label><select v-model="form.division" class="form-select form-select-sm" style="width:auto;"><option value="1">1部</option><option value="2">2部</option><option value="3">3部</option><option value="4">4部</option><option value="5">5部</option><option value="6">6部</option></select></div>
+                                    <div class="card border-primary mb-4"><div class="card-header bg-primary text-white bg-opacity-75"><i class="bi bi-trophy-fill"></i> 春季リーグ戦 エントリー</div><div class="card-body"><div class="d-flex align-items-center mb-2"><div class="form-check form-switch me-4"><input class="form-check-input" type="checkbox" v-model="entry.spring_league.join" id="springJoin"><label class="form-check-label fw-bold" for="springJoin">春季リーグ戦に参加する</label></div><div v-if="entry.spring_league.join" class="d-flex align-items-center"><label class="me-2 small fw-bold">所属部:</label><select v-model="form.division" class="form-select form-select-sm" style="width:auto;"><option value="1">1部</option><option value="2">2部</option><option value="3">3部</option><option value="4">4部</option><option value="5">5部</option><option value="6">6部</option></select></div></div><div v-if="entry.spring_league.join" class="ms-4"><p class="mb-0 text-primary fw-bold">参加費: {{ formatMoney(calcSpringLeague) }}</p></div></div></div>
+                                    
+                                    <div class="payment-box">
+                                        <div class="text-center">
+                                            <h5 class="text-dark mb-1">合計支払額: <strong>{{ formatMoney(calcRegAndSpring) }}</strong></h5>
+                                            <p class="mb-2 text-muted small">下記番号を振込名義の前に入力してください</p>
+                                            <div class="payment-id">{{ entry.reg_fee.payment_id }}</div>
+                                            <div class="mt-2 text-danger fw-bold">振込名義: {{ entry.reg_fee.payment_id }} {{ form.univ_name }}</div>
+                                            
+                                            <div class="receipt-area">
+                                                <h6 class="small fw-bold mb-3">振込明細の写真</h6>
+                                                <div v-if="entry.reg_fee.receipt_url">
+                                                    <span class="badge badge-uploaded mb-2"><i class="bi bi-check-circle-fill"></i> 登録済み</span>
+                                                    <div class="mb-3">
+                                                        <img :src="entry.reg_fee.receipt_url" class="receipt-preview">
+                                                    </div>
+                                                    <button class="btn btn-sm btn-outline-danger" @click="deleteReceipt('reg_fee')"><i class="bi bi-trash"></i> 画像を削除して再アップロード</button>
+                                                    <div class="mt-3 border-top pt-2">
+                                                        <button class="btn btn-outline-dark w-100" @click="openReceipt('reg_fee')"><i class="bi bi-receipt"></i> 領収書を発行</button>
+                                                    </div>
+                                                </div>
+                                                <div v-else>
+                                                    <span class="badge badge-missing mb-2">未登録</span>
+                                                    <div class="mt-2">
+                                                        <input type="file" class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'reg_fee')">
+                                                        <div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div v-if="entry.spring_league.join" class="ms-4"><p class="mb-0 text-primary fw-bold">参加費: {{ formatMoney(calcSpringLeague) }}</p></div>
-                                    </div></div>
-                                    <div class="payment-box"><div class="d-flex justify-content-between align-items-center"><div><h5 class="text-dark mb-1">合計支払額: <strong>{{ formatMoney(calcRegAndSpring) }}</strong></h5><small class="text-muted">(連盟登録費: {{ formatMoney(calcRegFee) }} + リーグ参加費: {{ formatMoney(calcSpringLeague) }})</small></div><button v-if="!entry.reg_fee.payment_id" class="btn btn-warning fw-bold text-dark" @click="issuePayment('reg_fee', '01')">支払い情報を発行する</button></div>
-                                            <div v-if="entry.reg_fee.payment_id" class="mt-3 text-center">
-                                                <p class="mb-2">下記番号を振込名義の前に入力してください</p><div class="payment-id">{{ entry.reg_fee.payment_id }}</div><div class="mt-2 text-danger fw-bold">振込名義: {{ entry.reg_fee.payment_id }} {{ form.univ_name }}</div>
-                                                <div class="receipt-area"><h6 class="small fw-bold text-muted mb-2">振込明細書の写真</h6><div v-if="!entry.reg_fee.receipt_url"><input type="file" class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'reg_fee')"><div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div></div><div v-else><img :src="entry.reg_fee.receipt_url" class="receipt-preview"><br><button class="btn btn-sm btn-outline-danger mt-2" @click="deleteReceipt('reg_fee')">削除して再アップロード</button></div></div>
-                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="save-area">
-                                        <button @click="saveData" class="btn btn-primary btn-lg px-5" :disabled="isSaving"><i class="bi bi-save"></i> {{ isSaving ? '保存中...' : 'データを保存する' }}</button>
-                                    </div>
+                                    <div class="save-area"><button @click="saveData" class="btn btn-primary btn-lg px-5" :disabled="isSaving"><i class="bi bi-save"></i> {{ isSaving ? '保存中...' : 'データを保存する' }}</button></div>
                                 </div>
 
                                 <div v-if="activeTab === 'add_reg'">
                                     <div class="d-flex justify-content-between align-items-center mb-3"><h4 class="text-success"><i class="bi bi-person-plus"></i> ② 追加登録</h4><button class="btn btn-sm btn-outline-secondary" @click="togglePasteMode('add')"><i class="bi bi-clipboard"></i> Excelから貼り付け</button></div>
-                                    <div class="alert alert-info small"><strong>ヒント:</strong> 「申請完了」を押すとリストがリセットされ、入力した選手は「⑨選手名簿」に保存されます。</div>
-                                    <div v-if="showPasteAreaAdd" class="mb-3 p-3 bg-light border rounded"><label class="small fw-bold">3列(姓, 名, NBA番号)をコピー＆ペースト</label><textarea class="form-control mb-2" v-model="pasteTextAdd" rows="3" placeholder="追加	花子	1122334455"></textarea><div class="text-end"><button class="btn btn-sm btn-success" @click="processPaste('add')">追加</button></div></div>
-                                    <div class="player-table-container bg-white rounded border mb-3">
-                                        <table class="table table-sm table-hover mb-0 align-middle"><thead class="table-sticky-head"><tr class="text-center"><th style="width:40px">No.</th><th>姓</th><th>名</th><th style="width:180px">NBA登録番号<br><span class="text-danger small">(10桁必須)</span></th><th style="width:250px" class="bg-light">追加登録費<br><span class="fee-detail-text">関東¥2,000 + 全日本¥2,000</span></th><th style="width:40px"></th></tr></thead>
-                                            <tbody><tr v-for="(player, idx) in entry.add_reg.players" :key="idx"><td class="text-center">{{ idx + 1 }}</td><td class="input-cell"><input type="text" class="form-control form-control-sm border-0" v-model="player.last_name"></td><td class="input-cell"><input type="text" class="form-control form-control-sm border-0" v-model="player.first_name"></td><td><input type="text" class="form-control form-control-sm border-0 text-center" v-model="player.nba_id" maxlength="10" :class="{'is-invalid-custom': player.nba_id && !/^\d{10}$/.test(player.nba_id)}"></td><td class="text-center bg-light"><input type="checkbox" class="form-check-input" v-model="player.is_gakuren"></td><td class="text-center"><button class="btn btn-link text-danger p-0" @click="removePlayer('add', idx)"><i class="bi bi-x-circle-fill"></i></button></td></tr><tr v-if="entry.add_reg.players.length === 0"><td colspan="6" class="text-center py-5 text-muted">今回の追加対象者を入力してください</td></tr></tbody></table>
-                                    </div>
+                                    <div v-if="showPasteAreaAdd" class="mb-3 p-3 bg-light border rounded"><textarea class="form-control mb-2" v-model="pasteTextAdd" rows="3" placeholder="追加	花子	1122334455"></textarea><div class="text-end"><button class="btn btn-sm btn-success" @click="processPaste('add')">追加</button></div></div>
+                                    <div class="player-table-container bg-white rounded border mb-3"><table class="table table-sm table-hover mb-0 align-middle"><thead class="table-sticky-head"><tr class="text-center"><th style="width:40px">No.</th><th>姓</th><th>名</th><th style="width:180px">NBA登録番号</th><th style="width:250px" class="bg-light">追加登録費</th><th style="width:40px"></th></tr></thead><tbody><tr v-for="(player, idx) in entry.add_reg.players" :key="idx"><td class="text-center">{{ idx + 1 }}</td><td class="input-cell"><input type="text" class="form-control form-control-sm border-0" v-model="player.last_name"></td><td class="input-cell"><input type="text" class="form-control form-control-sm border-0" v-model="player.first_name"></td><td><input type="text" class="form-control form-control-sm border-0 text-center" v-model="player.nba_id" maxlength="10"></td><td class="text-center bg-light"><input type="checkbox" class="form-check-input" v-model="player.is_gakuren"></td><td class="text-center"><button class="btn btn-link text-danger p-0" @click="removePlayer('add', idx)"><i class="bi bi-x-circle-fill"></i></button></td></tr></tbody></table></div>
                                     <button class="btn btn-outline-success" @click="addPlayer('add')"><i class="bi bi-plus-lg"></i> 追加選手を追加</button>
-                                    <div class="payment-box"><div class="d-flex justify-content-between align-items-center"><div><h5 class="text-dark mb-1">追加登録費 支払額: <strong>{{ formatMoney(calcAddReg) }}</strong></h5></div><div><button v-if="!entry.add_reg.payment_id" class="btn btn-warning fw-bold text-dark me-2" @click="issuePayment('add_reg', '02')">支払い情報を発行する</button><button v-if="entry.add_reg.payment_id" class="btn btn-success fw-bold text-white" @click="finalizeAddReg">申請完了（リストを空にする）</button></div></div>
-                                            <div v-if="entry.add_reg.payment_id" class="mt-3 text-center"><div class="payment-id">{{ entry.add_reg.payment_id }}</div><div class="mt-2 text-danger fw-bold">振込名義: {{ entry.add_reg.payment_id }} {{ form.univ_name }}</div>
-                                                <div class="receipt-area"><h6 class="small fw-bold text-muted mb-2">振込明細書の写真</h6><div v-if="!entry.add_reg.receipt_url"><input type="file" class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'add_reg')"><div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div></div><div v-else><img :src="entry.add_reg.receipt_url" class="receipt-preview"><br><button class="btn btn-sm btn-outline-danger mt-2" @click="deleteReceipt('add_reg')">削除して再アップロード</button></div></div>
-                                            </div>
-                                    </div>
-                                    <div class="save-area">
-                                        <button @click="saveData" class="btn btn-primary btn-lg px-5" :disabled="isSaving"><i class="bi bi-save"></i> {{ isSaving ? '保存中...' : 'データを保存する' }}</button>
-                                    </div>
-                                </div>
-
-                                <div v-if="activeTab === 'kanto_champ'"><h4>③ 関東学生選手権</h4><div class="card mb-3"><div class="card-header bg-light fw-bold">シングルス (¥3,000)</div><div class="card-body p-0"><div class="p-2 bg-class-a text-white small fw-bold">Aクラス</div><div v-for="(item, idx) in entry.kanto_champ.s_a" :key="'sa'+idx" class="entry-row d-flex px-3"><select class="form-select form-select-sm" v-model="item.p1"><option value="">選手...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('kanto_champ','s_a',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('kanto_champ','s_a')">+ 追加(A)</button></div><div class="p-2 bg-class-b text-white small fw-bold">Bクラス</div><div v-for="(item, idx) in entry.kanto_champ.s_b" :key="'sb'+idx" class="entry-row d-flex px-3"><select class="form-select form-select-sm" v-model="item.p1"><option value="">選手...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('kanto_champ','s_b',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-success" @click="addEntry('kanto_champ','s_b')">+ 追加(B)</button></div></div></div><div class="card mb-3"><div class="card-header bg-light fw-bold">ダブルス (¥6,000)</div><div class="card-body p-0"><div class="p-2 bg-class-a text-white small fw-bold">Aクラス</div><div v-for="(item, idx) in entry.kanto_champ.d_a" :key="'da'+idx" class="entry-row d-flex px-3"><select class="form-select form-select-sm me-1" v-model="item.p1"><option value="">選手1...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><select class="form-select form-select-sm" v-model="item.p2"><option value="">選手2...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('kanto_champ','d_a',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('kanto_champ','d_a')">+ 追加(A)</button></div><div class="p-2 bg-class-b text-white small fw-bold">Bクラス</div><div v-for="(item, idx) in entry.kanto_champ.d_b" :key="'db'+idx" class="entry-row d-flex px-3"><select class="form-select form-select-sm me-1" v-model="item.p1"><option value="">選手1...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><select class="form-select form-select-sm" v-model="item.p2"><option value="">選手2...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('kanto_champ','d_b',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-success" @click="addEntry('kanto_champ','d_b')">+ 追加(B)</button></div></div></div><div class="card mb-3"><div class="card-header bg-light fw-bold">ミックス (¥6,000)</div><div class="card-body p-0"><div class="p-2 bg-class-a text-white small fw-bold">Aクラス</div><div v-for="(item, idx) in entry.kanto_champ.m_a" :key="'ma'+idx" class="entry-row d-flex align-items-center px-3"><select class="form-select form-select-sm me-1" v-model="item.p1"><option value="">自大...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><div class="form-check form-switch ms-2 me-2"><input class="form-check-input" type="checkbox" v-model="item.is_cross"><label class="form-check-label small">他大</label></div><input v-if="item.is_cross" type="text" class="form-control form-control-sm" v-model="item.p2" placeholder="他大選手名"><select v-else class="form-select form-select-sm" v-model="item.p2"><option value="">自大...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger ms-2" @click="removeEntry('kanto_champ','m_a',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('kanto_champ','m_a')">+ 追加(A)</button></div><div class="p-2 bg-class-b text-white small fw-bold">Bクラス</div><div v-for="(item, idx) in entry.kanto_champ.m_b" :key="'mb'+idx" class="entry-row d-flex align-items-center px-3"><select class="form-select form-select-sm me-1" v-model="item.p1"><option value="">自大...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><div class="form-check form-switch ms-2 me-2"><input class="form-check-input" type="checkbox" v-model="item.is_cross"><label class="form-check-label small">他大</label></div><input v-if="item.is_cross" type="text" class="form-control form-control-sm" v-model="item.p2" placeholder="他大選手名"><select v-else class="form-select form-select-sm" v-model="item.p2"><option value="">自大...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger ms-2" @click="removeEntry('kanto_champ','m_b',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-success" @click="addEntry('kanto_champ','m_b')">+ 追加(B)</button></div></div></div>
-                                    <div class="payment-box"><div class="d-flex justify-content-between align-items-center"><h5>支払額: <strong>{{ formatMoney(calcKantoChamp) }}</strong></h5><button v-if="!entry.kanto_champ.payment_id" class="btn btn-warning fw-bold text-dark" @click="issuePayment('kanto_champ', '03')">支払い情報を発行する</button></div>
-                                            <div v-if="entry.kanto_champ.payment_id" class="mt-3 text-center"><div class="payment-id">{{ entry.kanto_champ.payment_id }}</div><div class="mt-2 text-danger fw-bold">振込名義: {{ entry.kanto_champ.payment_id }} {{ form.univ_name }}</div>
-                                                <div class="receipt-area"><h6 class="small fw-bold text-muted mb-2">振込明細書の写真</h6><div v-if="!entry.kanto_champ.receipt_url"><input type="file" class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'kanto_champ')"><div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div></div><div v-else><img :src="entry.kanto_champ.receipt_url" class="receipt-preview"><br><button class="btn btn-sm btn-outline-danger mt-2" @click="deleteReceipt('kanto_champ')">削除して再アップロード</button></div></div>
-                                            </div>
-                                    </div>
-                                    <div class="save-area">
-                                        <button @click="saveData" class="btn btn-primary btn-lg px-5" :disabled="isSaving"><i class="bi bi-save"></i> {{ isSaving ? '保存中...' : 'データを保存する' }}</button>
-                                    </div>
-                                </div>
-
-                                <div v-if="activeTab === 'east_japan'"><h4>④ 東日本大会</h4><div class="row g-3 mt-2 mb-4"><div class="col-md-6"><label>団体戦 (¥20,000/チーム)</label><input type="number" v-model.number="entry.east_japan.team" class="form-control" min="0" placeholder="チーム数"></div><div class="col-md-6"><label>運営費 (¥2,000/人)</label><input type="number" v-model.number="entry.east_japan.ops" class="form-control" min="0"></div></div><div class="card mb-2"><div class="card-header bg-light fw-bold">シングルス (¥3,000)</div><div class="card-body p-0"><div v-for="(item, idx) in entry.east_japan.s" :key="idx" class="entry-row d-flex px-3"><select class="form-select form-select-sm" v-model="item.p1"><option value="">選手...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('east_japan','s',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('east_japan','s')">+ 追加</button></div></div></div><div class="card mb-2"><div class="card-header bg-light fw-bold">ダブルス (¥6,000)</div><div class="card-body p-0"><div v-for="(item, idx) in entry.east_japan.d" :key="idx" class="entry-row d-flex px-3"><select class="form-select form-select-sm me-1" v-model="item.p1"><option value="">選手1...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><select class="form-select form-select-sm" v-model="item.p2"><option value="">選手2...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('east_japan','d',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('east_japan','d')">+ 追加</button></div></div></div><div class="card mb-3"><div class="card-header bg-light fw-bold">ミックス (¥6,000)</div><div class="card-body p-0"><div v-for="(item, idx) in entry.east_japan.m" :key="idx" class="entry-row d-flex align-items-center px-3"><select class="form-select form-select-sm me-1" v-model="item.p1"><option value="">自大選手...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><div class="form-check form-switch ms-2 me-2"><input class="form-check-input" type="checkbox" v-model="item.is_cross"><label class="form-check-label small">他大</label></div><input v-if="item.is_cross" type="text" class="form-control form-control-sm" v-model="item.p2" placeholder="他大選手名 (大学名)"><select v-else class="form-select form-select-sm" v-model="item.p2"><option value="">自大選手2...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('east_japan','m',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('east_japan','m')">+ 追加</button></div></div></div>
-                                    <div class="payment-box"><div class="d-flex justify-content-between align-items-center"><h5>支払額: <strong>{{ formatMoney(calcEastJapan) }}</strong></h5><button v-if="!entry.east_japan.payment_id" class="btn btn-warning fw-bold text-dark" @click="issuePayment('east_japan', '04')">支払い情報を発行する</button></div>
-                                            <div v-if="entry.east_japan.payment_id" class="mt-3 text-center"><div class="payment-id">{{ entry.east_japan.payment_id }}</div><div class="mt-2 text-danger fw-bold">振込名義: {{ entry.east_japan.payment_id }} {{ form.univ_name }}</div>
-                                                <div class="receipt-area"><h6 class="small fw-bold text-muted mb-2">振込明細書の写真</h6><div v-if="!entry.east_japan.receipt_url"><input type="file" class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'east_japan')"><div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div></div><div v-else><img :src="entry.east_japan.receipt_url" class="receipt-preview"><br><button class="btn btn-sm btn-outline-danger mt-2" @click="deleteReceipt('east_japan')">削除して再アップロード</button></div></div>
-                                            </div>
-                                    </div>
-                                    <div class="save-area">
-                                        <button @click="saveData" class="btn btn-primary btn-lg px-5" :disabled="isSaving"><i class="bi bi-save"></i> {{ isSaving ? '保存中...' : 'データを保存する' }}</button>
-                                    </div>
-                                </div>
-                                
-                                <div v-if="activeTab === 'autumn_league'"><h4>⑤ 秋季リーグ戦</h4><div class="card bg-light mt-4"><div class="card-body"><div class="d-flex align-items-center mb-2"><div class="form-check form-switch me-4"><input class="form-check-input" type="checkbox" v-model="entry.autumn_league.join" id="aJoin"><label class="form-check-label fw-bold" for="aJoin">参加する</label></div><div v-if="entry.autumn_league.join" class="d-flex align-items-center"><label class="me-2 small fw-bold">所属部:</label><select v-model="form.division" class="form-select form-select-sm" style="width:auto;"><option value="1">1部</option><option value="2">2部</option><option value="3">3部</option><option value="4">4部</option><option value="5">5部</option><option value="6">6部</option></select></div></div><div v-if="entry.autumn_league.join" class="ms-4"><p class="mb-0 text-primary fw-bold">参加費: {{ formatMoney(calcAutumnLeague) }}</p></div></div></div>
-                                    <div v-if="entry.autumn_league.join" class="payment-box"><div class="d-flex justify-content-between align-items-center"><h5>支払額: <strong>{{ formatMoney(calcAutumnLeague) }}</strong></h5><button v-if="!entry.autumn_league.payment_id" class="btn btn-warning fw-bold text-dark" @click="issuePayment('autumn_league', '05')">支払い情報を発行する</button></div>
-                                            <div v-if="entry.autumn_league.payment_id" class="mt-3 text-center"><div class="payment-id">{{ entry.autumn_league.payment_id }}</div><div class="mt-2 text-danger fw-bold">振込名義: {{ entry.autumn_league.payment_id }} {{ form.univ_name }}</div>
-                                                <div class="receipt-area"><h6 class="small fw-bold text-muted mb-2">振込明細書の写真</h6><div v-if="!entry.autumn_league.receipt_url"><input type="file" class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'autumn_league')"><div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div></div><div v-else><img :src="entry.autumn_league.receipt_url" class="receipt-preview"><br><button class="btn btn-sm btn-outline-danger mt-2" @click="deleteReceipt('autumn_league')">削除して再アップロード</button></div></div>
-                                            </div>
-                                    </div>
-                                    <div class="save-area">
-                                        <button @click="saveData" class="btn btn-primary btn-lg px-5" :disabled="isSaving"><i class="bi bi-save"></i> {{ isSaving ? '保存中...' : 'データを保存する' }}</button>
-                                    </div>
-                                </div>
-                                
-                                <div v-if="activeTab === 'all_japan_champ'">
-                                    <h4>⑥ インカレ</h4>
-                                    <div class="row g-3 mt-2 mb-4">
-                                        <div class="col-md-6"><label>運営費 (¥1,000/種目)</label><input type="number" v-model.number="entry.all_japan_champ.ops_events" class="form-control" placeholder="種目数"></div>
-                                    </div>
-                                    <div class="card mb-2">
-                                        <div class="card-header bg-light fw-bold">シングルス (¥3,000)</div>
-                                        <div class="card-body p-0">
-                                            <div v-for="(item, idx) in entry.all_japan_champ.s" :key="idx" class="entry-row d-flex px-3"><select class="form-select form-select-sm" v-model="item.p1"><option value="">選手...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('all_japan_champ','s',idx)">x</button></div>
-                                            <div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('all_japan_champ','s')">+ 追加</button></div>
-                                        </div>
-                                    </div>
-                                    <div class="card mb-2">
-                                        <div class="card-header bg-light fw-bold">ダブルス (¥6,000)</div>
-                                        <div class="card-body p-0">
-                                            <div v-for="(item, idx) in entry.all_japan_champ.d" :key="idx" class="entry-row d-flex px-3"><select class="form-select form-select-sm me-1" v-model="item.p1"><option value="">選手1...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><select class="form-select form-select-sm" v-model="item.p2"><option value="">選手2...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('all_japan_champ','d',idx)">x</button></div>
-                                            <div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('all_japan_champ','d')">+ 追加</button></div>
-                                        </div>
-                                    </div>
-                                    <div class="card mb-3">
-                                        <div class="card-header bg-light fw-bold">ミックス (¥6,000)</div>
-                                        <div class="card-body p-0">
-                                            <div v-for="(item, idx) in entry.all_japan_champ.m" :key="idx" class="entry-row d-flex align-items-center px-3"><select class="form-select form-select-sm me-1" v-model="item.p1"><option value="">自大選手...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><div class="form-check form-switch ms-2 me-2"><input class="form-check-input" type="checkbox" v-model="item.is_cross"><label class="form-check-label small">他大</label></div><input v-if="item.is_cross" type="text" class="form-control form-control-sm" v-model="item.p2" placeholder="他大選手名 (大学名)"><select v-else class="form-select form-select-sm" v-model="item.p2"><option value="">自大選手2...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('all_japan_champ','m',idx)">x</button></div>
-                                            <div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('all_japan_champ','m')">+ 追加</button></div>
-                                        </div>
-                                    </div>
-                                    <div class="payment-box"><div class="d-flex justify-content-between align-items-center"><h5>支払額: <strong>{{ formatMoney(calcAllJapanChamp) }}</strong></h5><button v-if="!entry.all_japan_champ.payment_id" class="btn btn-warning fw-bold text-dark" @click="issuePayment('all_japan_champ', '06')">支払い情報を発行する</button></div>
-                                            <div v-if="entry.all_japan_champ.payment_id" class="mt-3 text-center"><div class="payment-id">{{ entry.all_japan_champ.payment_id }}</div><div class="mt-2 text-danger fw-bold">振込名義: {{ entry.all_japan_champ.payment_id }} {{ form.univ_name }}</div>
-                                                <div class="receipt-area"><h6 class="small fw-bold text-muted mb-2">振込明細書の写真</h6><div v-if="!entry.all_japan_champ.receipt_url"><input type="file" class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'all_japan_champ')"><div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div></div><div v-else><img :src="entry.all_japan_champ.receipt_url" class="receipt-preview"><br><button class="btn btn-sm btn-outline-danger mt-2" @click="deleteReceipt('all_japan_champ')">削除して再アップロード</button></div></div>
-                                            </div>
-                                    </div>
-                                    <div class="save-area">
-                                        <button @click="saveData" class="btn btn-primary btn-lg px-5" :disabled="isSaving"><i class="bi bi-save"></i> {{ isSaving ? '保存中...' : 'データを保存する' }}</button>
-                                    </div>
-                                </div>
-                                
-                                <div v-if="activeTab === 'all_japan_team'">
-                                    <h4>⑦ 大学対抗戦</h4>
-                                    <div class="alert alert-secondary mt-3">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" v-model="entry.all_japan_team.join" id="teamCompJoin">
-                                            <label class="form-check-label fw-bold" for="teamCompJoin">大学対抗戦に参加する</label>
-                                        </div>
-                                    </div>
-                                    <div v-if="entry.all_japan_team.join">
-                                        <div class="row g-3 mt-2">
-                                            <div class="col-md-6"><label>チーム参加費 (¥20,000)</label><input type="number" v-model.number="entry.all_japan_team.team" class="form-control" min="0"></div>
-                                            <div class="col-md-6"><label>運営費 (¥3,000)</label><input type="number" v-model.number="entry.all_japan_team.ops" class="form-control" min="0"></div>
-                                        </div>
-                                    </div>
                                     
-                                    <div v-if="entry.all_japan_team.join" class="payment-box"><div class="d-flex justify-content-between align-items-center"><h5>支払額: <strong>{{ formatMoney(calcAllJapanTeam) }}</strong></h5><button v-if="!entry.all_japan_team.payment_id" class="btn btn-warning fw-bold text-dark" @click="issuePayment('all_japan_team', '07')">支払い情報を発行する</button></div>
-                                            <div v-if="entry.all_japan_team.payment_id" class="mt-3 text-center"><div class="payment-id">{{ entry.all_japan_team.payment_id }}</div><div class="mt-2 text-danger fw-bold">振込名義: {{ entry.all_japan_team.payment_id }} {{ form.univ_name }}</div>
-                                                <div class="receipt-area"><h6 class="small fw-bold text-muted mb-2">振込明細書の写真</h6><div v-if="!entry.all_japan_team.receipt_url"><input type="file" class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'all_japan_team')"><div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div></div><div v-else><img :src="entry.all_japan_team.receipt_url" class="receipt-preview"><br><button class="btn btn-sm btn-outline-danger mt-2" @click="deleteReceipt('all_japan_team')">削除して再アップロード</button></div></div>
+                                    <div class="payment-box">
+                                        <div class="d-flex justify-content-between align-items-center mb-2"><div><h5 class="text-dark mb-1">追加登録費 支払額: <strong>{{ formatMoney(calcAddReg) }}</strong></h5></div>
+
+<button class="btn btn-success fw-bold text-white" @click="finalizeAddReg">申請完了（保存）</button>
+
+</div>
+                                        <div class="text-center">
+                                            <p class="mb-2 text-muted small">下記番号を振込名義の前に入力してください</p>
+                                            <div class="payment-id">{{ entry.add_reg.payment_id }}</div>
+                                            <div class="mt-2 text-danger fw-bold">振込名義: {{ entry.add_reg.payment_id }} {{ form.univ_name }}</div>
+                                            <div class="receipt-area">
+                                                <h6 class="small fw-bold mb-3">振込明細の写真</h6>
+                                                <div v-if="entry.add_reg.receipt_url">
+                                                    <span class="badge badge-uploaded mb-2"><i class="bi bi-check-circle-fill"></i> 登録済み</span>
+                                                    <div class="mb-3"><img :src="entry.add_reg.receipt_url" class="receipt-preview"></div>
+                                                    <button class="btn btn-sm btn-outline-danger" @click="deleteReceipt('add_reg')"><i class="bi bi-trash"></i> 画像を削除</button>
+                                                    <div class="mt-3 border-top pt-2"><button class="btn btn-outline-dark w-100" @click="openReceipt('add_reg')"><i class="bi bi-receipt"></i> 領収書</button></div>
+                                                </div>
+                                                <div v-else>
+                                                    <span class="badge badge-missing mb-2">未登録</span>
+                                                    <div class="mt-2"><input type="file" class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'add_reg')"><div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div></div>
+                                                </div>
                                             </div>
+                                        </div>
                                     </div>
-                                    <div class="save-area">
-                                        <button @click="saveData" class="btn btn-primary btn-lg px-5" :disabled="isSaving"><i class="bi bi-save"></i> {{ isSaving ? '保存中...' : 'データを保存する' }}</button>
-                                    </div>
-                                </div>
-                                
-                                <div v-if="activeTab === 'rookie'">
-                                    <h4>⑧ 新人戦</h4><div class="row g-2 mb-3"><div class="col-md-6"><label class="small fw-bold">団体戦A (¥5,000)</label><input type="number" v-model.number="entry.rookie.team_a" class="form-control" min="0"></div><div class="col-md-6"><label class="small fw-bold">団体戦B (¥5,000)</label><input type="number" v-model.number="entry.rookie.team_b" class="form-control" min="0"></div></div><div class="card mb-3"><div class="card-header bg-light fw-bold">シングルス (¥3,000)</div><div class="card-body p-0"><div class="p-2 bg-class-a text-white small fw-bold">Aクラス</div><div v-for="(item, idx) in entry.rookie.s_a" :key="'rsa'+idx" class="entry-row d-flex px-3"><select class="form-select form-select-sm" v-model="item.p1"><option value="">選手...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('rookie','s_a',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('rookie','s_a')">+ 追加(A)</button></div><div class="p-2 bg-class-b text-white small fw-bold">Bクラス</div><div v-for="(item, idx) in entry.rookie.s_b" :key="'rsb'+idx" class="entry-row d-flex px-3"><select class="form-select form-select-sm" v-model="item.p1"><option value="">選手...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('rookie','s_b',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-success" @click="addEntry('rookie','s_b')">+ 追加(B)</button></div></div></div><div class="card mb-3"><div class="card-header bg-light fw-bold">ダブルス (¥6,000)</div><div class="card-body p-0"><div class="p-2 bg-class-a text-white small fw-bold">Aクラス</div><div v-for="(item, idx) in entry.rookie.d_a" :key="'rda'+idx" class="entry-row d-flex px-3"><select class="form-select form-select-sm me-1" v-model="item.p1"><option value="">選手1...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><select class="form-select form-select-sm" v-model="item.p2"><option value="">選手2...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('rookie','d_a',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('rookie','d_a')">+ 追加(A)</button></div><div class="p-2 bg-class-b text-white small fw-bold">Bクラス</div><div v-for="(item, idx) in entry.rookie.d_b" :key="'rdb'+idx" class="entry-row d-flex px-3"><select class="form-select form-select-sm me-1" v-model="item.p1"><option value="">選手1...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><select class="form-select form-select-sm" v-model="item.p2"><option value="">選手2...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('rookie','d_b',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-success" @click="addEntry('rookie','d_b')">+ 追加(B)</button></div></div></div>
-                                    <div class="payment-box"><div class="d-flex justify-content-between align-items-center"><h5>支払額: <strong>{{ formatMoney(calcRookie) }}</strong></h5><button v-if="!entry.rookie.payment_id" class="btn btn-warning fw-bold text-dark" @click="issuePayment('rookie', '08')">支払い情報を発行する</button></div>
-                                            <div v-if="entry.rookie.payment_id" class="mt-3 text-center"><div class="payment-id">{{ entry.rookie.payment_id }}</div><div class="mt-2 text-danger fw-bold">振込名義: {{ entry.rookie.payment_id }} {{ form.univ_name }}</div>
-                                                <div class="receipt-area"><h6 class="small fw-bold text-muted mb-2">振込明細書の写真</h6><div v-if="!entry.rookie.receipt_url"><input type="file" class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'rookie')"><div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div></div><div v-else><img :src="entry.rookie.receipt_url" class="receipt-preview"><br><button class="btn btn-sm btn-outline-danger mt-2" @click="deleteReceipt('rookie')">削除して再アップロード</button></div></div>
-                                            </div>
-                                    </div>
-                                    <div class="save-area">
-                                        <button @click="saveData" class="btn btn-primary btn-lg px-5" :disabled="isSaving"><i class="bi bi-save"></i> {{ isSaving ? '保存中...' : 'データを保存する' }}</button>
-                                    </div>
+                                    <div class="save-area"><button @click="saveData" class="btn btn-primary btn-lg px-5" :disabled="isSaving"><i class="bi bi-save"></i> データ保存</button></div>
                                 </div>
 
-                                <div v-if="activeTab === 'player_list'">
-                                    <h4><i class="bi bi-journal-text"></i> ⑨ 登録選手名簿 (全履歴)</h4>
-                                    <p class="text-muted small">これまで登録された全ての選手（初期登録＋追加登録）が表示されます。</p>
-                                    <div class="player-table-container bg-white rounded border">
-                                        <table class="table table-sm table-striped mb-0">
-                                            <thead class="table-sticky-head"><tr><th>No.</th><th>姓</th><th>名</th><th>NBA登録番号</th><th>登録日</th></tr></thead>
-                                            <tbody>
-                                                <tr v-for="(p, idx) in masterPlayerList" :key="idx"><td>{{ idx + 1 }}</td><td>{{ p.last_name }}</td><td>{{ p.first_name }}</td><td>{{ p.nba_id }}</td><td>{{ p.registered_at }}</td></tr>
-                                                <tr v-if="masterPlayerList.length === 0"><td colspan="5" class="text-center py-4">登録データなし</td></tr>
-                                            </tbody>
-                                        </table>
+                                <div v-if="activeTab === 'kanto_champ'"><h4>③ 関東学生選手権</h4>
+                                    <div class="card mb-3"><div class="card-header bg-light fw-bold">シングルス (¥3,000)</div><div class="card-body p-0"><div class="p-2 bg-class-a text-white small fw-bold">Aクラス</div><div v-for="(item, idx) in entry.kanto_champ.s_a" class="entry-row d-flex px-3"><select class="form-select form-select-sm" v-model="item.p1"><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('kanto_champ','s_a',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('kanto_champ','s_a')">+ 追加(A)</button></div><div class="p-2 bg-class-b text-white small fw-bold">Bクラス</div><div v-for="(item, idx) in entry.kanto_champ.s_b" class="entry-row d-flex px-3"><select class="form-select form-select-sm" v-model="item.p1"><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('kanto_champ','s_b',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-success" @click="addEntry('kanto_champ','s_b')">+ 追加(B)</button></div></div></div>
+                                    <div class="card mb-3"><div class="card-header bg-light fw-bold">ダブルス (¥6,000)</div><div class="card-body p-0"><div class="p-2 bg-class-a text-white small fw-bold">Aクラス</div><div v-for="(item, idx) in entry.kanto_champ.d_a" class="entry-row d-flex px-3"><select class="form-select form-select-sm me-1" v-model="item.p1"><option value="">選手1...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><select class="form-select form-select-sm" v-model="item.p2"><option value="">選手2...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('kanto_champ','d_a',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('kanto_champ','d_a')">+ 追加(A)</button></div><div class="p-2 bg-class-b text-white small fw-bold">Bクラス</div><div v-for="(item, idx) in entry.kanto_champ.d_b" class="entry-row d-flex px-3"><select class="form-select form-select-sm me-1" v-model="item.p1"><option value="">選手1...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><select class="form-select form-select-sm" v-model="item.p2"><option value="">選手2...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('kanto_champ','d_b',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-success" @click="addEntry('kanto_champ','d_b')">+ 追加(B)</button></div></div></div>
+                                    <div class="card mb-3"><div class="card-header bg-light fw-bold">ミックス (¥6,000)</div><div class="card-body p-0"><div class="p-2 bg-class-a text-white small fw-bold">Aクラス</div><div v-for="(item, idx) in entry.kanto_champ.m_a" class="entry-row d-flex align-items-center px-3"><select class="form-select form-select-sm me-1" v-model="item.p1"><option value="">自大...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><div class="form-check form-switch ms-2 me-2"><input class="form-check-input" type="checkbox" v-model="item.is_cross"><label class="form-check-label small">他大</label></div><input v-if="item.is_cross" type="text" class="form-control form-control-sm" v-model="item.p2" placeholder="他大選手名"><select v-else class="form-select form-select-sm" v-model="item.p2"><option value="">自大...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger ms-2" @click="removeEntry('kanto_champ','m_a',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('kanto_champ','m_a')">+ 追加(A)</button></div><div class="p-2 bg-class-b text-white small fw-bold">Bクラス</div><div v-for="(item, idx) in entry.kanto_champ.m_b" class="entry-row d-flex align-items-center px-3"><select class="form-select form-select-sm me-1" v-model="item.p1"><option value="">自大...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><div class="form-check form-switch ms-2 me-2"><input class="form-check-input" type="checkbox" v-model="item.is_cross"><label class="form-check-label small">他大</label></div><input v-if="item.is_cross" type="text" class="form-control form-control-sm" v-model="item.p2" placeholder="他大選手名"><select v-else class="form-select form-select-sm" v-model="item.p2"><option value="">自大...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger ms-2" @click="removeEntry('kanto_champ','m_b',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-success" @click="addEntry('kanto_champ','m_b')">+ 追加(B)</button></div></div></div>
+                                    
+                                    <div class="payment-box">
+                                        <div class="text-center">
+                                            <h5>支払額: <strong>{{ formatMoney(calcKantoChamp) }}</strong></h5>
+                                            <p class="mb-2 text-muted small">下記番号を振込名義の前に入力してください</p>
+                                            <div class="payment-id">{{ entry.kanto_champ.payment_id }}</div>
+                                            <div class="mt-2 text-danger fw-bold">振込名義: {{ entry.kanto_champ.payment_id }} {{ form.univ_name }}</div>
+                                            <div class="receipt-area">
+                                                <h6 class="small fw-bold mb-3">振込明細の写真</h6>
+                                                <div v-if="entry.kanto_champ.receipt_url">
+                                                    <span class="badge badge-uploaded mb-2"><i class="bi bi-check-circle-fill"></i> 登録済み</span>
+                                                    <div class="mb-3"><img :src="entry.kanto_champ.receipt_url" class="receipt-preview"></div>
+                                                    <button class="btn btn-sm btn-outline-danger" @click="deleteReceipt('kanto_champ')"><i class="bi bi-trash"></i> 画像を削除</button>
+                                                    <div class="mt-3 border-top pt-2"><button class="btn btn-outline-dark w-100" @click="openReceipt('kanto_champ')"><i class="bi bi-receipt"></i> 領収書</button></div>
+                                                </div>
+                                                <div v-else>
+                                                    <span class="badge badge-missing mb-2">未登録</span>
+                                                    <div class="mt-2"><input type="file" class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'kanto_champ')"><div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div></div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
+                                    <div class="save-area"><button @click="saveData" class="btn btn-primary btn-lg px-5" :disabled="isSaving"><i class="bi bi-save"></i> 保存</button></div>
                                 </div>
+
+                                <div v-if="activeTab === 'east_japan'"><h4>④ 東日本大会</h4><div class="row g-3 mt-2 mb-4"><div class="col-md-6"><label>団体戦 (¥20,000/チーム)</label><input type="number" v-model.number="entry.east_japan.team" class="form-control" min="0" placeholder="チーム数"></div><div class="col-md-6"><label>運営費 (¥2,000/人)</label><input type="number" v-model.number="entry.east_japan.ops" class="form-control" min="0"></div></div>
+                                    <div class="card mb-2"><div class="card-header bg-light fw-bold">シングルス (¥3,000)</div><div class="card-body p-0"><div v-for="(item, idx) in entry.east_japan.s" :key="idx" class="entry-row d-flex px-3"><select class="form-select form-select-sm" v-model="item.p1"><option value="">選手...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('east_japan','s',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('east_japan','s')">+ 追加</button></div></div></div>
+                                    <div class="card mb-2"><div class="card-header bg-light fw-bold">ダブルス (¥6,000)</div><div class="card-body p-0"><div v-for="(item, idx) in entry.east_japan.d" :key="idx" class="entry-row d-flex px-3"><select class="form-select form-select-sm me-1" v-model="item.p1"><option value="">選手1...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><select class="form-select form-select-sm" v-model="item.p2"><option value="">選手2...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('east_japan','d',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('east_japan','d')">+ 追加</button></div></div></div>
+                                    <div class="card mb-3"><div class="card-header bg-light fw-bold">ミックス (¥6,000)</div><div class="card-body p-0"><div v-for="(item, idx) in entry.east_japan.m" :key="idx" class="entry-row d-flex align-items-center px-3"><select class="form-select form-select-sm me-1" v-model="item.p1"><option value="">自大選手...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><div class="form-check form-switch ms-2 me-2"><input class="form-check-input" type="checkbox" v-model="item.is_cross"><label class="form-check-label small">他大</label></div><input v-if="item.is_cross" type="text" class="form-control form-control-sm" v-model="item.p2" placeholder="他大選手名 (大学名)"><select v-else class="form-select form-select-sm" v-model="item.p2"><option value="">自大選手2...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('east_japan','m',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('east_japan','m')">+ 追加</button></div></div></div>
+                                    <div class="payment-box">
+                                        <div class="text-center">
+                                            <h5>支払額: <strong>{{ formatMoney(calcEastJapan) }}</strong></h5>
+                                            <p class="mb-2 text-muted small">下記番号を振込名義の前に入力してください</p>
+                                            <div class="payment-id">{{ entry.east_japan.payment_id }}</div>
+                                            <div class="mt-2 text-danger fw-bold">振込名義: {{ entry.east_japan.payment_id }} {{ form.univ_name }}</div>
+                                            <div class="receipt-area">
+                                                <h6 class="small fw-bold mb-3">振込明細の写真</h6>
+                                                <div v-if="entry.east_japan.receipt_url">
+                                                    <span class="badge badge-uploaded mb-2"><i class="bi bi-check-circle-fill"></i> 登録済み</span>
+                                                    <div class="mb-3"><img :src="entry.east_japan.receipt_url" class="receipt-preview"></div>
+                                                    <button class="btn btn-sm btn-outline-danger" @click="deleteReceipt('east_japan')"><i class="bi bi-trash"></i> 画像を削除</button>
+                                                    <div class="mt-3 border-top pt-2"><button class="btn btn-outline-dark w-100" @click="openReceipt('east_japan')"><i class="bi bi-receipt"></i> 領収書</button></div>
+                                                </div>
+                                                <div v-else>
+                                                    <span class="badge badge-missing mb-2">未登録</span>
+                                                    <div class="mt-2"><input type="file" class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'east_japan')"><div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="save-area"><button @click="saveData" class="btn btn-primary btn-lg px-5">保存</button></div>
+                                </div>
+
+                                <div v-if="activeTab === 'autumn_league'"><h4>⑤ 秋季リーグ戦</h4><div class="card bg-light mt-4"><div class="card-body"><div class="d-flex align-items-center mb-2"><div class="form-check form-switch me-4"><input class="form-check-input" type="checkbox" v-model="entry.autumn_league.join"><label class="form-check-label fw-bold">参加する</label></div><div v-if="entry.autumn_league.join" class="d-flex align-items-center"><label class="me-2 small fw-bold">所属部:</label><select v-model="form.division" class="form-select form-select-sm" style="width:auto;"><option value="1">1部</option><option value="2">2部</option><option value="3">3部</option><option value="4">4部</option><option value="5">5部</option><option value="6">6部</option></select></div></div><div v-if="entry.autumn_league.join" class="ms-4"><p class="mb-0 text-primary fw-bold">参加費: {{ formatMoney(calcAutumnLeague) }}</p></div></div></div>
+                                    <div v-if="entry.autumn_league.join" class="payment-box">
+                                        <div class="text-center">
+                                            <h5>支払額: <strong>{{ formatMoney(calcAutumnLeague) }}</strong></h5>
+                                            <p class="mb-2 text-muted small">下記番号を振込名義の前に入力してください</p>
+                                            <div class="payment-id">{{ entry.autumn_league.payment_id }}</div>
+                                            <div class="mt-2 text-danger fw-bold">振込名義: {{ entry.autumn_league.payment_id }} {{ form.univ_name }}</div>
+                                            <div class="receipt-area">
+                                                <h6 class="small fw-bold mb-3">振込明細の写真</h6>
+                                                <div v-if="entry.autumn_league.receipt_url">
+                                                    <span class="badge badge-uploaded mb-2"><i class="bi bi-check-circle-fill"></i> 登録済み</span>
+                                                    <div class="mb-3"><img :src="entry.autumn_league.receipt_url" class="receipt-preview"></div>
+                                                    <button class="btn btn-sm btn-outline-danger" @click="deleteReceipt('autumn_league')"><i class="bi bi-trash"></i> 画像を削除</button>
+                                                    <div class="mt-3 border-top pt-2"><button class="btn btn-outline-dark w-100" @click="openReceipt('autumn_league')"><i class="bi bi-receipt"></i> 領収書</button></div>
+                                                </div>
+                                                <div v-else>
+                                                    <span class="badge badge-missing mb-2">未登録</span>
+                                                    <div class="mt-2"><input type="file" class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'autumn_league')"><div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="save-area"><button @click="saveData" class="btn btn-primary btn-lg px-5">保存</button></div>
+                                </div>
+
+                                <div v-if="activeTab === 'all_japan_champ'"><h4>⑥ インカレ</h4>
+                                    <div class="row g-3 mt-2 mb-4"><div class="col-md-6"><label>運営費 (¥1,000/種目)</label><input type="number" v-model.number="entry.all_japan_champ.ops_events" class="form-control" placeholder="種目数"></div></div>
+                                    <div class="card mb-2"><div class="card-header bg-light fw-bold">シングルス (¥3,000)</div><div class="card-body p-0"><div v-for="(item, idx) in entry.all_japan_champ.s" :key="idx" class="entry-row d-flex px-3"><select class="form-select form-select-sm" v-model="item.p1"><option value="">選手...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('all_japan_champ','s',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('all_japan_champ','s')">+ 追加</button></div></div></div>
+                                    <div class="card mb-2"><div class="card-header bg-light fw-bold">ダブルス (¥6,000)</div><div class="card-body p-0"><div v-for="(item, idx) in entry.all_japan_champ.d" :key="idx" class="entry-row d-flex px-3"><select class="form-select form-select-sm me-1" v-model="item.p1"><option value="">選手1...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><select class="form-select form-select-sm" v-model="item.p2"><option value="">選手2...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('all_japan_champ','d',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('all_japan_champ','d')">+ 追加</button></div></div></div>
+                                    <div class="card mb-3"><div class="card-header bg-light fw-bold">ミックス (¥6,000)</div><div class="card-body p-0"><div v-for="(item, idx) in entry.all_japan_champ.m" :key="idx" class="entry-row d-flex align-items-center px-3"><select class="form-select form-select-sm me-1" v-model="item.p1"><option value="">自大選手...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><div class="form-check form-switch ms-2 me-2"><input class="form-check-input" type="checkbox" v-model="item.is_cross"><label class="form-check-label small">他大</label></div><input v-if="item.is_cross" type="text" class="form-control form-control-sm" v-model="item.p2" placeholder="他大選手名 (大学名)"><select v-else class="form-select form-select-sm" v-model="item.p2"><option value="">自大選手2...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('all_japan_champ','m',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('all_japan_champ','m')">+ 追加</button></div></div></div>
+                                    <div class="payment-box">
+                                        <div class="text-center">
+                                            <h5>支払額: <strong>{{ formatMoney(calcAllJapanChamp) }}</strong></h5>
+                                            <p class="mb-2 text-muted small">下記番号を振込名義の前に入力してください</p>
+                                            <div class="payment-id">{{ entry.all_japan_champ.payment_id }}</div>
+                                            <div class="mt-2 text-danger fw-bold">振込名義: {{ entry.all_japan_champ.payment_id }} {{ form.univ_name }}</div>
+                                            <div class="receipt-area">
+                                                <h6 class="small fw-bold mb-3">振込明細の写真</h6>
+                                                <div v-if="entry.all_japan_champ.receipt_url">
+                                                    <span class="badge badge-uploaded mb-2"><i class="bi bi-check-circle-fill"></i> 登録済み</span>
+                                                    <div class="mb-3"><img :src="entry.all_japan_champ.receipt_url" class="receipt-preview"></div>
+                                                    <button class="btn btn-sm btn-outline-danger" @click="deleteReceipt('all_japan_champ')"><i class="bi bi-trash"></i> 画像を削除</button>
+                                                    <div class="mt-3 border-top pt-2"><button class="btn btn-outline-dark w-100" @click="openReceipt('all_japan_champ')"><i class="bi bi-receipt"></i> 領収書</button></div>
+                                                </div>
+                                                <div v-else>
+                                                    <span class="badge badge-missing mb-2">未登録</span>
+                                                    <div class="mt-2"><input type="file" class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'all_japan_champ')"><div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="save-area"><button @click="saveData" class="btn btn-primary btn-lg px-5">保存</button></div>
+                                </div>
+
+                                <div v-if="activeTab === 'all_japan_team'"><h4>⑦ 大学対抗戦</h4><div class="alert alert-secondary mt-3"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" v-model="entry.all_japan_team.join"><label class="form-check-label fw-bold">参加する</label></div></div>
+                                    <div v-if="entry.all_japan_team.join"><div class="row g-3 mt-2"><div class="col-md-6"><label>チーム参加費</label><input type="number" v-model.number="entry.all_japan_team.team" class="form-control"></div><div class="col-md-6"><label>運営費</label><input type="number" v-model.number="entry.all_japan_team.ops" class="form-control"></div></div></div>
+                                    <div v-if="entry.all_japan_team.join" class="payment-box">
+                                        <div class="text-center">
+                                            <h5>支払額: <strong>{{ formatMoney(calcAllJapanTeam) }}</strong></h5>
+                                            <p class="mb-2 text-muted small">下記番号を振込名義の前に入力してください</p>
+                                            <div class="payment-id">{{ entry.all_japan_team.payment_id }}</div>
+                                            <div class="mt-2 text-danger fw-bold">振込名義: {{ entry.all_japan_team.payment_id }} {{ form.univ_name }}</div>
+                                            <div class="receipt-area">
+                                                <h6 class="small fw-bold mb-3">振込明細の写真</h6>
+                                                <div v-if="entry.all_japan_team.receipt_url">
+                                                    <span class="badge badge-uploaded mb-2"><i class="bi bi-check-circle-fill"></i> 登録済み</span>
+                                                    <div class="mb-3"><img :src="entry.all_japan_team.receipt_url" class="receipt-preview"></div>
+                                                    <button class="btn btn-sm btn-outline-danger" @click="deleteReceipt('all_japan_team')"><i class="bi bi-trash"></i> 画像を削除</button>
+                                                    <div class="mt-3 border-top pt-2"><button class="btn btn-outline-dark w-100" @click="openReceipt('all_japan_team')"><i class="bi bi-receipt"></i> 領収書</button></div>
+                                                </div>
+                                                <div v-else>
+                                                    <span class="badge badge-missing mb-2">未登録</span>
+                                                    <div class="mt-2"><input type="file" class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'all_japan_team')"><div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="save-area"><button @click="saveData" class="btn btn-primary btn-lg px-5">保存</button></div>
+                                </div>
+
+                                <div v-if="activeTab === 'rookie'"><h4>⑧ 新人戦</h4><div class="row g-2 mb-3"><div class="col-md-6"><label class="small fw-bold">団体戦A (¥5,000)</label><input type="number" v-model.number="entry.rookie.team_a" class="form-control" min="0"></div><div class="col-md-6"><label class="small fw-bold">団体戦B (¥5,000)</label><input type="number" v-model.number="entry.rookie.team_b" class="form-control" min="0"></div></div>
+                                    <div class="card mb-3"><div class="card-header bg-light fw-bold">シングルス (¥3,000)</div><div class="card-body p-0"><div class="p-2 bg-class-a text-white small fw-bold">Aクラス</div><div v-for="(item, idx) in entry.rookie.s_a" :key="'rsa'+idx" class="entry-row d-flex px-3"><select class="form-select form-select-sm" v-model="item.p1"><option value="">選手...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('rookie','s_a',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('rookie','s_a')">+ 追加(A)</button></div><div class="p-2 bg-class-b text-white small fw-bold">Bクラス</div><div v-for="(item, idx) in entry.rookie.s_b" :key="'rsb'+idx" class="entry-row d-flex px-3"><select class="form-select form-select-sm" v-model="item.p1"><option value="">選手...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('rookie','s_b',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-success" @click="addEntry('rookie','s_b')">+ 追加(B)</button></div></div></div><div class="card mb-3"><div class="card-header bg-light fw-bold">ダブルス (¥6,000)</div><div class="card-body p-0"><div class="p-2 bg-class-a text-white small fw-bold">Aクラス</div><div v-for="(item, idx) in entry.rookie.d_a" :key="'rda'+idx" class="entry-row d-flex px-3"><select class="form-select form-select-sm me-1" v-model="item.p1"><option value="">選手1...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><select class="form-select form-select-sm" v-model="item.p2"><option value="">選手2...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('rookie','d_a',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-primary" @click="addEntry('rookie','d_a')">+ 追加(A)</button></div><div class="p-2 bg-class-b text-white small fw-bold">Bクラス</div><div v-for="(item, idx) in entry.rookie.d_b" :key="'rdb'+idx" class="entry-row d-flex px-3"><select class="form-select form-select-sm me-1" v-model="item.p1"><option value="">選手1...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><select class="form-select form-select-sm" v-model="item.p2"><option value="">選手2...</option><option v-for="opt in playerSelectOptions" :value="opt.value">{{opt.label}}</option></select><button class="btn btn-link text-danger" @click="removeEntry('rookie','d_b',idx)">x</button></div><div class="p-2"><button class="btn btn-sm btn-outline-success" @click="addEntry('rookie','d_b')">+ 追加(B)</button></div></div></div>
+                                    <div class="payment-box">
+                                        <div class="text-center">
+                                            <h5>支払額: <strong>{{ formatMoney(calcRookie) }}</strong></h5>
+                                            <p class="mb-2 text-muted small">下記番号を振込名義の前に入力してください</p>
+                                            <div class="payment-id">{{ entry.rookie.payment_id }}</div>
+                                            <div class="mt-2 text-danger fw-bold">振込名義: {{ entry.rookie.payment_id }} {{ form.univ_name }}</div>
+                                            <div class="receipt-area">
+                                                <h6 class="small fw-bold mb-3">振込明細の写真</h6>
+                                                <div v-if="entry.rookie.receipt_url">
+                                                    <span class="badge badge-uploaded mb-2"><i class="bi bi-check-circle-fill"></i> 登録済み</span>
+                                                    <div class="mb-3"><img :src="entry.rookie.receipt_url" class="receipt-preview"></div>
+                                                    <button class="btn btn-sm btn-outline-danger" @click="deleteReceipt('rookie')"><i class="bi bi-trash"></i> 画像を削除</button>
+                                                    <div class="mt-3 border-top pt-2"><button class="btn btn-outline-dark w-100" @click="openReceipt('rookie')"><i class="bi bi-receipt"></i> 領収書</button></div>
+                                                </div>
+                                                <div v-else>
+                                                    <span class="badge badge-missing mb-2">未登録</span>
+                                                    <div class="mt-2"><input type="file" class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'rookie')"><div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="save-area"><button @click="saveData" class="btn btn-primary btn-lg px-5">保存</button></div>
+                                </div>
+
+                                <div v-if="activeTab === 'player_list'"><h4><i class="bi bi-journal-text"></i> ⑨ 登録選手名簿 (全履歴)</h4><div class="player-table-container bg-white rounded border"><table class="table table-sm table-striped mb-0"><thead class="table-sticky-head"><tr><th>No.</th><th>姓</th><th>名</th><th>NBA登録番号</th><th>登録日</th></tr></thead><tbody><tr v-for="(p, idx) in masterPlayerList" :key="idx"><td>{{ idx + 1 }}</td><td>{{ p.last_name }}</td><td>{{ p.first_name }}</td><td>{{ p.nba_id }}</td><td>{{ p.registered_at }}</td></tr></tbody></table></div></div>
 
                                 <div v-if="activeTab === 'settlement'">
-                                    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
-                                        <h4><i class="bi bi-file-earmark-spreadsheet-fill"></i> ⑩ 支払明細</h4>
-                                        <button onclick="window.print()" class="btn btn-dark"><i class="bi bi-printer"></i> 印刷 / PDF保存</button>
-                                    </div>
-
+                                    <div class="d-flex justify-content-between align-items-center mb-4 no-print"><h4><i class="bi bi-file-earmark-spreadsheet-fill"></i> ⑩ 支払明細</h4><button onclick="window.print()" class="btn btn-dark"><i class="bi bi-printer"></i> 印刷 / PDF保存</button></div>
                                     <div class="report-container">
                                         <h3 class="text-center mb-4">令和7年度 関東学生バドミントン連盟 支払明細</h3>
-                                        <div class="d-flex justify-content-between mb-3">
-                                            <h5>大学名: <u>{{ form.univ_name }} ({{ genderLabel }})</u></h5>
-                                            <h5>日付: <u>{{ new Date().toLocaleDateString() }}</u></h5>
-                                        </div>
-
-                                        <table class="report-table">
-                                            <colgroup>
-                                                <col class="col-item">
-                                                <col class="col-detail">
-                                                <col class="col-price">
-                                            </colgroup>
-                                            <thead>
-                                                <tr>
-                                                    <th>項目</th>
-                                                    <th>詳細・内訳</th>
-                                                    <th>金額</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr>
-                                                    <td>連盟登録費 (初期)</td>
-                                                    <td>
-                                                        年度初め納入金: {{ entry.reg_fee.is_paid_base ? '¥15,000' : '未選択(¥0)' }}<br>
-                                                        選手登録: {{ gakurenCount }}名 × ¥4,000
-                                                    </td>
-                                                    <td class="col-price">{{ formatMoney(calcRegFee) }}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>春季リーグ参加費</td>
-                                                    <td>
-                                                        {{ entry.spring_league.join ? form.division + '部' : '不参加' }}
-                                                    </td>
-                                                    <td class="col-price">{{ formatMoney(calcSpringLeague) }}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>追加登録費</td>
-                                                    <td>{{ addRegCount }}名 × ¥4,000</td>
-                                                    <td class="col-price">{{ formatMoney(calcAddReg) }}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>関東選手権</td>
-                                                    <td>
-                                                        シングルス: {{ (entry.kanto_champ.s_a?.length||0) + (entry.kanto_champ.s_b?.length||0) }} / 
-                                                        ダブルス: {{ (entry.kanto_champ.d_a?.length||0) + (entry.kanto_champ.d_b?.length||0) }} / 
-                                                        MIX: {{ (entry.kanto_champ.m_a?.length||0) + (entry.kanto_champ.m_b?.length||0) }}
-                                                    </td>
-                                                    <td class="col-price">{{ formatMoney(calcKantoChamp) }}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>東日本大会</td>
-                                                    <td>
-                                                        団体: {{ entry.east_japan.team }} / S: {{ (entry.east_japan.s?.length || 0) }} / D: {{ (entry.east_japan.d?.length || 0) }} / M: {{ (entry.east_japan.m?.length || 0) }}
-                                                    </td>
-                                                    <td class="col-price">{{ formatMoney(calcEastJapan) }}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>秋季リーグ参加費</td>
-                                                    <td>
-                                                        {{ entry.autumn_league.join ? form.division + '部' : '不参加' }}
-                                                    </td>
-                                                    <td class="col-price">{{ formatMoney(calcAutumnLeague) }}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>インカレ</td>
-                                                    <td>
-                                                        S: {{ (entry.all_japan_champ.s?.length || 0) }} / D: {{ (entry.all_japan_champ.d?.length || 0) }} / M: {{ (entry.all_japan_champ.m?.length || 0) }}
-                                                    </td>
-                                                    <td class="col-price">{{ formatMoney(calcAllJapanChamp) }}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>大学対抗戦</td>
-                                                    <td>
-                                                        {{ entry.all_japan_team.join ? '参加' : '不参加' }} (チーム: {{ entry.all_japan_team.join ? entry.all_japan_team.team : 0 }})
-                                                    </td>
-                                                    <td class="col-price">{{ formatMoney(calcAllJapanTeam) }}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>新人戦</td>
-                                                    <td>
-                                                        団体: {{ (entry.rookie.team_a||0) + (entry.rookie.team_b||0) }} / 
-                                                        S: {{ (entry.rookie.s_a?.length||0) + (entry.rookie.s_b?.length||0) }} / 
-                                                        D: {{ (entry.rookie.d_a?.length||0) + (entry.rookie.d_b?.length||0) }}
-                                                    </td>
-                                                    <td class="col-price">{{ formatMoney(calcRookie) }}</td>
-                                                </tr>
-                                            </tbody>
-                                            <tfoot>
-                                                <tr>
-                                                    <th colspan="2" class="text-center fs-5">合計</th>
-                                                    <th class="col-price fs-4">{{ formatMoney(grandTotal) }}</th>
-                                                </tr>
-                                            </tfoot>
-                                        </table>
-                                        
-                                        <div class="mt-5">
-                                            <h6>備考・振込記録</h6>
-                                            <textarea v-model="memo" class="form-control d-print-none" rows="5" placeholder="ここに振込日、名義、連絡事項などを入力してください。&#10;（例）&#10;4/10 登録費・春リーグ費振込完了&#10;振込名義: カ)カントウガクレン"></textarea>
-                                            <div class="d-none d-print-block memo-box">{{ memo }}</div>
-                                            
-                                            <div class="save-area d-print-none">
-                                                <button @click="saveData" class="btn btn-primary btn-lg px-5" :disabled="isSaving"><i class="bi bi-save"></i> {{ isSaving ? '保存中...' : 'データを保存する' }}</button>
-                                            </div>
-                                        </div>
+                                        <div class="d-flex justify-content-between mb-3"><h5>大学名: <u>{{ form.univ_name }} ({{ genderLabel }})</u></h5><h5>日付: <u>{{ new Date().toLocaleDateString() }}</u></h5></div>
+                                        <table class="report-table"><colgroup><col class="col-item"><col class="col-detail"><col class="col-price"></colgroup><thead><tr><th>項目</th><th>詳細・内訳</th><th>金額</th></tr></thead><tbody><tr><td>連盟登録費</td><td>基本: {{ entry.reg_fee.is_paid_base ? '¥15,000' : '¥0' }} / 登録: {{ gakurenCount }}名</td><td class="col-price">{{ formatMoney(calcRegFee) }}</td></tr><tr><td>春リーグ</td><td>{{ entry.spring_league.join ? '参加' : '不参加' }}</td><td class="col-price">{{ formatMoney(calcSpringLeague) }}</td></tr><tr><td>追加登録</td><td>{{ addRegCount }}名</td><td class="col-price">{{ formatMoney(calcAddReg) }}</td></tr><tr><td>関東選手権</td><td>S/D/M</td><td class="col-price">{{ formatMoney(calcKantoChamp) }}</td></tr><tr><td>東日本</td><td>団体/個人</td><td class="col-price">{{ formatMoney(calcEastJapan) }}</td></tr><tr><td>秋リーグ</td><td>{{ entry.autumn_league.join ? '参加' : '不参加' }}</td><td class="col-price">{{ formatMoney(calcAutumnLeague) }}</td></tr><tr><td>インカレ</td><td>個人</td><td class="col-price">{{ formatMoney(calcAllJapanChamp) }}</td></tr><tr><td>対抗戦</td><td>{{ entry.all_japan_team.join ? '参加' : '不参加' }}</td><td class="col-price">{{ formatMoney(calcAllJapanTeam) }}</td></tr><tr><td>新人戦</td><td>団体/個人</td><td class="col-price">{{ formatMoney(calcRookie) }}</td></tr></tbody><tfoot><tr><th colspan="2" class="text-center fs-5">合計</th><th class="col-price fs-4">{{ formatMoney(grandTotal) }}</th></tr></tfoot></table>
+                                        <div class="mt-5"><h6>備考・振込記録</h6><textarea v-model="memo" class="form-control d-print-none" rows="5"></textarea><div class="d-none d-print-block memo-box">{{ memo }}</div><div class="save-area d-print-none"><button @click="saveData" class="btn btn-primary btn-lg px-5">保存</button></div></div>
                                     </div>
                                 </div>
 
-                                <div v-if="activeTab === 'account'">
-                                    <h4><i class="bi bi-gear-fill"></i> ⑪ アカウント設定</h4>
-                                    <div class="card mt-4 border-warning">
-                                        <div class="card-header bg-warning bg-opacity-10 fw-bold">メールアドレス・パスワードの変更</div>
-                                        <div class="card-body">
-                                            <p class="small text-muted">※セキュリティ保護のため、変更には再ログインが必要になる場合があります。</p>
-                                            <div class="mb-3"><label class="form-label">現在のメールアドレス</label><input type="text" class="form-control" :value="user.email" disabled></div>
-                                            <hr>
-                                            <div class="mb-3"><label class="form-label fw-bold">新しいメールアドレス</label><input type="email" v-model="account.newEmail" class="form-control" placeholder="変更しない場合は空欄"></div>
-                                            <div class="mb-3"><label class="form-label fw-bold">新しいパスワード (6文字以上)</label><input type="password" v-model="account.newPass" class="form-control" placeholder="変更しない場合は空欄"></div>
-                                            <button class="btn btn-warning text-dark fw-bold" @click="updateAccount" :disabled="!account.newEmail && !account.newPass">変更内容を保存</button>
-                                        </div>
-                                    </div>
-                                </div>
+                                <div v-if="activeTab === 'account'"><h4><i class="bi bi-gear-fill"></i> ⑪ アカウント設定</h4><div class="card mt-4 border-warning"><div class="card-header bg-warning bg-opacity-10 fw-bold">メールアドレス・パスワードの変更</div><div class="card-body"><div class="mb-3"><label class="form-label">現在のメールアドレス</label><input type="text" class="form-control" :value="user.email" disabled></div><hr><div class="mb-3"><label class="form-label fw-bold">新しいメールアドレス</label><input type="email" v-model="account.newEmail" class="form-control"></div><div class="mb-3"><label class="form-label fw-bold">新しいパスワード</label><input type="password" v-model="account.newPass" class="form-control"></div><button class="btn btn-warning text-dark fw-bold" @click="updateAccount">変更内容を保存</button></div></div></div>
 
                             </div>
                         </div>
@@ -500,6 +499,9 @@
                 </div>
             </div>
         </div>
+
+        <div v-if="receiptData.show" class="modal fade show d-block" id="receiptModal" tabindex="-1" style="background: rgba(0,0,0,0.5);"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">領収書プレビュー</h5><button type="button" class="btn-close" @click="receiptData.show = false"></button></div><div class="modal-body bg-light p-4"><div class="receipt-layout mx-auto" style="max-width: 700px;"><div class="text-center"><span class="receipt-title">領　収　証</span></div><div class="d-flex justify-content-between align-items-end mt-4"><h4 class="mb-0"><u>{{ form.univ_name }} 様</u></h4><div>発行日: {{ new Date().toLocaleDateString('ja-JP', {year:'numeric', month:'long', day:'numeric'}) }}</div></div><div class="receipt-amount">{{ formatMoney(receiptData.amount) }}-</div><div class="text-center small text-muted">（消費税等を含む）</div><div class="receipt-detail"><p>但　{{ receiptData.title }} として<br>上記正に領収いたしました。</p></div><div class="issuer-info"><div class="hanko-box"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect x="2" y="2" width="96" height="96" rx="2" ry="2" fill="none" stroke="#d00" stroke-width="2" /><rect x="6" y="6" width="88" height="88" rx="1" ry="1" fill="none" stroke="#d00" stroke-width="1" /><text x="78" y="15" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">関</text><text x="78" y="38" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">東</text><text x="78" y="61" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">学</text><text x="78" y="84" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">生</text><text x="50" y="15" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(6,0)">バ</text><text x="50" y="38" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(6,0)">ド</text><text x="50" y="61" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(6,0)">ミ</text><text x="50" y="84" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(6,0)">ン</text><text x="22" y="15" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(2,0)">ト</text><text x="22" y="38" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(2,0)">ン</text><text x="22" y="61" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">連</text><text x="22" y="84" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">盟</text></svg></div><h5>関東学生バドミントン連盟</h5><p class="small mb-0">〒272-0123</p><p class="small mb-0">千葉県市川市幸1-14-17</p></div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" @click="receiptData.show = false">閉じる</button><button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> 印刷 / PDF保存</button></div></div></div></div>
+
     </div>
 
     <script>
@@ -546,7 +548,8 @@
                     adminFilterType: 'all',
                     adminSearchQuery: '',
                     adminStatusKeys: ['reg_fee', 'add_reg', 'kanto_champ', 'east_japan', 'autumn_league', 'all_japan_champ', 'all_japan_team', 'rookie'],
-                    modal: { show: false, univName: '', category: '', url: '' }
+                    modal: { show: false, univName: '', category: '', url: '' },
+                    receiptData: { show: false, amount: 0, title: '' }
                 }
             },
             computed: {
@@ -572,14 +575,11 @@
                 
                 calcEastJapan() { 
                     const e=this.entry.east_japan; 
-                    // undefined防止: 数値が入っていない場合は0として扱う
-                    const team = e.team || 0;
-                    const ops = e.ops || 0;
+                    const team = e.team || 0; const ops = e.ops || 0;
                     return (team*20000)+((e.s?.length||0)*3000)+((e.d?.length||0)*6000)+((e.m?.length||0)*6000)+(ops*2000); 
                 },
                 calcAllJapanChamp() { 
                     const e=this.entry.all_japan_champ; 
-                    // undefined防止
                     const ops = e.ops_events || 0;
                     return ((e.s?.length||0)*3000)+((e.d?.length||0)*6000)+((e.m?.length||0)*6000)+(ops*1000); 
                 },
@@ -608,27 +608,39 @@
                     return this.adminRecords.reduce((sum, r) => sum + (parseInt(r.total_cost) || 0), 0);
                 }
             },
+
             created() {
                 this.isLoading = true;
-                fetch(GAS_API_URL).then(r=>r.json()).then(d=>{
-                    this.masterData=d.master; this.savedRecords=d.records; this.allPlayersList=d.players||[]; this.isLoading=false;
-                    firebase.auth().onAuthStateChanged(u => { this.user=u; if(u) this.initUserData(u.email); });
-                }).catch(e=>{console.error(e);this.isLoading=false;});
+                
+                // ★修正箇所: URLの末尾に「?t=現在時刻」を追加することで、
+                // ブラウザのキャッシュを無視して、毎回必ず最新のスプレッドシートデータを取得させます。
+                const url = GAS_API_URL + "?t=" + new Date().getTime();
+
+                fetch(url).then(r => r.json()).then(d => {
+                    this.masterData = d.master; 
+                    this.savedRecords = d.records; 
+                    this.allPlayersList = d.players || []; 
+                    this.isLoading = false;
+                    
+                    firebase.auth().onAuthStateChanged(u => { 
+                        this.user = u; 
+                        if(u) this.initUserData(u.email); 
+                    });
+                }).catch(e => {
+                    console.error(e);
+                    this.isLoading = false;
+                });
             },
+
             methods: {
-                formatMoney(v) { 
-                    // NaNやundefinedなら¥0を表示する
-                    if (isNaN(v) || v === null || v === undefined) return "¥0";
-                    return "¥" + v.toLocaleString(); 
-                },
+                formatMoney(v) { if (isNaN(v) || v === null || v === undefined) return "¥0"; return "¥" + v.toLocaleString(); },
                 getLeagueFee(d) { d=parseInt(d); return d<=2?50000:d<=4?20000:14000; },
+                
                 issuePayment(key, code) {
-                    if(!confirm("支払い情報を発行しますか？")) return;
                     if (key === 'add_reg') {
                         const d = new Date(); const mm = String(d.getMonth() + 1).padStart(2, '0'); const dd = String(d.getDate()).padStart(2, '0');
                         this.entry[key].payment_id = `${this.form.univ_id}${code}-${mm}${dd}`;
                     } else { this.entry[key].payment_id = `${this.form.univ_id}${code}`; }
-                    this.saveData(true);
                 },
                 
                 uploadReceipt(event, category) {
@@ -637,18 +649,11 @@
                     this.isUploading = true;
                     const path = `receipts/${this.form.univ_id}/${category}_${Date.now()}`;
                     const storageRef = firebase.storage().ref().child(path);
-                    
-                    storageRef.put(file).then(snapshot => {
-                        return snapshot.ref.getDownloadURL();
-                    }).then(url => {
+                    storageRef.put(file).then(snapshot => snapshot.ref.getDownloadURL()).then(url => {
                         this.entry[category].receipt_url = url;
                         this.saveData(true);
                         this.isUploading = false;
-                    }).catch(error => {
-                        console.error(error);
-                        alert("アップロードに失敗しました: " + error.message);
-                        this.isUploading = false;
-                    });
+                    }).catch(error => { alert("アップロード失敗: " + error.message); this.isUploading = false; });
                 },
                 deleteReceipt(category) {
                     if(!confirm("画像を削除しますか？")) return;
@@ -666,88 +671,110 @@
                     let c=0; txt.trim().split('\n').forEach(l=>{ const cols=l.split(/[\t,]+/); if(cols.length>=1){ const p={last_name:cols[0].trim(),first_name:cols[1]?cols[1].trim():'',nba_id:cols[2]?cols[2].trim():'',is_gakuren:true}; type==='reg'?this.entry.reg_fee.players.push(p):this.entry.add_reg.players.push(p); c++; } });
                     if(c>0) { type==='reg'?this.showPasteAreaReg=false:this.showPasteAreaAdd=false; alert(`${c}名追加`); }
                 },
+
+
                 finalizeAddReg() {
-                    if(!confirm("申請を完了し、リストをリセットしますか？\n（入力された選手は名簿に保存されます）")) return;
-                    this.isSaving = true;
-                    this.saveDataPayload().then(() => { this.entry.add_reg = { players: [], payment_id: '', receipt_url: '' }; return this.saveDataPayload(); }).then(() => fetch(GAS_API_URL).then(r=>r.json())).then(d => { this.allPlayersList = d.players || []; this.isSaving = false; alert("申請が完了しました。リストをリセットしました。"); });
-                },
+    // メッセージを変更（リセットするという文言を削除）
+    if(!confirm("追加登録の申請を完了しますか？\n※管理者が確認するまでデータはそのまま残ります。")) return;
+    
+    this.isSaving = true;
+
+    // データを保存する処理のみを実行（空にする処理を削除）
+    this.saveDataPayload()
+        .then(() => fetch(GAS_API_URL).then(r => r.json()))
+        .then(d => {
+            this.allPlayersList = d.players || [];
+            this.isSaving = false;
+            alert("申請が完了しました。\n管理者が承認した後、次の登録を行う場合は手動でリストを整理してください。");
+        })
+        .catch(e => {
+            console.error(e);
+            this.isSaving = false;
+            alert("エラーが発生しました。");
+        });
+},
+
+
                 updateAccount() {
                     const user = firebase.auth().currentUser; const promises = [];
                     if (this.account.newEmail) promises.push(user.updateEmail(this.account.newEmail));
                     if (this.account.newPass) promises.push(user.updatePassword(this.account.newPass));
-                    Promise.all(promises).then(() => { alert("アカウント情報を更新しました"); if (this.account.newEmail) this.saveData(true); this.account.newEmail = ''; this.account.newPass = ''; }).catch(err => { alert("エラー: 再ログインしてから試してください。\n" + err.message); });
+                    Promise.all(promises).then(() => { alert("アカウント情報を更新しました"); if (this.account.newEmail) this.saveData(true); this.account.newEmail = ''; this.account.newPass = ''; }).catch(err => { alert("エラー: " + err.message); });
                 },
                 toggleRegisterMode() { this.isRegisterMode=true; this.resetSelection(); },
                 resetSelection() { this.regForm.univ_id=''; this.regUnivName=''; this.regError=''; this.searchQuery=''; },
                 selectUniv(u) { const t=this.savedRecords.some(r=>r.univ_id==u.univ_id); if(t){this.regError="登録済み";this.regForm.univ_id='';}else{this.regError='';this.regForm.univ_id=u.univ_id;this.regUnivName=u.univ_name;} },
                 
                 login() {
-                    if (this.authEmail === ADMIN_ID && this.authPass === ADMIN_PASS) {
-                        this.isAdmin = true;
-                        this.authEmail = ''; this.authPass = ''; 
-                        return;
-                    }
+                    if (this.authEmail === ADMIN_ID && this.authPass === ADMIN_PASS) { this.isAdmin = true; this.authEmail = ''; this.authPass = ''; return; }
                     firebase.auth().signInWithEmailAndPassword(this.authEmail,this.authPass).catch(e=>alert(e.message)); 
                 },
-
-resetPassword() {
-        if (!this.authEmail) {
-            alert("「メールアドレス」欄にアドレスを入力してから、もう一度押してください。");
-            return;
-        }
-        if (!confirm(this.authEmail + " 宛に\nパスワード再設定メールを送信しますか？")) return;
-
-        firebase.auth().sendPasswordResetEmail(this.authEmail)
-            .then(() => {
-                alert("送信しました。\nメールを確認して新しいパスワードを設定してください。");
-            })
-            .catch((error) => {
-                if (error.code === 'auth/user-not-found') {
-                    alert("このメールアドレスは登録されていません。");
-                } else if (error.code === 'auth/invalid-email') {
-                    alert("メールアドレスの形式が正しくありません。");
-                } else {
-                    alert("エラー: " + error.message);
-                }
-            });
-    },
-
-                register() { if(this.regError||!this.regUnivName)return; if(!confirm("登録しますか？"))return; firebase.auth().createUserWithEmailAndPassword(this.authEmail,this.authPass).then(c=>{this.form.univ_id=this.regForm.univ_id;this.form.univ_name=this.regUnivName;this.saveData(true);}).catch(e=>alert(e.message)); },
-                logout() { 
-                    if(this.isAdmin) {
-                        this.isAdmin = false;
-                    } else {
-                        firebase.auth().signOut(); 
-                    }
+                resetPassword() {
+                    if (!this.authEmail) { alert("「メールアドレス」欄に入力してください。"); return; }
+                    if (!confirm("パスワード再設定メールを送信しますか？")) return;
+                    firebase.auth().sendPasswordResetEmail(this.authEmail).then(() => alert("送信しました")).catch((e) => alert("エラー: " + e.message));
                 },
+                register() { if(this.regError||!this.regUnivName)return; if(!confirm("登録しますか？"))return; firebase.auth().createUserWithEmailAndPassword(this.authEmail,this.authPass).then(c=>{this.form.univ_id=this.regForm.univ_id;this.form.univ_name=this.regUnivName;this.saveData(true);}).catch(e=>alert(e.message)); },
+                logout() { if(this.isAdmin) { this.isAdmin = false; } else { firebase.auth().signOut(); } },
                 
                 initUserData(em) {
                     const d = this.savedRecords.find(r=>r.email===em); if(d){
                         this.form.univ_id=d.univ_id; this.form.univ_name=d.univ_name; this.form.division=d.division;
                         if(d.memo) this.memo = d.memo;
 
+                        const setAutoID = () => {
+                            this.entry.reg_fee.payment_id = this.form.univ_id + '01';
+                            this.entry.kanto_champ.payment_id = this.form.univ_id + '03';
+                            this.entry.east_japan.payment_id = this.form.univ_id + '04';
+                            this.entry.autumn_league.payment_id = this.form.univ_id + '05';
+                            this.entry.all_japan_champ.payment_id = this.form.univ_id + '06';
+                            this.entry.all_japan_team.payment_id = this.form.univ_id + '07';
+                            this.entry.rookie.payment_id = this.form.univ_id + '08';
+                            if (!this.entry.add_reg.payment_id) {
+                                const today = new Date();
+                                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                                const dd = String(today.getDate()).padStart(2, '0');
+                                this.entry.add_reg.payment_id = `${this.form.univ_id}02-${mm}${dd}`;
+                            }
+                        };
+
                         try{
-                            const safeParse = (json, defaultVal) => json ? JSON.parse(json) : defaultVal;
+                            const safeParse = (json, defaultVal) => {
+    // 既にオブジェクトとして届いている場合はそのまま返す
+    if (typeof json === 'object' && json !== null) return json;
+    try {
+        return json ? JSON.parse(json) : defaultVal;
+    } catch(e) {
+        console.error("データ読み込みエラー:", e);
+        return defaultVal;
+    }
+};
                             
                             const rF = safeParse(d.reg_fee, {});
-                            if(rF.players) this.entry.reg_fee = rF;
-                            if(rF.payment_id) this.entry.reg_fee.payment_id = rF.payment_id;
-                            if(rF.receipt_url) this.entry.reg_fee.receipt_url = rF.receipt_url;
+                            this.entry.reg_fee.players = rF.players || [];
+                            this.entry.reg_fee.receipt_url = rF.receipt_url || '';
                             this.entry.reg_fee.is_paid_base = !!rF.is_paid_base;
 
                             const aR = safeParse(d.add_reg, {});
-                            this.entry.add_reg = (aR && aR.players) ? aR : { players:[], payment_id:'', receipt_url:'' };
+                            this.entry.add_reg.players = aR.players || [];
+                            this.entry.add_reg.payment_id = aR.payment_id || ''; 
+                            this.entry.add_reg.receipt_url = aR.receipt_url || '';
 
-                            this.entry.spring_league = safeParse(d.spring_league, { join: false });
-                            this.entry.autumn_league = safeParse(d.autumn_league, { join: false, payment_id: '', receipt_url: '' });
+                            const sL = safeParse(d.spring_league, {});
+                            this.entry.spring_league.join = !!sL.join;
 
-                            this.entry.all_japan_team = safeParse(d.all_japan_team, { join: false, team: 1, ops: 1, payment_id: '', receipt_url: '' });
-                            if (this.entry.all_japan_team.join === undefined) this.entry.all_japan_team.join = false;
+                            const aL = safeParse(d.autumn_league, {});
+                            this.entry.autumn_league = { join: !!aL.join, receipt_url: aL.receipt_url || '' };
+
+                            const ajT = safeParse(d.all_japan_team, {});
+                            this.entry.all_japan_team = { join: !!ajT.join, team: ajT.team||1, ops: ajT.ops||1, receipt_url: ajT.receipt_url||'' };
 
                             const parseList = (jsonStr, isClass) => {
                                 const obj = safeParse(jsonStr, {});
                                 if(isClass) {
-                                    if(obj.s) { obj.s_a = obj.s; delete obj.s; } if(obj.d) { obj.d_a = obj.d; delete obj.d; } if(obj.m) { obj.m_a = obj.m; delete obj.m; }
+                                    if(obj.s) { obj.s_a = obj.s; delete obj.s; } 
+                                    if(obj.d) { obj.d_a = obj.d; delete obj.d; } 
+                                    if(obj.m) { obj.m_a = obj.m; delete obj.m; }
                                     if(!Array.isArray(obj.s_a)) obj.s_a=[]; if(!Array.isArray(obj.s_b)) obj.s_b=[];
                                     if(!Array.isArray(obj.d_a)) obj.d_a=[]; if(!Array.isArray(obj.d_b)) obj.d_b=[];
                                     if(!Array.isArray(obj.m_a)) obj.m_a=[]; if(!Array.isArray(obj.m_b)) obj.m_b=[];
@@ -756,6 +783,7 @@ resetPassword() {
                                     if (!Array.isArray(obj.d)) obj.d = []; 
                                     if (!Array.isArray(obj.m)) obj.m = []; 
                                 }
+                                obj.receipt_url = obj.receipt_url || '';
                                 return obj;
                             };
 
@@ -763,18 +791,16 @@ resetPassword() {
                             this.entry.east_japan = parseList(d.east_japan, false);
                             this.entry.all_japan_champ = parseList(d.all_japan_champ, false);
                             this.entry.rookie = parseList(d.rookie, true);
-                            
-                            if(this.entry.rookie.team) { 
-                                this.entry.rookie.team_a = this.entry.rookie.team; 
-                                delete this.entry.rookie.team; 
-                            }
+                            if(this.entry.rookie.team) { this.entry.rookie.team_a = this.entry.rookie.team; delete this.entry.rookie.team; }
+
+                            setAutoID();
 
                         }catch(e){ console.error("Data Parse Error", e); }
                     }
                 },
+                
                 saveDataPayload() {
-                    const p = { univ_id:this.form.univ_id, email:this.user.email, univ_name:this.form.univ_name, division:this.form.division,
-                        memo: this.memo,
+                    const p = { univ_id:this.form.univ_id, email:this.user.email, univ_name:this.form.univ_name, division:this.form.division, memo: this.memo,
                         reg_fee:this.entry.reg_fee, add_reg:this.entry.add_reg, spring_league:this.entry.spring_league, kanto_champ:this.entry.kanto_champ,
                         east_japan:this.entry.east_japan, autumn_league:this.entry.autumn_league, all_japan_champ:this.entry.all_japan_champ,
                         all_japan_team:this.entry.all_japan_team, rookie:this.entry.rookie, total_cost:this.grandTotal };
@@ -789,53 +815,72 @@ resetPassword() {
 
                 processAdminRecord(raw) {
                     const safeParse = (json, def) => { try { return json ? JSON.parse(json) : def; } catch(e) { return def; } };
-                    const parseCat = (json) => {
-                        const obj = safeParse(json, {});
-                        return { hasPaymentId: !!obj.payment_id, hasReceipt: !!obj.receipt_url, receiptUrl: obj.receipt_url, paymentId: obj.payment_id }; 
+                    const rFee = safeParse(raw.reg_fee, {}); const aReg = safeParse(raw.add_reg, {}); const sLig = safeParse(raw.spring_league, {});
+                    const kChamp = safeParse(raw.kanto_champ, {}); const eJapan = safeParse(raw.east_japan, {}); const aLig = safeParse(raw.autumn_league, {});
+                    const ajChamp = safeParse(raw.all_japan_champ, {}); const ajTeam = safeParse(raw.all_japan_team, {}); const rookie = safeParse(raw.rookie, {});
+
+                    let details = [];
+                    let regCost = 0;
+                    if (rFee.is_paid_base) { regCost += 15000; details.push(`基本金: ¥15,000`); }
+                    if (rFee.players && rFee.players.length > 0) {
+                        const count = rFee.players.filter(p => p.is_gakuren).length;
+                        if (count > 0) { regCost += count * 4000; details.push(`登録(${count}名): ¥${(count*4000).toLocaleString()}`); }
+                    }
+                    if (aReg.players && aReg.players.length > 0) {
+                        const count = aReg.players.filter(p => p.is_gakuren).length;
+                        if (count > 0) details.push(`追加(${count}名): ¥${(count*4000).toLocaleString()}`);
+                    }
+                    if (sLig.join) { const fee = this.getLeagueFee(raw.division); details.push(`春リーグ: ¥${fee.toLocaleString()}`); }
+                    if (aLig.join) { const fee = this.getLeagueFee(raw.division); details.push(`秋リーグ: ¥${fee.toLocaleString()}`); }
+                    if (ajTeam.join) { const fee = (ajTeam.team||0)*20000 + (ajTeam.ops||0)*3000; if(fee>0) details.push(`対抗戦: ¥${fee.toLocaleString()}`); }
+                    const detailText = details.length > 0 ? details.join('\n') : "内訳なし";
+
+                    const parseCat = (obj) => {
+                        return { hasPaymentId: !!obj.payment_id, hasReceipt: !!obj.receipt_url, receiptUrl: obj.receipt_url, paymentId: obj.payment_id, confirmed: !!obj.confirmed, rawObj: obj }; 
                     };
+
                     return {
-                        univ_id: raw.univ_id,
-                        univ_name: raw.univ_name,
-                        division: raw.division,
-                        total_cost: raw.total_cost,
-                        memo: raw.memo,
-                        reg_fee: parseCat(raw.reg_fee),
-                        add_reg: parseCat(raw.add_reg),
-                        spring_league: parseCat(raw.spring_league),
-                        kanto_champ: parseCat(raw.kanto_champ),
-                        east_japan: parseCat(raw.east_japan),
-                        autumn_league: parseCat(raw.autumn_league),
-                        all_japan_champ: parseCat(raw.all_japan_champ),
-                        all_japan_team: parseCat(raw.all_japan_team),
-                        rookie: parseCat(raw.rookie),
+                        univ_id: raw.univ_id, univ_name: raw.univ_name, division: raw.division, total_cost: raw.total_cost, cost_detail: detailText, memo: raw.memo,
+                        reg_fee: parseCat(rFee), add_reg: parseCat(aReg), spring_league: parseCat(sLig), kanto_champ: parseCat(kChamp),
+                        east_japan: parseCat(eJapan), autumn_league: parseCat(aLig), all_japan_champ: parseCat(ajChamp), all_japan_team: parseCat(ajTeam), rookie: parseCat(rookie), raw_data: raw
                     };
                 },
-                getAdminStatusClass(cat) {
-                    if (cat.hasReceipt) return 'status-done';
-                    if (cat.hasPaymentId) return 'status-waiting';
-                    return 'status-none';
-                },
-                showReceipt(name, cat, url) {
-                    this.modal.univName = name;
-                    this.modal.category = cat;
-                    this.modal.url = url;
-                    this.modal.show = true;
-                },
+                getAdminStatusClass(cat) { if (cat.confirmed) return 'status-done'; if (cat.hasReceipt) return 'status-pending'; if (cat.hasPaymentId) return 'status-waiting'; return 'status-none'; },
+                showReceipt(record, catKey) { this.modal.univName = record.univ_name; this.modal.category = catKey; this.modal.url = record[catKey].receiptUrl; this.modal.targetRecord = record; this.modal.show = true; },
                 closeModal() { this.modal.show = false; },
-                getCategoryName(key) {
-                    const names = { reg_fee:'連盟登録', add_reg:'追加登録', kanto_champ:'関東選手権', east_japan:'東日本', autumn_league:'秋季リーグ', all_japan_champ:'インカレ', all_japan_team:'対抗戦', rookie:'新人戦' };
-                    return names[key] || key;
-                },
+                getCategoryName(key) { const names = { reg_fee:'連盟登録', add_reg:'追加登録', kanto_champ:'関東選手権', east_japan:'東日本', autumn_league:'秋季リーグ', all_japan_champ:'インカレ', all_japan_team:'対抗戦', rookie:'新人戦' }; return names[key] || key; },
                 downloadCSV() {
                     let csv = "大学ID,大学名,部署,合計請求額,備考\n";
-                    this.filteredAdminRecords.forEach(r => {
-                        csv += `${r.univ_id},${r.univ_name},${r.division},${r.total_cost},"${(r.memo||'').replace(/\n/g,' ')}"\n`;
-                    });
+                    this.filteredAdminRecords.forEach(r => { csv += `${r.univ_id},${r.univ_name},${r.division},${r.total_cost},"${(r.memo||'').replace(/\n/g,' ')}"\n`; });
                     const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: "text/csv" });
-                    const link = document.createElement("a");
-                    link.href = URL.createObjectURL(blob);
-                    link.download = "kanto_badminton_summary.csv";
-                    link.click();
+                    const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "kanto_badminton_summary.csv"; link.click();
+                },
+                toggleApproval(isApprove) {
+                    const rec = this.modal.targetRecord; const cat = this.modal.category;
+                    if (!confirm(isApprove ? "「振込済み」として承認しますか？" : "承認を取り消しますか？")) return;
+                    rec[cat].confirmed = isApprove; rec[cat].rawObj.confirmed = isApprove;
+                    this.saveTargetRecord(rec).then(() => { alert(isApprove ? "承認しました" : "承認を取り消しました"); this.modal.show = false; });
+                },
+                saveTargetRecord(rec) {
+                    const payload = { ...rec.raw_data }; const cats = this.adminStatusKeys;
+                    cats.forEach(key => { payload[key] = JSON.stringify(rec[key].rawObj); });
+                    payload.email = payload.email || 'admin_edit'; 
+                    return fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(r => r.json()).catch(e => { console.error(e); alert("保存エラーが発生しました"); });
+                },
+                openReceipt(category) {
+                    let amount = 0; let title = "";
+                    switch(category) {
+                        case 'reg_fee': amount = this.calcRegAndSpring; title = "令和7年度 連盟登録費および春季リーグ参加費"; break;
+                        case 'add_reg': amount = this.calcAddReg; title = "令和7年度 追加登録費"; break;
+                        case 'kanto_champ': amount = this.calcKantoChamp; title = "関東学生選手権大会 参加費"; break;
+                        case 'east_japan': amount = this.calcEastJapan; title = "東日本学生選手権大会 参加費・運営費"; break;
+                        case 'autumn_league': amount = this.calcAutumnLeague; title = "令和7年度 秋季リーグ戦参加費"; break;
+                        case 'all_japan_champ': amount = this.calcAllJapanChamp; title = "全日本学生選手権大会（インカレ）参加費・運営費"; break;
+                        case 'all_japan_team': amount = this.calcAllJapanTeam; title = "全日本学生選手権大会（団体対抗戦）参加費・運営費"; break;
+                        case 'rookie': amount = this.calcRookie; title = "関東学生新人選手権大会 参加費"; break;
+                    }
+                    if (amount === 0) { alert("支払金額が0円のため発行できません。"); return; }
+                    this.receiptData.amount = amount; this.receiptData.title = title; this.receiptData.show = true;
                 }
             }
         }).mount('#app');
