@@ -211,7 +211,14 @@
                                         <div v-else-if="rec[key].hasPaymentId"><span class="small">{{ rec[key].paymentId }}</span></div>
                                         <div v-else>-</div>
                                     </div>
+
+<div class="text-center mt-1" v-if="rec[key].rawObj">
+        <button class="btn btn-sm btn-outline-secondary py-0" style="font-size: 0.7rem;" @click="openDetailModal(rec, key)">
+            <i class="bi bi-list-ul"></i> 詳細
+        </button>
+    </div>
                                 </td>
+
                                 <td style="max-width: 200px;">
             <div class="text-truncate small" :title="rec.memo">{{ rec.memo }}</div>
             <button class="btn btn-sm btn-outline-danger mt-1 w-100" @click="sendAlertEmail(rec)">
@@ -287,8 +294,8 @@
                                 <div v-if="activeTab === 'reg_fee'">
                                     <div class="d-flex justify-content-between align-items-center mb-3"><h4 class="text-primary"><i class="bi bi-people-fill"></i> ① 連盟登録 (初期) ＆ 春季リーグ</h4><button class="btn btn-sm btn-outline-secondary" @click="togglePasteMode('reg')"><i class="bi bi-clipboard"></i> Excelから貼り付け</button></div>
                                     <div class="alert alert-secondary p-3 mb-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" v-model="entry.reg_fee.is_paid_base" id="baseFeeCheck"><label class="form-check-label fw-bold" for="baseFeeCheck">年度初め納入金 (¥15,000) を支払う</label></div><div class="small text-muted ms-4 mt-1">※関東学連維持費(¥10,000) + 全日本学連加盟金(¥5,000) = ¥15,000</div></div>
-                                    <div v-if="showPasteAreaReg" class="mb-3 p-3 bg-light border rounded"><label class="small fw-bold">3列(姓, 名, NBA番号)をコピー＆ペースト</label><textarea class="form-control mb-2" v-model="pasteTextReg" rows="3" placeholder="山田	太郎	1234567890"></textarea><div class="text-end"><button class="btn btn-sm btn-primary" @click="processPaste('reg')">追加</button></div></div>
-                                    <div class="player-table-container bg-white rounded border mb-3"><table class="table table-sm table-hover mb-0 align-middle"><thead class="table-sticky-head"><tr class="text-center"><th style="width:40px">No.</th><th>姓</th><th>名</th><th style="width:180px">NBA登録番号<br><span class="text-danger small">(10桁必須)</span></th><th style="width:250px" class="bg-light">登録費<br><span class="fee-detail-text">関東¥2,000 + 全日本¥2,000</span></th><th style="width:40px"></th></tr></thead><tbody><tr v-for="(player, idx) in entry.reg_fee.players" :key="idx"><td class="text-center">{{ idx + 1 }}</td><td class="input-cell"><input type="text" class="form-control form-control-sm border-0" v-model="player.last_name"></td><td class="input-cell"><input type="text" class="form-control form-control-sm border-0" v-model="player.first_name"></td><td><input type="text" class="form-control form-control-sm border-0 text-center" v-model="player.nba_id" maxlength="10" :class="{'is-invalid-custom': player.nba_id && !/^\d{10}$/.test(player.nba_id)}"></td><td class="text-center bg-light"><input type="checkbox" class="form-check-input" v-model="player.is_gakuren"></td><td class="text-center"><button class="btn btn-link text-danger p-0" @click="removePlayer('reg', idx)"><i class="bi bi-x-circle-fill"></i></button></td></tr></tbody></table></div>
+                                    <div v-if="showPasteAreaReg" class="mb-3 p-3 bg-light border rounded"><label class="small fw-bold">3列(姓, 名, BAJ番号)をコピー＆ペースト</label><textarea class="form-control mb-2" v-model="pasteTextReg" rows="3" placeholder="山田	太郎	1234567890"></textarea><div class="text-end"><button class="btn btn-sm btn-primary" @click="processPaste('reg')">追加</button></div></div>
+                                    <div class="player-table-container bg-white rounded border mb-3"><table class="table table-sm table-hover mb-0 align-middle"><thead class="table-sticky-head"><tr class="text-center"><th style="width:40px">No.</th><th>姓</th><th>名</th><th style="width:180px">BAJ登録番号<br><span class="text-danger small">(10桁必須)</span></th><th style="width:250px" class="bg-light">登録費<br><span class="fee-detail-text">関東¥2,000 + 全日本¥2,000</span></th><th style="width:40px"></th></tr></thead><tbody><tr v-for="(player, idx) in entry.reg_fee.players" :key="idx"><td class="text-center">{{ idx + 1 }}</td><td class="input-cell"><input type="text" class="form-control form-control-sm border-0" v-model="player.last_name"></td><td class="input-cell"><input type="text" class="form-control form-control-sm border-0" v-model="player.first_name"></td><td><input type="text" class="form-control form-control-sm border-0 text-center" v-model="player.nba_id" maxlength="10" :class="{'is-invalid-custom': player.nba_id && !/^\d{10}$/.test(player.nba_id)}"></td><td class="text-center bg-light"><input type="checkbox" class="form-check-input" v-model="player.is_gakuren"></td><td class="text-center"><button class="btn btn-link text-danger p-0" @click="removePlayer('reg', idx)"><i class="bi bi-x-circle-fill"></i></button></td></tr></tbody></table></div>
                                     <button class="btn btn-outline-primary mb-4" @click="addPlayer('reg')"><i class="bi bi-plus-lg"></i> 選手を追加</button>
                                     <div class="card border-primary mb-4"><div class="card-header bg-primary text-white bg-opacity-75"><i class="bi bi-trophy-fill"></i> 春季リーグ戦 エントリー</div><div class="card-body"><div class="d-flex align-items-center mb-2"><div class="form-check form-switch me-4"><input class="form-check-input" type="checkbox" v-model="entry.spring_league.join" id="springJoin"><label class="form-check-label fw-bold" for="springJoin">春季リーグ戦に参加する</label></div><div v-if="entry.spring_league.join" class="d-flex align-items-center"><label class="me-2 small fw-bold">所属部:</label><select v-model="form.division" class="form-select form-select-sm" style="width:auto;"><option value="1">1部</option><option value="2">2部</option><option value="3">3部</option><option value="4">4部</option><option value="5">5部</option><option value="6">6部</option></select></div></div><div v-if="entry.spring_league.join" class="ms-4"><p class="mb-0 text-primary fw-bold">参加費: {{ formatMoney(calcSpringLeague) }}</p></div></div></div>
                                     
@@ -327,7 +334,7 @@
                                 <div v-if="activeTab === 'add_reg'">
                                     <div class="d-flex justify-content-between align-items-center mb-3"><h4 class="text-success"><i class="bi bi-person-plus"></i> ② 追加登録</h4><button class="btn btn-sm btn-outline-secondary" @click="togglePasteMode('add')"><i class="bi bi-clipboard"></i> Excelから貼り付け</button></div>
                                     <div v-if="showPasteAreaAdd" class="mb-3 p-3 bg-light border rounded"><textarea class="form-control mb-2" v-model="pasteTextAdd" rows="3" placeholder="追加	花子	1122334455"></textarea><div class="text-end"><button class="btn btn-sm btn-success" @click="processPaste('add')">追加</button></div></div>
-                                    <div class="player-table-container bg-white rounded border mb-3"><table class="table table-sm table-hover mb-0 align-middle"><thead class="table-sticky-head"><tr class="text-center"><th style="width:40px">No.</th><th>姓</th><th>名</th><th style="width:180px">NBA登録番号</th><th style="width:250px" class="bg-light">追加登録費</th><th style="width:40px"></th></tr></thead><tbody><tr v-for="(player, idx) in entry.add_reg.players" :key="idx"><td class="text-center">{{ idx + 1 }}</td><td class="input-cell"><input type="text" class="form-control form-control-sm border-0" v-model="player.last_name"></td><td class="input-cell"><input type="text" class="form-control form-control-sm border-0" v-model="player.first_name"></td><td><input type="text" class="form-control form-control-sm border-0 text-center" v-model="player.nba_id" maxlength="10"></td><td class="text-center bg-light"><input type="checkbox" class="form-check-input" v-model="player.is_gakuren"></td><td class="text-center"><button class="btn btn-link text-danger p-0" @click="removePlayer('add', idx)"><i class="bi bi-x-circle-fill"></i></button></td></tr></tbody></table></div>
+                                    <div class="player-table-container bg-white rounded border mb-3"><table class="table table-sm table-hover mb-0 align-middle"><thead class="table-sticky-head"><tr class="text-center"><th style="width:40px">No.</th><th>姓</th><th>名</th><th style="width:180px">BAJ登録番号</th><th style="width:250px" class="bg-light">追加登録費</th><th style="width:40px"></th></tr></thead><tbody><tr v-for="(player, idx) in entry.add_reg.players" :key="idx"><td class="text-center">{{ idx + 1 }}</td><td class="input-cell"><input type="text" class="form-control form-control-sm border-0" v-model="player.last_name"></td><td class="input-cell"><input type="text" class="form-control form-control-sm border-0" v-model="player.first_name"></td><td><input type="text" class="form-control form-control-sm border-0 text-center" v-model="player.nba_id" maxlength="10"></td><td class="text-center bg-light"><input type="checkbox" class="form-check-input" v-model="player.is_gakuren"></td><td class="text-center"><button class="btn btn-link text-danger p-0" @click="removePlayer('add', idx)"><i class="bi bi-x-circle-fill"></i></button></td></tr></tbody></table></div>
                                     <button class="btn btn-outline-success" @click="addPlayer('add')"><i class="bi bi-plus-lg"></i> 追加選手を追加</button>
                                     
                                     <div class="payment-box">
@@ -521,7 +528,7 @@
                                     <div class="save-area"><button @click="saveData" class="btn btn-primary btn-lg px-5">保存</button></div>
                                 </div>
 
-                                <div v-if="activeTab === 'player_list'"><h4><i class="bi bi-journal-text"></i> ⑨ 登録選手名簿 (全履歴)</h4><div class="player-table-container bg-white rounded border"><table class="table table-sm table-striped mb-0"><thead class="table-sticky-head"><tr><th>No.</th><th>姓</th><th>名</th><th>NBA登録番号</th><th>登録日</th></tr></thead><tbody><tr v-for="(p, idx) in masterPlayerList" :key="idx"><td>{{ idx + 1 }}</td><td>{{ p.last_name }}</td><td>{{ p.first_name }}</td><td>{{ p.nba_id }}</td><td>{{ p.registered_at }}</td></tr></tbody></table></div></div>
+                                <div v-if="activeTab === 'player_list'"><h4><i class="bi bi-journal-text"></i> ⑨ 登録選手名簿 (全履歴)</h4><div class="player-table-container bg-white rounded border"><table class="table table-sm table-striped mb-0"><thead class="table-sticky-head"><tr><th>No.</th><th>姓</th><th>名</th><th>BAJ登録番号</th><th>登録日</th></tr></thead><tbody><tr v-for="(p, idx) in masterPlayerList" :key="idx"><td>{{ idx + 1 }}</td><td>{{ p.last_name }}</td><td>{{ p.first_name }}</td><td>{{ p.nba_id }}</td><td>{{ p.registered_at }}</td></tr></tbody></table></div></div>
 
                                 <div v-if="activeTab === 'settlement'">
                                     <div class="d-flex justify-content-between align-items-center mb-4 no-print"><h4><i class="bi bi-file-earmark-spreadsheet-fill"></i> ⑩ 支払明細</h4><button onclick="window.print()" class="btn btn-dark"><i class="bi bi-printer"></i> 印刷 / PDF保存</button></div>
@@ -541,6 +548,34 @@
                 </div>
             </div>
         </div>
+
+<div v-if="detailModal.show" class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-light py-2">
+                <h6 class="modal-title fw-bold">{{ detailModal.title }}</h6>
+                <button type="button" class="btn-close small" @click="detailModal.show = false"></button>
+            </div>
+            <div class="modal-body">
+                <div v-if="detailModal.type === 'list'">
+                    <table class="table table-sm table-striped"><thead><tr><th>No.</th><th>氏名</th><th>BAJ番号</th><th>登録</th></tr></thead><tbody><tr v-for="(p, i) in detailModal.data" :key="i"><td>{{ i + 1 }}</td><td>{{ p.last_name }} {{ p.first_name }}</td><td>{{ p.nba_id }}</td><td class="text-center"><span v-if="p.is_gakuren">〇</span></td></tr></tbody></table>
+                    <div v-if="!detailModal.data || detailModal.data.length===0" class="text-center small text-muted">データなし</div>
+                </div>
+                <div v-else-if="detailModal.type === 'entry'">
+                    <div v-for="(list, key) in detailModal.data" :key="key">
+                        <div v-if="list && list.length > 0" class="mb-3">
+                            <h6 class="border-bottom pb-1 mb-2 text-primary small fw-bold text-uppercase">{{ key.replace('_', ' ') }} ({{ list.length }})</h6>
+                            <ul class="list-group list-group-flush small"><li v-for="(item, k) in list" :key="k" class="list-group-item px-0 py-1"><span class="fw-bold">{{ item.p1 }}</span><span v-if="item.p2"> / {{ item.p2 }}</span><span v-if="item.is_cross" class="badge bg-warning text-dark ms-1">混成</span></li></ul>
+                        </div>
+                    </div>
+                    <div v-if="Object.keys(detailModal.data).length === 0" class="text-center text-muted">エントリーなし</div>
+                </div>
+                <div v-else class="text-center py-4"><h5>{{ detailModal.data }}</h5></div>
+            </div>
+            <div class="modal-footer py-1"><button type="button" class="btn btn-sm btn-secondary" @click="detailModal.show = false">閉じる</button></div>
+        </div>
+    </div>
+</div>
 
         <div v-if="receiptData.show" class="modal fade show d-block" id="receiptModal" tabindex="-1" style="background: rgba(0,0,0,0.5);"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">領収書プレビュー</h5><button type="button" class="btn-close" @click="receiptData.show = false"></button></div><div class="modal-body bg-light p-4"><div class="receipt-layout mx-auto" style="max-width: 700px;"><div class="text-center"><span class="receipt-title">領　収　証</span></div><div class="d-flex justify-content-between align-items-end mt-4"><h4 class="mb-0"><u>{{ form.univ_name }} 様</u></h4><div>発行日: {{ new Date().toLocaleDateString('ja-JP', {year:'numeric', month:'long', day:'numeric'}) }}</div></div><div class="receipt-amount">{{ formatMoney(receiptData.amount) }}-</div><div class="text-center small text-muted">（消費税等を含む）</div><div class="receipt-detail"><p>但　{{ receiptData.title }} として<br>上記正に領収いたしました。</p></div><div class="issuer-info"><div class="hanko-box"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect x="2" y="2" width="96" height="96" rx="2" ry="2" fill="none" stroke="#d00" stroke-width="2" /><rect x="6" y="6" width="88" height="88" rx="1" ry="1" fill="none" stroke="#d00" stroke-width="1" /><text x="78" y="15" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">関</text><text x="78" y="38" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">東</text><text x="78" y="61" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">学</text><text x="78" y="84" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">生</text><text x="50" y="15" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(6,0)">バ</text><text x="50" y="38" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(6,0)">ド</text><text x="50" y="61" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(6,0)">ミ</text><text x="50" y="84" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(6,0)">ン</text><text x="22" y="15" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(2,0)">ト</text><text x="22" y="38" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(2,0)">ン</text><text x="22" y="61" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">連</text><text x="22" y="84" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">盟</text></svg></div><h5>関東学生バドミントン連盟</h5><p class="small mb-0">〒272-0123</p><p class="small mb-0">千葉県市川市幸1-14-17</p></div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" @click="receiptData.show = false">閉じる</button><button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> 印刷 / PDF保存</button></div></div></div></div>
 
@@ -601,6 +636,7 @@
         adminSearchQuery: '',
         adminStatusKeys: ['reg_fee', 'add_reg', 'kanto_champ', 'east_japan', 'autumn_league', 'all_japan_champ', 'all_japan_team', 'rookie'],
         modal: { show: false, univName: '', category: '', url: '' },
+detailModal: { show: false, title: '', type: '', data: null },
         receiptData: { show: false, amount: 0, title: '' }
     }
 },
@@ -897,7 +933,7 @@ this.newsList = d.news || [];
                 },
                 saveData(isSilent = false) {
                     const chk = (ps) => ps.filter(p=>p.nba_id && !/^\d{10}$/.test(p.nba_id));
-                    if(chk(this.entry.reg_fee.players).length>0 || chk(this.entry.add_reg.players).length>0) { alert("NBA番号は10桁必須です"); return; }
+                    if(chk(this.entry.reg_fee.players).length>0 || chk(this.entry.add_reg.players).length>0) { alert("BAJ番号は10桁必須です"); return; }
                     this.isSaving = true;
                     this.saveDataPayload().then(d => { if(!isSilent) alert("保存しました"); this.isSaving=false; }).catch(e=>{alert("エラー");this.isSaving=false;});
                 },
@@ -1023,8 +1059,24 @@ this.newsList = d.news || [];
                             else alert("送信失敗: " + d.message);
                         })
                         .catch(e => alert("通信エラー"));
+                },
+            openDetailModal(rec, key) {
+                    const raw = rec[key].rawObj;
+                    let type = '', data = null, title = `${rec.univ_name} - ${this.getCategoryName(key)}`;
+
+                    if (key === 'reg_fee' || key === 'add_reg') {
+                        type = 'list'; data = raw.players || [];
+                    } else if (['kanto_champ', 'east_japan', 'all_japan_champ', 'rookie'].includes(key)) {
+                        type = 'entry'; data = {};
+                        ['s_a', 's_b', 's', 'd_a', 'd_b', 'd', 'm_a', 'm_b', 'm'].forEach(k => { if (raw[k] && raw[k].length > 0) data[k] = raw[k]; });
+                        if (raw.team) title += ` (団体: ${raw.team})`;
+                        if (raw.team_a) title += ` (団体A: ${raw.team_a})`;
+                    } else {
+                        type = 'simple'; data = raw.join ? '参加' : '不参加';
+                    }
+                    this.detailModal = { show: true, title: title, type: type, data: data };
                 }
-            }
+                           } 
         }).mount('#app');
     </script>
 </body>
