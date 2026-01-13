@@ -11,13 +11,10 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
-<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
@@ -97,7 +94,8 @@
         /* 印刷設定 */
         @media print {
             body { background-color: white; color: black; }
-            .no-print, .menu-list, .btn, .card-header, .save-area, nav, .payment-box button, .excel-upload-area, .count-input-group, .fixed-alert { display: none !important; } /* fixed-alertも印刷しない */
+            .no-print, .menu-list, .btn, .card-header, .save-area, nav, .payment-box button, .excel-upload-area, .count-input-group, .fixed-alert, 
+            .chat-floating-btn, .chat-window { display: none !important; } /* fixed-alert, chat も印刷しない */
             .container-fluid, .row, .col-md-9, .col-lg-10 { padding: 0 !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; flex: none !important; }
             .main-content-card { border: none !important; box-shadow: none !important; min-height: 0 !important; }
             .card-body { padding: 0 !important; }
@@ -142,6 +140,49 @@
         @media print {
             .hanko-box { opacity: 1; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
+
+        /* チャット用スタイル */
+        .chat-floating-btn {
+            position: fixed; bottom: 30px; right: 30px;
+            width: 60px; height: 60px; border-radius: 50%;
+            background-color: #0d6efd; color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; cursor: pointer; z-index: 9990;
+            transition: transform 0.2s;
+        }
+        .chat-floating-btn:hover { transform: scale(1.1); }
+        .chat-window {
+            position: fixed; bottom: 100px; right: 30px;
+            width: 350px; height: 500px;
+            background: white; border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            z-index: 9991; display: flex; flex-direction: column;
+            overflow: hidden; border: 1px solid #ddd;
+        }
+        .chat-header { background: #0d6efd; color: white; padding: 10px 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .chat-body { flex: 1; padding: 15px; overflow-y: auto; background: #f8f9fa; display: flex; flex-direction: column; gap: 10px; }
+        .chat-footer { padding: 10px; border-top: 1px solid #ddd; background: white; display: flex; gap: 5px; }
+        
+        /* 吹き出し */
+        .msg-row { display: flex; margin-bottom: 5px; }
+        .msg-row.mine { justify-content: flex-end; }
+        .msg-row.theirs { justify-content: flex-start; }
+        .msg-bubble {
+            max-width: 80%; padding: 8px 12px; border-radius: 15px; font-size: 0.9rem; word-wrap: break-word; white-space: pre-wrap;
+        }
+        .mine .msg-bubble { background-color: #0d6efd; color: white; border-bottom-right-radius: 2px; }
+        .theirs .msg-bubble { background-color: #e9ecef; color: black; border-bottom-left-radius: 2px; }
+        .msg-time { font-size: 0.7rem; color: #aaa; margin-top: 2px; text-align: right; }
+        
+        /* 管理者画面のチャットリスト用 */
+        .chat-admin-container { height: 600px; border: 1px solid #ddd; display: flex; }
+        .chat-user-list { width: 30%; border-right: 1px solid #ddd; overflow-y: auto; }
+        .chat-main-area { width: 70%; display: flex; flex-direction: column; background: #f8f9fa;}
+        .user-list-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #f0f0f0; }
+        .user-list-item:hover { background: #e9ecef; }
+        .user-list-item.active { background: #cfe2ff; font-weight: bold; }
+        .unread-dot { width: 10px; height: 10px; background: red; border-radius: 50%; display: inline-block; margin-right: 5px; }
     </style>
 </head>
 <body>
@@ -210,20 +251,20 @@
                             </div>
                             <div class="col-md-8">
                                 <div class="d-flex gap-2">
-    <button class="btn btn-success" @click="downloadTournamentZip">
-        <i class="bi bi-file-earmark-zip-fill"></i> Excel一括DL (ZIP)
-    </button>
-    <button class="btn btn-warning text-dark fw-bold" @click="downloadAllParticipantsExcel">
-        <i class="bi bi-person-lines-fill"></i> 参加者名簿作成
-    </button>
-    <button class="btn btn-outline-dark" @click="downloadTournamentCSV">
-        <i class="bi bi-file-text"></i> CSV出力
-    </button>
-</div>
-<div v-if="isZipping || isGeneratingList" class="text-success small mt-1">
-    <div class="spinner-border spinner-border-sm" role="status"></div> 
-    {{ isZipping ? 'ファイルを収集中...' : '名簿を作成中...各大学のファイルを解析しています' }}
-</div>
+                                    <button class="btn btn-success" @click="downloadTournamentZip">
+                                        <i class="bi bi-file-earmark-zip-fill"></i> Excel一括DL (ZIP)
+                                    </button>
+                                    <button class="btn btn-warning text-dark fw-bold" @click="downloadAllParticipantsExcel">
+                                        <i class="bi bi-person-lines-fill"></i> 参加者名簿作成
+                                    </button>
+                                    <button class="btn btn-outline-dark" @click="downloadTournamentCSV">
+                                        <i class="bi bi-file-text"></i> CSV出力
+                                    </button>
+                                </div>
+                                <div v-if="isZipping || isGeneratingList" class="text-success small mt-1">
+                                    <div class="spinner-border spinner-border-sm" role="status"></div> 
+                                    {{ isZipping ? 'ファイルを収集中...' : '名簿を作成中...各大学のファイルを解析しています' }}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -257,6 +298,48 @@
                                 <button class="btn btn-sm btn-outline-danger" @click="deleteNews(i)">削除</button>
                             </li>
                         </ul>
+                    </div>
+                </div>
+
+                <div class="card mb-4 border-dark">
+                    <div class="card-header bg-dark text-white fw-bold"><i class="bi bi-chat-dots-fill"></i> チャット管理</div>
+                    <div class="card-body p-0">
+                        <div class="chat-admin-container">
+                            <div class="chat-user-list">
+                                <div v-for="univ in filteredAdminRecords" :key="univ.univ_id" 
+                                     class="user-list-item" 
+                                     :class="{active: adminActiveChatUnivId === univ.univ_id}"
+                                     @click="selectAdminChatUser(univ.univ_id)">
+                                    <div class="fw-bold small">{{ univ.univ_name }}</div>
+                                    <div class="small text-muted" style="font-size:0.7rem">ID: {{ univ.univ_id }}</div>
+                                </div>
+                            </div>
+                            <div class="chat-main-area">
+                                <div v-if="!adminActiveChatUnivId" class="d-flex h-100 align-items-center justify-content-center text-muted">
+                                    左のリストから大学を選択してください
+                                </div>
+                                <template v-else>
+                                    <div class="chat-header bg-secondary">
+                                        <span>{{ adminActiveChatUnivId }} とのチャット</span>
+                                    </div>
+                                    <div class="chat-body" id="chatBodyAdmin">
+                                        <div v-for="msg in adminChatMessages" :key="msg.id" class="msg-row" :class="msg.sender === 'admin' ? 'mine' : 'theirs'">
+                                            <div>
+                                                <div class="msg-bubble">{{ msg.text }}</div>
+                                                <div class="d-flex align-items-center justify-content-end gap-2">
+    <i class="bi bi-trash text-danger" style="cursor: pointer; font-size: 0.8rem;" @click="deleteAdminMessage(msg.id)" title="削除"></i>
+    <div class="msg-time" v-if="msg.createdAt">{{ new Date(msg.createdAt.seconds * 1000).toLocaleString() }}</div>
+</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="chat-footer">
+                                        <input type="text" class="form-control" v-model="chatMessage" @keyup.enter="sendMessage(true)" placeholder="返信を入力...">
+                                        <button class="btn btn-primary" @click="sendMessage(true)"><i class="bi bi-send-fill"></i></button>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -295,8 +378,8 @@
                             <tr v-for="rec in filteredAdminRecords" :key="rec.univ_id">
                                 <td>{{ rec.univ_id }}</td>
                                 <td class="univ-name-cell">{{ rec.univ_name }} <span class="badge bg-secondary ms-1" style="font-size:0.6rem">{{ rec.division }}部</span></td>
-                                                                <td class="money-cell fw-bold text-primary" :title="rec.cost_detail" style="cursor: help; text-decoration: underline dotted;">{{ formatMoney(rec.total_cost) }}</td>
-                               
+                                <td class="money-cell fw-bold text-primary" :title="rec.cost_detail" style="cursor: help; text-decoration: underline dotted;">{{ formatMoney(rec.total_cost) }}</td>
+                                
                                 <td v-for="key in adminStatusKeys" :key="key" style="min-width: 100px;">
                                     <div :class="['status-badge', getAdminStatusClass(rec[key], key)]">
                                         <div v-if="key === 'add_reg'">
@@ -320,17 +403,13 @@
                                             </button>
                                         </template>
                                         <template v-else>
-    <a v-if="rec[key].rawObj && rec[key].rawObj.excel_url" :href="rec[key].rawObj.excel_url" target="_blank" class="btn btn-sm btn-outline-success py-0" style="font-size: 0.7rem;">
-        <i class="bi bi-file-earmark-excel-fill"></i> DL
-    </a>
-    
-    <button v-if="rec[key].rawObj && (rec[key].rawObj.excel_url || rec[key].rawObj.join || rec[key].rawObj.amount)" 
-            class="btn btn-sm btn-outline-secondary py-0" 
-            style="font-size: 0.7rem;" 
-            @click="openDetailModal(rec, key)">
-        <i class="bi bi-list-ul"></i> 詳細
-    </button>
-</template>
+                                            <a v-if="rec[key].rawObj && rec[key].rawObj.excel_url" :href="rec[key].rawObj.excel_url" target="_blank" class="btn btn-sm btn-outline-success py-0" style="font-size: 0.7rem;">
+                                                <i class="bi bi-file-earmark-excel-fill"></i> DL
+                                            </a>
+                                            <button v-if="rec[key].rawObj && (rec[key].rawObj.excel_url || rec[key].rawObj.join || rec[key].rawObj.amount)" class="btn btn-sm btn-outline-secondary py-0" style="font-size: 0.7rem;" @click="openDetailModal(rec, key)">
+                                                <i class="bi bi-list-ul"></i> 詳細
+                                            </button>
+                                        </template>
                                     </div>
                                 </td>
 
@@ -343,53 +422,6 @@
                             </tr>
                         </tbody>
                     </table>
-                </div>
-                
-                <div v-if="modal.show" class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
-                    <div class="modal-dialog modal-lg modal-dialog-centered">
-                        <div class="modal-content">
-                            <div class="modal-header"><h5 class="modal-title">{{ modal.univName }} - {{ getCategoryName(modal.category) }}</h5><button type="button" class="btn-close" @click="closeModal"></button></div>
-                            <div class="modal-body text-center bg-light">
-                                <div v-if="modal.url">
-                                    <div v-if="modal.url.includes('.xlsx') || modal.url.includes('.xls')">
-                                        <div class="py-5">
-                                            <i class="bi bi-file-earmark-excel fs-1 text-success"></i>
-                                            <p class="mt-3">Excelファイルが添付されています</p>
-                                            <a :href="modal.url" target="_blank" class="btn btn-success">
-                                                <i class="bi bi-download"></i> ファイルを開く / ダウンロード
-                                            </a>
-                                        </div>
-                                    </div>
-                                    <div v-else>
-                                        <img :src="modal.url" class="receipt-modal-img">
-                                    </div>
-                                </div>
-                                <div v-else class="py-5 text-muted">
-                                    ファイルはありません。<br>
-                                    <span v-if="modal.targetRecord && modal.targetRecord[modal.category] && modal.targetRecord[modal.category].rawObj">申請額: {{ formatMoney(modal.targetRecord[modal.category].rawObj.amount) }}</span>
-                                </div>
-                            </div>
-                            <div class="modal-footer justify-content-between">
-                                <div><a v-if="modal.url" :href="modal.url" target="_blank" class="btn btn-outline-light btn-sm text-dark border-secondary">元画像を開く</a></div>
-                                <div class="d-flex gap-2">
-                                    <button type="button" class="btn btn-secondary" @click="closeModal">閉じる</button>
-                                    
-                                    <div v-if="modal.category === 'add_reg'">
-                                        <button v-if="!modal.subRecord.confirmed" class="btn btn-success btn-approve" @click="toggleApprovalArray(true)"><i class="bi bi-check-lg"></i> 承認する</button>
-                                        <button v-else class="btn btn-outline-danger" @click="toggleApprovalArray(false)">承認取消</button>
-                                    </div>
-                                    <div v-else-if="['league_expense','refund_request'].includes(modal.category)">
-                                        <button v-if="!modal.targetRecord[modal.category].confirmed" class="btn btn-info btn-approve text-white" @click="toggleApproval(true)"><i class="bi bi-cash-coin"></i> 振込完了とする</button>
-                                        <button v-else class="btn btn-outline-danger" @click="toggleApproval(false)">振込完了を取り消す</button>
-                                    </div>
-                                    <div v-else>
-                                        <button v-if="!modal.targetRecord[modal.category].confirmed" class="btn btn-success btn-approve" @click="toggleApproval(true)"><i class="bi bi-check-lg"></i> 承認する</button>
-                                        <button v-else class="btn btn-outline-danger" @click="toggleApproval(false)">承認取消</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -404,7 +436,6 @@
                         <div class="list-group menu-list shadow-sm">
                             <button class="list-group-item list-group-item-action fw-bold" :class="{active: activeTab === 'home'}" @click="activeTab = 'home'"><i class="bi bi-house-door-fill"></i> ホーム (連絡事項)</button>
                             <div class="list-group-item bg-light fw-bold text-muted small">登録・申請メニュー</div>
-
                             <button class="list-group-item list-group-item-action fw-bold" :class="{active: activeTab === 'reg_fee'}" @click="activeTab = 'reg_fee'">① 連盟登録 & 春季リーグ</button>
                             <button class="list-group-item list-group-item-action mt-2" :class="{active: activeTab === 'add_reg'}" @click="activeTab = 'add_reg'">② 追加登録</button>
                             <button class="list-group-item list-group-item-action" :class="{active: activeTab === 'kanto_champ'}" @click="activeTab = 'kanto_champ'">③ 関東選手権</button>
@@ -413,11 +444,9 @@
                             <button class="list-group-item list-group-item-action" :class="{active: activeTab === 'all_japan_champ'}" @click="activeTab = 'all_japan_champ'">⑥ インカレ</button>
                             <button class="list-group-item list-group-item-action" :class="{active: activeTab === 'all_japan_team'}" @click="activeTab = 'all_japan_team'">⑦ 大学対抗戦</button>
                             <button class="list-group-item list-group-item-action" :class="{active: activeTab === 'rookie'}" @click="activeTab = 'rookie'">⑧ 新人戦</button>
-                            
                             <div class="list-group-item bg-light fw-bold text-muted small mt-2">経費・返金</div>
                             <button class="list-group-item list-group-item-action" :class="{active: activeTab === 'league_expense'}" @click="activeTab = 'league_expense'">⑩ リーグ戦経費申請</button>
                             <button class="list-group-item list-group-item-action" :class="{active: activeTab === 'refund_request'}" @click="activeTab = 'refund_request'">⑪ 返金申請</button>
-
                             <div class="list-group-item bg-light fw-bold text-muted small mt-2">設定・その他</div>
                             <button class="list-group-item list-group-item-action" :class="{active: activeTab === 'settlement'}" @click="activeTab = 'settlement'">⑫ 支払明細</button>
                             <button class="list-group-item list-group-item-action" :class="{active: activeTab === 'account'}" @click="activeTab = 'account'">⑬ アカウント設定</button>
@@ -442,7 +471,7 @@
                                                     <i class="bi bi-paperclip"></i> 添付ファイルを開く
                                                 </a>
                                             </div>
-                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 
@@ -527,55 +556,54 @@
                                 </div>
 
                                 <div v-if="activeTab === 'all_japan_team'">
-    <h4>⑦ 大学対抗戦</h4>
-    <div class="alert alert-secondary mt-3 mb-3">
-        <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" v-model="entry.all_japan_team.join">
-            <label class="form-check-label fw-bold">参加する</label>
-        </div>
-    </div>
-    
-    <div v-if="entry.all_japan_team.join">
-        <div class="alert alert-info small"><i class="bi bi-exclamation-circle-fill"></i> 申込データ(Excel)をアップロードし、チーム数等を入力してください。</div>
-        <div class="excel-upload-area">
-            <label class="form-label fw-bold">申込ファイル(Excel)のアップロード</label>
-            <input type="file" class="form-control w-75 mx-auto" accept=".xlsx, .xls" @change="uploadExcel($event, 'all_japan_team')">
-            <div v-if="entry.all_japan_team.excel_url" class="mt-3">
-                <span class="badge bg-success"><i class="bi bi-file-earmark-excel"></i> アップロード済み</span>
-                <a :href="entry.all_japan_team.excel_url" target="_blank" class="d-block mt-1 small">確認する</a>
-            </div>
-            <div v-if="isUploading" class="spinner-border spinner-border-sm mt-2 text-primary"></div>
-        </div>
-        <div class="row g-3 mt-2">
-            <div class="col-md-6"><label>チーム参加費</label><input type="number" v-model.number="entry.all_japan_team.team" class="form-control"></div>
-            <div class="col-md-6"><label>運営費</label><input type="number" v-model.number="entry.all_japan_team.ops" class="form-control"></div>
-        </div>
-        <div class="payment-box">
-            <div class="text-center">
-                <h5>支払額: <strong>{{ formatMoney(calcAllJapanTeam) }}</strong></h5>
-                <p class="mb-2 text-muted small">下記番号を振込名義の前に入力してください</p>
-                <div class="payment-id">{{ entry.all_japan_team.payment_id }}</div>
-                <div class="mt-2 text-danger fw-bold">振込名義: {{ entry.all_japan_team.payment_id }} {{ form.univ_name }}</div>
-                <div class="receipt-area">
-                    <h6 class="small fw-bold mb-3">振込明細の写真</h6>
-                    <div v-if="entry.all_japan_team.receipt_url">
-                        <span class="badge badge-uploaded mb-2"><i class="bi bi-check-circle-fill"></i> 登録済み</span>
-                        <div class="mb-3"><img :src="entry.all_japan_team.receipt_url" class="receipt-preview"></div>
-                        <button class="btn btn-sm btn-outline-danger" @click="deleteReceipt('all_japan_team')"><i class="bi bi-trash"></i> 画像を削除</button>
-                        <div class="mt-3 border-top pt-2"><button class="btn btn-outline-dark w-100" @click="openReceipt('all_japan_team')"><i class="bi bi-receipt"></i> 領収書</button></div>
-                    </div>
-                    <div v-else>
-                        <span class="badge badge-missing mb-2">未登録</span>
-                        <div class="mt-2"><input type="file" class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'all_japan_team')"><div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div> 
-    <div class="save-area">
-        <button @click="saveData" class="btn btn-primary btn-lg px-5">保存</button>
-    </div>
-</div>
+                                    <h4>⑦ 大学対抗戦</h4>
+                                    <div class="alert alert-secondary mt-3 mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" v-model="entry.all_japan_team.join">
+                                            <label class="form-check-label fw-bold">参加する</label>
+                                        </div>
+                                    </div>
+                                    <div v-if="entry.all_japan_team.join">
+                                        <div class="alert alert-info small"><i class="bi bi-exclamation-circle-fill"></i> 申込データ(Excel)をアップロードし、チーム数等を入力してください。</div>
+                                        <div class="excel-upload-area">
+                                            <label class="form-label fw-bold">申込ファイル(Excel)のアップロード</label>
+                                            <input type="file" class="form-control w-75 mx-auto" accept=".xlsx, .xls" @change="uploadExcel($event, 'all_japan_team')">
+                                            <div v-if="entry.all_japan_team.excel_url" class="mt-3">
+                                                <span class="badge bg-success"><i class="bi bi-file-earmark-excel"></i> アップロード済み</span>
+                                                <a :href="entry.all_japan_team.excel_url" target="_blank" class="d-block mt-1 small">確認する</a>
+                                            </div>
+                                            <div v-if="isUploading" class="spinner-border spinner-border-sm mt-2 text-primary"></div>
+                                        </div>
+                                        <div class="row g-3 mt-2">
+                                            <div class="col-md-6"><label>チーム参加費</label><input type="number" v-model.number="entry.all_japan_team.team" class="form-control"></div>
+                                            <div class="col-md-6"><label>運営費</label><input type="number" v-model.number="entry.all_japan_team.ops" class="form-control"></div>
+                                        </div>
+                                        <div class="payment-box">
+                                            <div class="text-center">
+                                                <h5>支払額: <strong>{{ formatMoney(calcAllJapanTeam) }}</strong></h5>
+                                                <p class="mb-2 text-muted small">下記番号を振込名義の前に入力してください</p>
+                                                <div class="payment-id">{{ entry.all_japan_team.payment_id }}</div>
+                                                <div class="mt-2 text-danger fw-bold">振込名義: {{ entry.all_japan_team.payment_id }} {{ form.univ_name }}</div>
+                                                <div class="receipt-area">
+                                                    <h6 class="small fw-bold mb-3">振込明細の写真</h6>
+                                                    <div v-if="entry.all_japan_team.receipt_url">
+                                                        <span class="badge badge-uploaded mb-2"><i class="bi bi-check-circle-fill"></i> 登録済み</span>
+                                                        <div class="mb-3"><img :src="entry.all_japan_team.receipt_url" class="receipt-preview"></div>
+                                                        <button class="btn btn-sm btn-outline-danger" @click="deleteReceipt('all_japan_team')"><i class="bi bi-trash"></i> 画像を削除</button>
+                                                        <div class="mt-3 border-top pt-2"><button class="btn btn-outline-dark w-100" @click="openReceipt('all_japan_team')"><i class="bi bi-receipt"></i> 領収書</button></div>
+                                                    </div>
+                                                    <div v-else>
+                                                        <span class="badge badge-missing mb-2">未登録</span>
+                                                        <div class="mt-2"><input type="file" class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'all_japan_team')"><div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div> 
+                                    <div class="save-area">
+                                        <button @click="saveData" class="btn btn-primary btn-lg px-5">保存</button>
+                                    </div>
+                                </div>
 
                                 <div v-if="activeTab === 'rookie'">
                                     <h4>⑧ 新人戦</h4>
@@ -657,10 +685,40 @@
                                 </div>
 
                                 <div v-if="activeTab === 'account'"><h4><i class="bi bi-gear-fill"></i> ⑬ アカウント設定</h4><div class="card mt-4 border-warning"><div class="card-header bg-warning bg-opacity-10 fw-bold">メールアドレス・パスワードの変更</div><div class="card-body"><div class="mb-3"><label class="form-label">現在のメールアドレス</label><input type="text" class="form-control" :value="user.email" disabled></div><hr><div class="mb-3"><label class="form-label fw-bold">新しいメールアドレス</label><input type="email" v-model="account.newEmail" class="form-control"></div><div class="mb-3"><label class="form-label fw-bold">新しいパスワード</label><input type="password" v-model="account.newPass" class="form-control"></div><button class="btn btn-warning text-dark fw-bold" @click="updateAccount">変更内容を保存</button></div></div></div>
-
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="!isAdmin && user">
+            <div class="chat-floating-btn" @click="toggleChat">
+                <i class="bi" :class="isShowChat ? 'bi-x-lg' : 'bi-chat-dots-fill'"></i>
+            </div>
+            
+            <div v-if="isShowChat" class="chat-window">
+                <div class="chat-header">
+                    <span><i class="bi bi-headset"></i> 運営へのお問い合わせ</span>
+                    <button class="btn-close btn-close-white" @click="toggleChat"></button>
+                </div>
+                <div class="chat-body" id="chatBodyUser">
+                    <div v-if="messages.length === 0" class="text-center text-muted small mt-5">
+                        メッセージ履歴はありません。<br>困ったことがあればここに入力してください。
+                    </div>
+                    <div v-for="msg in messages" :key="msg.id" class="msg-row" :class="msg.sender === 'user' ? 'mine' : 'theirs'">
+                        <div>
+                            <div class="msg-bubble">{{ msg.text }}</div>
+                            <div class="d-flex align-items-center gap-2" :class="msg.sender === 'user' ? 'justify-content-end' : 'justify-content-start'">
+    <i class="bi bi-trash text-secondary opacity-50" style="cursor: pointer; font-size: 0.7rem;" @click="deleteUserMessage(msg.id)"></i>
+    <div class="msg-time" v-if="msg.createdAt">{{ new Date(msg.createdAt.seconds * 1000).toLocaleString([], {hour:'2-digit', minute:'2-digit'}) }}</div>
+</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-footer">
+                    <input type="text" class="form-control" v-model="chatMessage" @keyup.enter="sendMessage(false)" placeholder="メッセージを入力...">
+                    <button class="btn btn-primary" @click="sendMessage(false)"><i class="bi bi-send-fill"></i></button>
                 </div>
             </div>
         </div>
@@ -672,16 +730,11 @@
                         <h6 class="modal-title fw-bold">{{ detailModal.title }}</h6>
                         <button type="button" class="btn-close small" @click="detailModal.show = false"></button>
                     </div>
-                    
-
-
-
-<div class="modal-body">
+                    <div class="modal-body">
                         <div v-if="detailModal.loading" class="text-center py-5">
                             <div class="spinner-border text-primary" role="status"></div>
                             <p class="mt-2 text-muted">Excelファイルを読み込んでいます...</p>
                         </div>
-
                         <div v-else-if="detailModal.parsedData && detailModal.parsedData.length > 0">
                             <div class="alert alert-success small py-1 mb-2"><i class="bi bi-table"></i> 名簿プレビュー</div>
                             <div class="table-responsive" style="max-height: 400px;">
@@ -702,7 +755,6 @@
                                 <button class="btn btn-sm btn-secondary" @click="detailModal.parsedData = []">一覧を閉じる</button>
                             </div>
                         </div>
-
                         <div v-else>
                             <div v-if="detailModal.type === 'array_list'">
                                 <div class="list-group">
@@ -731,33 +783,111 @@
                             <div v-else class="text-center py-4"><h5>{{ detailModal.data }}</h5></div>
                         </div>
                     </div>
-
                     <div class="modal-footer py-1"><button type="button" class="btn btn-sm btn-secondary" @click="detailModal.show = false">閉じる</button></div>
                 </div>
             </div>
         </div>
 
-        <div v-if="receiptData.show" class="modal fade show d-block" id="receiptModal" tabindex="-1" style="background: rgba(0,0,0,0.5);"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">領収書プレビュー</h5><button type="button" class="btn-close" @click="receiptData.show = false"></button></div><div class="modal-body bg-light p-4"><div class="receipt-layout mx-auto" style="max-width: 700px;"><div class="text-center"><span class="receipt-title">領　収　証</span></div><div class="d-flex justify-content-between align-items-end mt-4"><h4 class="mb-0"><u>{{ form.univ_name }} 様</u></h4><div>発行日: {{ new Date().toLocaleDateString('ja-JP', {year:'numeric', month:'long', day:'numeric'}) }}</div></div><div class="receipt-amount">{{ formatMoney(receiptData.amount) }}-</div><div class="text-center small text-muted">（消費税等を含む）</div><div class="receipt-detail"><p>但　{{ receiptData.title }} として<br>上記正に領収いたしました。</p></div><div class="issuer-info"><div class="hanko-box"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect x="2" y="2" width="96" height="96" rx="2" ry="2" fill="none" stroke="#d00" stroke-width="2" /><rect x="6" y="6" width="88" height="88" rx="1" ry="1" fill="none" stroke="#d00" stroke-width="1" /><text x="78" y="15" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">関</text><text x="78" y="38" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">東</text><text x="78" y="61" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">学</text><text x="78" y="84" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">生</text><text x="50" y="15" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(6,0)">バ</text><text x="50" y="38" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(6,0)">ド</text><text x="50" y="61" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(6,0)">ミ</text><text x="50" y="84" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(6,0)">ン</text><text x="22" y="15" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(2,0)">ト</text><text x="22" y="38" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(2,0)">ン</text><text x="22" y="61" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">連</text><text x="22" y="84" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">盟</text></svg></div><h5>関東学生バドミントン連盟</h5><p class="small mb-0">〒272-0123</p><p class="small mb-0">千葉県市川市幸1-14-17</p></div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" @click="receiptData.show = false">閉じる</button><button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> 印刷 / PDF保存</button></div></div></div></div>
+        <div v-if="receiptData.show" class="modal fade show d-block" id="receiptModal" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">領収書プレビュー</h5>
+                        <button type="button" class="btn-close" @click="receiptData.show = false"></button>
+                    </div>
+                    <div class="modal-body bg-light p-4">
+                        <div class="receipt-layout mx-auto" style="max-width: 700px;">
+                            <div class="text-center"><span class="receipt-title">領　収　証</span></div>
+                            <div class="d-flex justify-content-between align-items-end mt-4"><h4 class="mb-0"><u>{{ form.univ_name }} 様</u></h4><div>発行日: {{ new Date().toLocaleDateString('ja-JP', {year:'numeric', month:'long', day:'numeric'}) }}</div></div>
+                            <div class="receipt-amount">{{ formatMoney(receiptData.amount) }}-</div>
+                            <div class="text-center small text-muted">（消費税等を含む）</div>
+                            <div class="receipt-detail"><p>但　{{ receiptData.title }} として<br>上記正に領収いたしました。</p></div>
+                            <div class="issuer-info">
+                                <div class="hanko-box"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect x="2" y="2" width="96" height="96" rx="2" ry="2" fill="none" stroke="#d00" stroke-width="2" /><rect x="6" y="6" width="88" height="88" rx="1" ry="1" fill="none" stroke="#d00" stroke-width="1" /><text x="78" y="15" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">関</text><text x="78" y="38" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">東</text><text x="78" y="61" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">学</text><text x="78" y="84" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">生</text><text x="50" y="15" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(6,0)">バ</text><text x="50" y="38" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(6,0)">ド</text><text x="50" y="61" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(6,0)">ミ</text><text x="50" y="84" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(6,0)">ン</text><text x="22" y="15" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(2,0)">ト</text><text x="22" y="38" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="16" fill="#d00" text-anchor="middle" transform="scale(0.9, 1) translate(2,0)">ン</text><text x="22" y="61" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">連</text><text x="22" y="84" font-family="'Hiragino Mincho ProN', 'MS Mincho', serif" font-weight="bold" font-size="20" fill="#d00" text-anchor="middle">盟</text></svg></div>
+                                <h5>関東学生バドミントン連盟</h5>
+                                <p class="small mb-0">〒272-0123</p>
+                                <p class="small mb-0">千葉県市川市幸1-14-17</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @click="receiptData.show = false">閉じる</button>
+                        <button type="button" class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> 印刷 / PDF保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
+        <div v-if="modal.show" class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header"><h5 class="modal-title">{{ modal.univName }} - {{ getCategoryName(modal.category) }}</h5><button type="button" class="btn-close" @click="closeModal"></button></div>
+                    <div class="modal-body text-center bg-light">
+                        <div v-if="modal.url">
+                            <div v-if="modal.url.includes('.xlsx') || modal.url.includes('.xls')">
+                                <div class="py-5">
+                                    <i class="bi bi-file-earmark-excel fs-1 text-success"></i>
+                                    <p class="mt-3">Excelファイルが添付されています</p>
+                                    <a :href="modal.url" target="_blank" class="btn btn-success">
+                                        <i class="bi bi-download"></i> ファイルを開く / ダウンロード
+                                    </a>
+                                </div>
+                            </div>
+                            <div v-else>
+                                <img :src="modal.url" class="receipt-modal-img">
+                            </div>
+                        </div>
+                        <div v-else class="py-5 text-muted">
+                            ファイルはありません。<br>
+                            <span v-if="modal.targetRecord && modal.targetRecord[modal.category] && modal.targetRecord[modal.category].rawObj">申請額: {{ formatMoney(modal.targetRecord[modal.category].rawObj.amount) }}</span>
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-between">
+                        <div><a v-if="modal.url" :href="modal.url" target="_blank" class="btn btn-outline-light btn-sm text-dark border-secondary">元画像を開く</a></div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-secondary" @click="closeModal">閉じる</button>
+                            <div v-if="modal.category === 'add_reg'">
+                                <button v-if="!modal.subRecord.confirmed" class="btn btn-success btn-approve" @click="toggleApprovalArray(true)"><i class="bi bi-check-lg"></i> 承認する</button>
+                                <button v-else class="btn btn-outline-danger" @click="toggleApprovalArray(false)">承認取消</button>
+                            </div>
+                            <div v-else-if="['league_expense','refund_request'].includes(modal.category)">
+                                <button v-if="!modal.targetRecord[modal.category].confirmed" class="btn btn-info btn-approve text-white" @click="toggleApproval(true)"><i class="bi bi-cash-coin"></i> 振込完了とする</button>
+                                <button v-else class="btn btn-outline-danger" @click="toggleApproval(false)">振込完了を取り消す</button>
+                            </div>
+                            <div v-else>
+                                <button v-if="!modal.targetRecord[modal.category].confirmed" class="btn btn-success btn-approve" @click="toggleApproval(true)"><i class="bi bi-check-lg"></i> 承認する</button>
+                                <button v-else class="btn btn-outline-danger" @click="toggleApproval(false)">承認取消</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-
-   <script>
+    <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzno9haVN6wUA6bskklwYRe8iefZZpGTxfCIk_AHiPCMcBcAKozGooUgSLhOPhuM_cNAg/exec";
 
         const firebaseConfig = {
-          apiKey: "AIzaSyASxcZep_OpFzc2EML2sUMRuK8rDJXv-cg",
-          authDomain: "kanto-badminton-app.firebaseapp.com",
-          projectId: "kanto-badminton-app",
-          storageBucket: "kanto-badminton-app.firebasestorage.app",
-          messagingSenderId: "64616841162",
-          appId: "1:64616841162:web:aa78e54f507bd502de5933",
+            apiKey: "AIzaSyASxcZep_OpFzc2EML2sUMRuK8rDJXv-cg",
+            authDomain: "kanto-badminton-app.firebaseapp.com",
+            projectId: "kanto-badminton-app",
+            storageBucket: "kanto-badminton-app.firebasestorage.app",
+            messagingSenderId: "64616841162",
+            appId: "1:64616841162:web:aa78e54f507bd502de5933",
         };
 
         const ADMIN_ID = "admin";
         const ADMIN_PASS = "admin1234"; 
 
         firebase.initializeApp(firebaseConfig);
+firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                console.log("✅ [System Check] ログイン成功: UID =", user.uid);
+            } else {
+                console.error("❌ [System Check] ログインしていません (Cookieがブロックされている可能性があります)");
+            }
+        });
         const { createApp } = Vue;
 
         createApp({
@@ -770,6 +900,16 @@
                     newsList: [],
                     activeTab: 'home',
                     
+                    // --- チャット関連 ---
+                    isShowChat: false,
+                    chatMessage: '',
+                    messages: [],
+                    chatUnsubscribe: null,
+                    adminActiveChatUnivId: null,
+                    adminChatMessages: [],
+                    adminChatUnsubscribe: null,
+                    // --------------------
+
                     adminNews: { date: '', title: '', content: '', url: '' },
                     isUploadingNews: false,
 
@@ -795,7 +935,6 @@
                     adminStatusKeys: ['reg_fee', 'add_reg', 'kanto_champ', 'east_japan', 'autumn_league', 'all_japan_champ', 'all_japan_team', 'rookie', 'league_expense', 'refund_request'],
                     selectedTournament: 'reg_fee', 
                     isZipping: false, 
-                    // ★追加: 名簿作成中のフラグ
                     isGeneratingList: false,
 
                     modal: { show: false, univName: '', category: '', url: '', subRecord: null }, 
@@ -872,7 +1011,6 @@
                 uploadExcel(event, category) {
                     const file = event.target.files[0]; if (!file) return;
                     this.isUploading = true;
-                    // ユーザー画面用プレビュー読み込み
                     const reader = new FileReader();
                     reader.onload = (e) => {
                         try {
@@ -928,7 +1066,11 @@
                     .then(c=>{ this.form.univ_id=this.regForm.univ_id; this.form.univ_name=this.regUnivName; this.saveData(true, this.authPass); })
                     .catch(e=>alert(e.message)); 
                 },
-                logout() { if(this.isAdmin) { this.isAdmin = false; } else { firebase.auth().signOut(); } },
+                logout() { 
+                    if (this.chatUnsubscribe) this.chatUnsubscribe();
+                    if (this.adminChatUnsubscribe) this.adminChatUnsubscribe();
+                    if(this.isAdmin) { this.isAdmin = false; } else { firebase.auth().signOut(); } 
+                },
 
                 initUserData(em) {
                     const d = this.savedRecords.find(r => r.email === em);
@@ -1419,6 +1561,59 @@
                         }
                     } catch (e) { console.error(e); alert("ZIP作成中にエラーが発生しました。"); } finally { this.isZipping = false; }
                 },
+
+/* ニュース投稿 (addNews) */
+                addNews() {
+                    if (!this.adminNews.title && !this.adminNews.content) return;
+                    const newMsg = {
+                        date: this.adminNews.date || new Date().toISOString(),
+                        title: this.adminNews.title,
+                        content: this.adminNews.content,
+                        url: this.adminNews.url || ''
+                    };
+                    this.newsList.unshift(newMsg);
+                    this.saveData(true); 
+                    this.adminNews = { date: '', title: '', content: '', url: '' };
+                },
+
+                /* ニュース削除 (deleteNews) */
+                deleteNews(index) {
+                    if(!confirm("このニュースを削除しますか？")) return;
+                    this.newsList.splice(index, 1);
+                    this.saveData(true);
+                },
+
+                /* 追加登録の新しい枠を追加 (addNewReg) */
+                addNewReg() {
+                    this.entry.add_reg.push({
+                        id: Date.now(),
+                        date: new Date().toLocaleDateString(),
+                        count: 0,
+                        excel_url: '',
+                        payment_id: this.form.univ_id + '02',
+                        receipt_url: '',
+                        confirmed: false
+                    });
+                },
+
+                /* 不備連絡メール送信 (sendAlertEmail) */
+                sendAlertEmail(rec) {
+                    const reason = prompt("不備の内容を入力してください:\n(例: 振込明細が添付されていません、金額が不足しています 等)");
+                    if (!reason) return;
+                    
+                    const payload = { 
+                        action: 'send_email', 
+                        to: rec.raw_data.email || prompt("送信先メールアドレスを入力してください"), 
+                        body: `${rec.univ_name} 様\n\n関東学生バドミントン連盟システムよりご連絡です。\n申請いただいた内容に以下の不備があります。\n\n【不備内容】\n${reason}\n\nシステムより確認・再提出をお願いいたします。` 
+                    };
+
+                    if(!payload.to) return;
+
+                    fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify(payload) })
+                        .then(() => alert("不備連絡メールを送信しました"))
+                        .catch(e => alert("送信エラー: " + e.message));
+                },
+
                 uploadNewsFile(event) {
                     const file = event.target.files[0]; if (!file) return;
                     this.isUploadingNews = true;
@@ -1426,7 +1621,99 @@
                     firebase.storage().ref().child(path).put(file).then(s => s.ref.getDownloadURL()).then(url => {
                         this.adminNews.url = url; this.isUploadingNews = false;
                     }).catch(e => { alert("アップロード失敗: " + e.message); this.isUploadingNews = false; });
+                },
+
+                // --- チャット関連メソッド ---
+                toggleChat() {
+                    this.isShowChat = !this.isShowChat;
+                    if (this.isShowChat) {
+                        this.subscribeChat(this.form.univ_id);
+                        this.$nextTick(() => {
+                            const el = document.getElementById('chatBodyUser');
+                            if(el) el.scrollTop = el.scrollHeight;
+                        });
+                    }
+                },
+
+                async sendMessage(isFromAdmin = false) {
+                    const text = this.chatMessage;
+                    if (!text.trim()) return;
+                    const targetUnivId = isFromAdmin ? this.adminActiveChatUnivId : this.form.univ_id;
+                    if (!targetUnivId) return;
+                    const db = firebase.firestore();
+                    try {
+                        await db.collection('chats').doc(String(targetUnivId)).collection('messages').add({
+                            text: text,
+                            sender: isFromAdmin ? 'admin' : 'user',
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            read: false
+                        });
+                        this.chatMessage = ''; 
+                    } catch (e) {
+                        console.error("送信エラー", e);
+                        alert("メッセージ送信に失敗しました");
+                    }
+                },
+                subscribeChat(univId) {
+                    if (this.chatUnsubscribe) this.chatUnsubscribe();
+                    if (!univId) return;
+                    const db = firebase.firestore();
+                    this.chatUnsubscribe = db.collection('chats').doc(String(univId))
+                        .collection('messages')
+                        .orderBy('createdAt', 'asc')
+                        .onSnapshot((snapshot) => {
+                            this.messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            this.$nextTick(() => {
+                                const el = document.getElementById('chatBodyUser');
+                                if(el) el.scrollTop = el.scrollHeight;
+                            });
+                        });
+                },
+                selectAdminChatUser(univId) {
+                this.adminActiveChatUnivId = univId;
+                if (this.adminChatUnsubscribe) this.adminChatUnsubscribe();
+                const db = firebase.firestore();
+                this.adminChatUnsubscribe = db.collection('chats').doc(String(univId))
+                    .collection('messages')
+                    .orderBy('createdAt', 'asc')
+                    .onSnapshot((snapshot) => {
+                        this.adminChatMessages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        this.$nextTick(() => {
+                            const el = document.getElementById('chatBodyAdmin');
+                            if(el) el.scrollTop = el.scrollHeight;
+                        });
+                    });
+            }, // ★ここにカンマ(,)があることが超重要です！
+
+            /* 管理者画面でメッセージを削除 */
+            async deleteAdminMessage(msgId) {
+                if (!this.adminActiveChatUnivId) return;
+                if (!confirm("このメッセージを削除しますか？\n(相手の画面からも消えます)")) return;
+
+                try {
+                    const db = firebase.firestore();
+                    await db.collection('chats').doc(String(this.adminActiveChatUnivId))
+                            .collection('messages').doc(msgId).delete();
+                } catch (e) {
+                    console.error(e);
+                    alert("削除に失敗しました");
                 }
+            },
+
+            /* ユーザー画面でメッセージを削除 */
+            async deleteUserMessage(msgId) {
+                if (!this.form.univ_id) return;
+                if (!confirm("このメッセージを削除しますか？")) return;
+
+                try {
+                    const db = firebase.firestore();
+                    await db.collection('chats').doc(String(this.form.univ_id))
+                            .collection('messages').doc(msgId).delete();
+                } catch (e) {
+                    console.error(e);
+                    alert("削除に失敗しました");
+                }
+            }
             } 
         }).mount('#app');
     </script>
