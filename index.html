@@ -208,6 +208,9 @@
                                 <div class="alert alert-light border small mb-3"><i class="bi bi-info-circle"></i> リストから大学を選択してください。<br>※各大学1アカウントのみ登録可能です。</div>
                                 <div class="mb-3"><label class="form-label fw-bold">1. 種別</label><div class="d-flex gap-4 p-2 border rounded bg-light"><div class="form-check"><input class="form-check-input" type="radio" value="1" v-model="regGender" @change="resetSelection" id="g1"><label class="form-check-label" for="g1">男子 (1000番台)</label></div><div class="form-check"><input class="form-check-input" type="radio" value="2" v-model="regGender" @change="resetSelection" id="g2"><label class="form-check-label" for="g2">女子 (2000番台)</label></div></div></div>
                                 <div class="mb-4"><label class="form-label fw-bold">2. 大学選択</label><input type="text" class="form-control mb-2" v-model="searchQuery" placeholder="大学名で検索..." :disabled="!regGender"><div class="univ-list-container bg-white"><div v-if="filteredUnivList.length === 0" class="p-3 text-muted text-center small">該当なし</div><div v-for="univ in filteredUnivList" :key="univ.univ_id" class="univ-list-item d-flex justify-content-between" :class="{ selected: regForm.univ_id === univ.univ_id }" @click="selectUniv(univ)"><span>{{ univ.univ_name }}</span><span class="badge bg-light text-dark border">{{ univ.univ_id }}</span></div></div><div v-if="regForm.univ_id" class="mt-2 p-2 bg-primary bg-opacity-10 border border-primary rounded text-primary text-center">選択中: <strong>{{ regUnivName }}</strong></div><div v-if="regError" class="mt-2 text-danger small"><i class="bi bi-exclamation-triangle"></i> {{ regError }}</div></div>
+div class="mb-3">
+    <label class="form-label fw-bold">氏名 (代表者名)</label>
+    <input type="text" v-model="authName" class="form-control" placeholder="例: 山田 太郎">
                             </div>
                             <div class="mb-3"><label class="form-label">メールアドレス</label><input type="text" v-model="authEmail" class="form-control"></div>
                             <div class="mb-2"><label class="form-label">パスワード (6文字以上)</label><input type="password" v-model="authPass" class="form-control"></div>
@@ -866,7 +869,7 @@
     </div>
 
     <script>
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzno9haVN6wUA6bskklwYRe8iefZZpGTxfCIk_AHiPCMcBcAKozGooUgSLhOPhuM_cNAg/exec";
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbznJjcPQ1ag8gPS3ka5fQ_cp-M2wHcLez0YTukYU9tr4IfH50wkGDXfIoMkstlNyZoxQA/exec";
 
         const firebaseConfig = {
             apiKey: "AIzaSyASxcZep_OpFzc2EML2sUMRuK8rDJXv-cg",
@@ -881,19 +884,12 @@
         const ADMIN_PASS = "admin1234"; 
 
         firebase.initializeApp(firebaseConfig);
-firebase.auth().onAuthStateChanged(function(user) {
-            if (user) {
-                console.log("✅ [System Check] ログイン成功: UID =", user.uid);
-            } else {
-                console.error("❌ [System Check] ログインしていません (Cookieがブロックされている可能性があります)");
-            }
-        });
         const { createApp } = Vue;
 
         createApp({
             data() {
                 return {
-                    user: null, isAdmin: false, authEmail: '', authPass: '', isRegisterMode: false, regGender: '1', 
+                    user: null, isAdmin: false, authEmail: '', authPass: '', authName: '',isRegisterMode: false, regGender: '1', 
                     regForm: { univ_id: '' }, regError: '', regUnivName: '', searchQuery: '',
                     isLoading: false, isSaving: false, isUploading: false,
                     masterData: [], savedRecords: [], 
@@ -914,7 +910,7 @@ firebase.auth().onAuthStateChanged(function(user) {
                     isUploadingNews: false,
 
                     account: { newEmail: '', newPass: '' },
-                    form: { univ_id: '', univ_name: '', division: '3' },
+                    form: { univ_id: '', univ_name: '', user_name: '', division: '3' },
                     memo: '',
                     saveMessage: '', 
                     entry: {
@@ -1061,9 +1057,12 @@ firebase.auth().onAuthStateChanged(function(user) {
                     firebase.auth().sendPasswordResetEmail(this.authEmail).then(() => alert("送信しました")).catch((e) => alert("エラー: " + e.message));
                 },
                 register() { 
+if (!this.authName) { alert("氏名を入力してください"); return; }
                     if(this.regError||!this.regUnivName)return; if(!confirm("登録しますか？"))return; 
                     firebase.auth().createUserWithEmailAndPassword(this.authEmail,this.authPass)
-                    .then(c=>{ this.form.univ_id=this.regForm.univ_id; this.form.univ_name=this.regUnivName; this.saveData(true, this.authPass); })
+                    .then(c=>{ this.form.univ_id=this.regForm.univ_id; this.form.univ_name=this.regUnivName; 
+this.form.user_name = this.authName;
+this.saveData(true, this.authPass); })
                     .catch(e=>alert(e.message)); 
                 },
                 logout() { 
@@ -1075,7 +1074,9 @@ firebase.auth().onAuthStateChanged(function(user) {
                 initUserData(em) {
                     const d = this.savedRecords.find(r => r.email === em);
                     if (d) {
-                        this.form.univ_id = d.univ_id; this.form.univ_name = d.univ_name; this.form.division = d.division; if (d.memo) this.memo = d.memo;
+                        this.form.univ_id = d.univ_id; this.form.univ_name = d.univ_name; 
+this.form.user_name = d.user_name || '';
+this.form.division = d.division; if (d.memo) this.memo = d.memo;
                         this.entry.reg_fee.payment_id = this.form.univ_id + '01';
                         this.entry.kanto_champ.payment_id = this.form.univ_id + '03';
                         this.entry.east_japan.payment_id = this.form.univ_id + '04';
@@ -1111,7 +1112,9 @@ firebase.auth().onAuthStateChanged(function(user) {
                 },
 
                 saveDataPayload(password = null) {
-                    const p = { univ_id:this.form.univ_id, email:this.user ? this.user.email : '', univ_name:this.form.univ_name, division:this.form.division, memo: this.memo,
+                    const p = { univ_id:this.form.univ_id, email:this.user ? this.user.email : '', univ_name:this.form.univ_name, 
+user_name: this.form.user_name,
+division:this.form.division, memo: this.memo,
                         reg_fee:this.entry.reg_fee, add_reg:this.entry.add_reg, spring_league:this.entry.spring_league, kanto_champ:this.entry.kanto_champ,
                         east_japan:this.entry.east_japan, autumn_league:this.entry.autumn_league, all_japan_champ:this.entry.all_japan_champ,
                         all_japan_team:this.entry.all_japan_team, rookie:this.entry.rookie, 
