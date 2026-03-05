@@ -1096,88 +1096,83 @@
                                             :disabled="isSaving"><i class="bi bi-save"></i> {{ isSaving ? '保存中...' :
                                             'データを保存する' }}</button></div>
                                 </div>
-                                <div v-if="activeTab === 'add_reg'">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <h4 class="text-success"><i class="bi bi-person-plus"></i> ③ 追加登録</h4>
-                                    </div>
-                                    <div v-for="(app, index) in entry.add_reg" :key="app.id"
-                                        class="card mb-4 add-reg-card shadow-sm">
-                                        <div class="add-reg-index">{{ index + 1 }}</div>
-                                        <div
-                                            class="card-header d-flex justify-content-between align-items-center bg-white border-bottom-0 pt-3">
-                                            <h5 class="m-0 fw-bold text-success">申請日: {{ app.date }}</h5><span
-                                                v-if="app.confirmed" class="badge bg-success">承認済み</span><span
-                                                v-else-if="app.receipt_url"
-                                                class="badge bg-warning text-dark">確認待ち</span><span v-else
-                                                class="badge bg-secondary">未完了</span>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="excel-upload-area"><label
-                                                    class="form-label fw-bold">追加登録用紙(Excel)</label>
-                                                <div v-if="app.excel_url" class="mt-3">
-                                                    <div class="d-flex align-items-center justify-content-center gap-2">
-                                                        <span class="badge bg-success">UP済み</span><a
-                                                            :href="app.excel_url" target="_blank"
-                                                            class="btn btn-sm btn-primary"><i class="bi bi-search"></i>
-                                                            確認</a><button class="btn btn-sm btn-outline-danger"
-                                                            @click="deleteExcelArray(index)"><i class="bi bi-trash"></i>
-                                                            削除</button></div>
-                                                </div>
-                                                <div v-else><input type="file" class="form-control w-75 mx-auto"
-                                                        accept=".xlsx, .xls" @change="uploadExcelArray($event, index)">
-                                                </div>
-                                            </div>
-                                            <div class="row g-3 align-items-center mb-3">
-                                                <div class="col-md-5"><label
-                                                        class="form-label small fw-bold">追加人数</label>
-                                                    <div class="input-group"><input type="number"
-                                                            v-model.number="app.count" class="form-control"
-                                                            min="0"><span class="input-group-text">人</span></div>
-                                                </div>
-                                                <div class="col-md-7">
-                                                    <div class="text-end fw-bold text-success fs-5">小計: ¥{{ (app.count *
-                                                        4000).toLocaleString() }}</div>
-                                                </div>
-                                            </div>
+                                
+<div v-if="activeTab === 'add_reg'">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="text-success"><i class="bi bi-person-plus"></i> ③ 大会別 追加登録</h4>
+    </div>
+    <div class="alert alert-info small"><i class="bi bi-info-circle"></i> 各大会の枠にファイルをアップロードしてください。</div>
 
-                                            <div class="payment-box">
-                                                <div class="text-center">
-                                                    <div class="fw-bold mb-2">
-                                                        ゆうちょ銀行　店名：029　当座　口座番号：0080708<br>名義：関東学生バドミントン連盟</div>
-                                                    <p class="mb-2 text-muted small">下記番号を振込名義の前に入力してください</p>
-                                                    <div class="payment-id">{{ app.payment_id }}</div>
-                                                    <div class="mt-2 text-danger fw-bold">振込名義: {{ app.payment_id }} {{
-                                                        form.univ_name }}</div>
-                                                    <div class="receipt-area mt-2 p-2">
-                                                        <h6 class="small fw-bold mb-2">振込明細</h6>
-                                                        <div v-if="app.receipt_url">
-                                                            <div class="mb-2"><img :src="app.receipt_url"
-                                                                    class="receipt-preview" style="max-height:150px;">
-                                                            </div>
-                                                            <div class="d-flex justify-content-center gap-2"><a
-                                                                    :href="app.receipt_url" target="_blank"
-                                                                    class="btn btn-sm btn-secondary"><i
-                                                                        class="bi bi-eye"></i> 拡大</a><button
-                                                                    class="btn btn-sm btn-outline-danger"
-                                                                    @click="deleteReceiptArray(index)">削除</button><button
-                                                                    class="btn btn-sm btn-outline-dark"
-                                                                    @click="openReceiptArray(index)">領収書</button></div>
-                                                        </div>
-                                                        <div v-else><input type="file"
-                                                                class="form-control form-control-sm w-75 mx-auto"
-                                                                accept="image/*"
-                                                                @change="uploadReceiptArray($event, index)"></div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="text-center mb-5"><button class="btn btn-outline-success btn-lg w-100"
-                                            style="border-style: dashed;" @click="addNewReg"><i
-                                                class="bi bi-plus-circle-fill"></i> 新しい申請</button></div>
-                                    <div class="save-area"><button @click="saveData" class="btn btn-primary btn-lg px-5"
-                                            :disabled="isSaving">データ保存</button></div>
-                                </div>
+    <div v-for="(app, index) in entry.add_reg" :key="app.id" class="card mb-4 add-reg-card shadow-sm">
+        <div class="add-reg-index">{{ index + 1 }}</div>
+        <div class="card-header d-flex justify-content-between align-items-center bg-white border-bottom-0 pt-3">
+            <h5 class="m-0 fw-bold text-success">{{ app.tournament }}</h5>
+            <div>
+                <span v-if="app.confirmed" class="badge bg-success">承認済み</span>
+                <span v-else-if="app.receipt_url" class="badge bg-warning text-dark">確認待ち</span>
+                <span v-else class="badge bg-secondary">未完了</span>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="excel-upload-area">
+                <label class="form-label fw-bold">追加登録用紙(Excel)</label>
+                <div v-if="app.excel_url" class="mt-3">
+                    <div class="d-flex align-items-center justify-content-center gap-2">
+                        <span class="badge bg-success">UP済み</span>
+                        <a :href="app.excel_url" target="_blank" class="btn btn-sm btn-primary"><i class="bi bi-search"></i> 確認</a>
+                        <button class="btn btn-sm btn-outline-danger" @click="deleteExcelArray(index)"><i class="bi bi-trash"></i> 削除</button>
+                    </div>
+                </div>
+                <div v-else>
+                    <input type="file" class="form-control w-75 mx-auto" accept=".xlsx, .xls" @change="uploadExcelArray($event, index)">
+                </div>
+            </div>
+
+            <div class="row g-3 align-items-center mb-3">
+                <div class="col-md-5">
+                    <label class="form-label small fw-bold">追加人数</label>
+                    <div class="input-group">
+                        <input type="number" v-model.number="app.count" class="form-control" min="0">
+                        <span class="input-group-text">人</span>
+                    </div>
+                </div>
+                <div class="col-md-7">
+                    <div class="text-end fw-bold text-success fs-5">小計: ¥{{ (app.count * 4000).toLocaleString() }}</div>
+                </div>
+            </div>
+
+            <div class="payment-box">
+                <div class="text-center">
+                    <div class="fw-bold mb-2">振込先：ゆうちょ銀行（店名029 当座 0080708）</div>
+                    <p class="mb-2 text-muted small">下記番号を振込名義の前に入力してください</p>
+                    <div class="payment-id">{{ app.payment_id }}</div>
+                    <div class="mt-2 text-danger fw-bold">振込名義: {{ app.payment_id }} {{ form.univ_name }}</div>
+                    <div class="receipt-area mt-2 p-2 border-0 bg-transparent">
+                        <h6 class="small fw-bold mb-2">振込明細</h6>
+                        <div v-if="app.receipt_url">
+                            <div class="mb-2"><img :src="app.receipt_url" class="receipt-preview" style="max-height:150px;"></div>
+                            <div class="d-flex justify-content-center gap-2">
+                                <a :href="app.receipt_url" target="_blank" class="btn btn-sm btn-secondary">拡大</a>
+                                <button class="btn btn-sm btn-outline-danger" @click="deleteReceiptArray(index)">削除</button>
+                                <button class="btn btn-sm btn-outline-dark" @click="openReceiptArray(index)">領収書</button>
+                            </div>
+                        </div>
+                        <div v-else>
+                            <input type="file" class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceiptArray($event, index)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="save-area">
+        <button @click="saveData" class="btn btn-primary btn-lg px-5" :disabled="isSaving">
+            <i class="bi bi-save"></i> {{ isSaving ? '保存中...' : 'データ保存' }}
+        </button>
+    </div>
+</div>
                                 <div v-if="activeTab === 'kanto_champ'">
                                     <h4>③ 関東学生選手権</h4>
                                     <div class="excel-upload-area"><label
@@ -2177,7 +2172,14 @@ reg_fee: {
     receipt_url: '', 
     is_paid_base: false 
 },
-                            add_reg: [], spring_league: { join: false }, autumn_league: { join: false, excel_url: '', payment_id: '', receipt_url: '' },
+                            add_reg: [
+    { id: 1, tournament: '春リーグ', count: 0, excel_url: '', receipt_url: '', payment_id: '', confirmed: false },
+    { id: 2, tournament: '関東選手権', count: 0, excel_url: '', receipt_url: '', payment_id: '', confirmed: false },
+    { id: 3, tournament: '東日本大会', count: 0, excel_url: '', receipt_url: '', payment_id: '', confirmed: false },
+    { id: 4, tournament: '秋リーグ', count: 0, excel_url: '', receipt_url: '', payment_id: '', confirmed: false },
+    { id: 5, tournament: '新人戦', count: 0, excel_url: '', receipt_url: '', payment_id: '', confirmed: false }
+],
+ spring_league: { join: false }, autumn_league: { join: false, excel_url: '', payment_id: '', receipt_url: '' },
                             kanto_champ: { excel_url: '', count_s: 0, count_d: 0, count_m: 0, payment_id: '', receipt_url: '' },
                             east_japan: { excel_url: '', team: 0, ops: 0, count_s: 0, count_d: 0, count_m: 0, payment_id: '', receipt_url: '' },
                             all_japan_champ: { excel_url: '', ops_events: 0, count_s: 0, count_d: 0, count_m: 0, payment_id: '', receipt_url: '' },
@@ -2740,19 +2742,22 @@ deleteExcelField(category, subField) {
                         // 4. 配列データ（追加登録・選手登録）の特別処理
                         // 追加登録
                         try {
-                            const ar = d.add_reg ? JSON.parse(d.add_reg) : [];
-                            if (Array.isArray(ar)) {
-                                this.entry.add_reg = ar;
-                            } else if (ar.count || ar.payment_id) {
-                                // 旧データ形式の場合の救済処置
-                                this.entry.add_reg = [{
-                                    id: 'legacy', date: '過去の申請',
-                                    count: ar.count || 0, excel_url: ar.excel_url || '',
-                                    payment_id: ar.payment_id || (this.form.univ_id + '02'),
-                                    receipt_url: ar.receipt_url || '', confirmed: !!ar.confirmed
-                                }];
-                            }
-                        } catch (e) { }
+   const savedArray = d.add_reg ? JSON.parse(d.add_reg) : [];
+    if (Array.isArray(savedArray)) {
+        // 重要：現在の add_reg（5枠）に対して、保存されていたデータを1つずつ流し込む
+        savedArray.forEach((item, idx) => {
+            if (this.entry.add_reg[idx]) {
+                // tournament名などは初期値（春リーグ等）を維持しつつ、countやURLを上書き
+                this.entry.add_reg[idx] = { 
+                    ...this.entry.add_reg[idx], 
+                    ...item 
+                };
+            }
+        });
+    }
+} catch (e) {
+    console.error("追加登録の読み込みに失敗しました", e);
+}
 
                         // 選手登録
                         try {
@@ -2768,9 +2773,10 @@ deleteExcelField(category, subField) {
                             this.entry.reg_fee.payment_id = this.form.univ_id + '01';
 
                             // 追加登録内のID補完
-                            this.entry.add_reg.forEach(item => {
-                                if (!item.payment_id) item.payment_id = this.form.univ_id + '02';
-                            });
+                            this.entry.add_reg.forEach((item, idx) => {
+    // 01は連盟登録なので、追加登録は02, 03, 04, 05, 06と連番にする
+    item.payment_id = this.form.univ_id + '0' + (idx + 2);
+});
 
                             this.entry.kanto_champ.payment_id = this.form.univ_id + '03';
                             this.entry.east_japan.payment_id = this.form.univ_id + '04';
@@ -3383,83 +3389,104 @@ deleteExcelField(category, subField) {
                         });
                         saveAs(blob, `kanto_${key}_list.csv`);
                     },
-                    downloadTournamentZip() {
-                        const key = this.selectedTournament;
-                        const zip = new JSZip();
-                        let count = 0;
-                        this.isZipping = true;
-                        let targets = [];
-                        if (key === 'add_reg') {
-                            this.filteredAdminRecords.forEach(r => {
-                                r.add_reg.forEach((item, idx) => {
-                                    if (item.excel_url) {
-                                        targets.push({
-                                            name: `${r.univ_name}_追加登録_${item.date.replace(/\//g, '')}_${idx}.xlsx`,
-                                            url: item.excel_url
-                                        });
-                                    }
-                                });
-                            });
-                        } else if (key === 'player_reg') {
-                            // 選手登録の画像を一括ダウンロード
-                            this.filteredAdminRecords.forEach(r => {
-                                const list = Array.isArray(r.player_reg.rawObj) ? r.player_reg.rawObj : [];
-                                list.forEach((p, idx) => {
-                                    if (p.receipt_url) {
-                                        // URLから拡張子を推測、またはjpg固定
-                                        let ext = "jpg";
-                                        if (p.receipt_url.includes(".png")) ext = "png";
-                                        targets.push({
-                                            name: `${r.univ_name}_${p.name}_${idx}.${ext}`,
-                                            url: p.receipt_url
-                                        });
-                                    }
-                                });
-                            });
-                        } else {
-                            targets = this.filteredAdminRecords.filter(r => r[key].rawObj && r[key].rawObj.excel_url)
-                                .map(r => ({
-                                    name: `${r.univ_name}_${this.getCategoryName(key)}.xlsx`,
-                                    url: r[key].rawObj.excel_url
-                                }));
-                        }
-                        if (targets.length === 0) {
-                            alert("対象のファイルがありません。");
-                            this.isZipping = false;
-                            return;
-                        }
-                        const process = async () => {
-                            try {
-                                const promises = targets.map(async (target) => {
-                                    try {
-                                        const response = await fetch(target.url);
-                                        if (!response.ok) throw new Error("Network error");
-                                        const blob = await response.blob();
-                                        zip.file(target.name, blob);
-                                        count++;
-                                    } catch (err) {
-                                        console.error(`Failed to load ${target.name}`, err);
-                                    }
-                                });
-                                await Promise.all(promises);
-                                if (count === 0) {
-                                    alert("ファイルのダウンロードに失敗しました。");
-                                } else {
-                                    const content = await zip.generateAsync({
-                                        type: "blob"
-                                    });
-                                    saveAs(content, `${this.getCategoryName(key)}_All_Files.zip`);
-                                }
-                            } catch (e) {
-                                console.error(e);
-                                alert("ZIP作成中にエラーが発生しました。");
-                            } finally {
-                                this.isZipping = false;
-                            }
-                        };
-                        process();
-                    },
+                    
+downloadTournamentZip() {
+    const key = this.selectedTournament;
+    const zip = new JSZip();
+    let count = 0;
+    this.isZipping = true;
+    let targets = [];
 
+    if (key === 'add_reg') {
+        // 追加登録の5つのスロット名を定義
+        const addRegNames = ["1_春リーグ追加", "2_関東選手権追加", "3_東日本大会追加", "4_秋リーグ追加", "5_新人戦追加"];
+        
+        this.filteredAdminRecords.forEach(r => {
+            if (Array.isArray(r.add_reg)) {
+                r.add_reg.forEach((item, idx) => {
+                    if (item && item.excel_url) {
+                        // 0〜4番目なら大会名を使用、それ以降（念のため）は番号を表示
+                        const tournamentName = addRegNames[idx] || `追加登録_${idx + 1}`;
+                        // 日付の記号を除去して安全なファイル名にする
+                        const safeDate = item.date ? item.date.replace(/[^0-9]/g, '') : '';
+                        
+                        targets.push({
+                            name: `${r.univ_id}_${r.univ_name}_${tournamentName}_${safeDate}.xlsx`,
+                            url: item.excel_url
+                        });
+                    }
+                });
+            }
+        });
+    } else if (key === 'reg_fee') {
+        this.filteredAdminRecords.forEach(r => {
+            const raw = r.reg_fee.rawObj;
+            if (raw.excel_url) {
+                targets.push({ name: `${r.univ_id}_${r.univ_name}_1_春登録.xlsx`, url: raw.excel_url });
+            }
+            if (raw.excel_url_apply) {
+                targets.push({ name: `${r.univ_id}_${r.univ_name}_2_春リーグ申込.xlsx`, url: raw.excel_url_apply });
+            }
+            if (raw.excel_url_reg) {
+                targets.push({ name: `${r.univ_id}_${r.univ_name}_3_レギュラー登録.xlsx`, url: raw.excel_url_reg });
+            }
+        });
+    } else if (key === 'player_reg') {
+        this.filteredAdminRecords.forEach(r => {
+            const list = Array.isArray(r.player_reg.rawObj) ? r.player_reg.rawObj : [];
+            list.forEach((p, idx) => {
+                if (p.receipt_url) {
+                    let ext = p.receipt_url.includes(".png") ? "png" : "jpg";
+                    targets.push({
+                        name: `${r.univ_id}_${r.univ_name}_${p.name}_${idx}.${ext}`,
+                        url: p.receipt_url
+                    });
+                }
+            });
+        });
+    } else {
+        targets = this.filteredAdminRecords.filter(r => r[key].rawObj && r[key].rawObj.excel_url)
+            .map(r => ({
+                name: `${r.univ_id}_${r.univ_name}_${this.getCategoryName(key)}.xlsx`,
+                url: r[key].rawObj.excel_url
+            }));
+    }
+
+    if (targets.length === 0) {
+        alert("対象のファイルがありません。");
+        this.isZipping = false;
+        return;
+    }
+
+    const process = async () => {
+        try {
+            const promises = targets.map(async (target) => {
+                try {
+                    const response = await fetch(target.url);
+                    if (!response.ok) throw new Error("Network error");
+                    const blob = await response.blob();
+                    zip.file(target.name, blob);
+                    count++;
+                } catch (err) {
+                    console.error(`Failed to load ${target.name}`, err);
+                }
+            });
+            await Promise.all(promises);
+            if (count === 0) {
+                alert("ファイルのダウンロードに失敗しました。");
+            } else {
+                const content = await zip.generateAsync({ type: "blob" });
+                saveAs(content, `${this.getCategoryName(key)}_一括ダウンロード.zip`);
+            }
+        } catch (e) {
+            console.error(e);
+            alert("ZIP作成中にエラーが発生しました。");
+        } finally {
+            this.isZipping = false;
+        }
+    };
+    process();
+},
                     /* ニュース投稿 (addNews) */
                     addNews() {
                         if (!this.adminNews.title && !this.adminNews.content) return;
