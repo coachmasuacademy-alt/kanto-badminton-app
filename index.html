@@ -2702,16 +2702,16 @@ deleteExcelField(category, subField) {
                             this.regUnivName = u.univ_name;
                         }
                     },
-                    login() {
+                   login() {
     // Firebase Authでログインを実行
     firebase.auth().signInWithEmailAndPassword(this.authEmail, this.authPass)
     .then((userCredential) => {
         const userEmail = userCredential.user.email;
 
-        // ログインしたメールアドレスが「管理者用」として登録したものと一致するか判定
-        // ※ここで Firebaseコンソールに登録したアドレスを指定してください
-        if (userEmail === "admin@example.com" || userEmail === ADMIN_ID) {
+        // 画像に表示されている「admin@example.com」と一致するか判定
+        if (userEmail === "admin@example.com") {
             this.isAdmin = true;
+            // 管理者としてログインしたことがわかるようにアラート（任意）
             alert("管理者としてログインしました");
         }
 
