@@ -2703,22 +2703,35 @@ deleteExcelField(category, subField) {
                         }
                     },
                     login() {
-                        if (this.authEmail === ADMIN_ID && this.authPass === ADMIN_PASS) {
-                            this.isAdmin = true;
-                            this.authEmail = '';
-                            this.authPass = '';
-                            return;
-                        }
-                        firebase.auth().signInWithEmailAndPassword(this.authEmail, this.authPass).catch(e => alert(e.message));
-                    },
-                    resetPassword() {
-                        if (!this.authEmail) {
-                            alert("「メールアドレス」欄に入力してください。");
-                            return;
-                        }
-                        if (!confirm("パスワード再設定メールを送信しますか？")) return;
-                        firebase.auth().sendPasswordResetEmail(this.authEmail).then(() => alert("送信しました")).catch((e) => alert("エラー: " + e.message));
-                    },
+    // Firebase Authでログインを実行
+    firebase.auth().signInWithEmailAndPassword(this.authEmail, this.authPass)
+    .then((userCredential) => {
+        const userEmail = userCredential.user.email;
+
+        // ログインしたメールアドレスが「管理者用」として登録したものと一致するか判定
+        // ※ここで Firebaseコンソールに登録したアドレスを指定してください
+        if (userEmail === "admin@example.com" || userEmail === ADMIN_ID) {
+            this.isAdmin = true;
+            alert("管理者としてログインしました");
+        }
+
+        this.authEmail = '';
+        this.authPass = '';
+    })
+    .catch(e => {
+        alert("ログイン失敗: " + e.message);
+    });
+},
+resetPassword() {
+    if (!this.authEmail) {
+        alert("「メールアドレス」欄に入力してください。");
+        return;
+    }
+    if (!confirm("パスワード再設定メールを送信しますか？")) return;
+    firebase.auth().sendPasswordResetEmail(this.authEmail)
+        .then(() => alert("パスワード再設定用のメールを送信しました。メールを確認してください。"))
+        .catch((e) => alert("エラー: " + e.message));
+},
                     register() {
                         if (!this.authName) {
                             alert("氏名を入力してください");
