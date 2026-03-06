@@ -2130,7 +2130,7 @@
                 appId: "1:64616841162:web:aa78e54f507bd502de5933",
             };
 
-            const ADMIN_ID = "admin@example.com";
+            const ADMIN_ID = "kantoibf2025@gmail.com";
             const ADMIN_PASS = "admin1234";
 
             firebase.initializeApp(firebaseConfig);
@@ -2703,25 +2703,31 @@ deleteExcelField(category, subField) {
                         }
                     },
                    login() {
-    // Firebase Authでログインを実行
+    this.isLoading = true;
     firebase.auth().signInWithEmailAndPassword(this.authEmail, this.authPass)
     .then((userCredential) => {
         const userEmail = userCredential.user.email;
 
-        // 画像に表示されている「admin@example.com」と一致するか判定
-        if (userEmail === "admin@example.com") {
+        // 管理者メールアドレス（ADMIN_ID）と一致するか判定
+        if (userEmail === ADMIN_ID) {
             this.isAdmin = true;
-            // 管理者としてログインしたことがわかるようにアラート（任意）
             alert("管理者としてログインしました");
+        } else {
+            // 大学ユーザーの場合
+            this.isAdmin = false;
+            this.initUserData(userEmail);
         }
 
         this.authEmail = '';
         this.authPass = '';
+        this.isLoading = false;
     })
     .catch(e => {
+        this.isLoading = false;
         alert("ログイン失敗: " + e.message);
     });
 },
+
 resetPassword() {
     if (!this.authEmail) {
         alert("「メールアドレス」欄に入力してください。");
