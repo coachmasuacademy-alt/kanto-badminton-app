@@ -2144,7 +2144,7 @@
         </div>
 
         <script>
-            const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwqnaW7HvamEN8lymAKSanVfGMrKjfMbWHfVCLzH15sdKp5JpC37rIzhAoLLHpQo7BF/exec";
+            const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwhkx3IjExBM8Yl0CM-Ea44BZ4oLqjMmPaxc5FOep3NoGu9ugFFB_p-LnuePTMkry38TQ/exec";
 
             const firebaseConfig = {
                 apiKey: "AIzaSyASxcZep_OpFzc2EML2sUMRuK8rDJXv-cg",
@@ -2709,22 +2709,27 @@ deleteExcelField(category, subField) {
                     // --- アカウント・認証 ---
                    updateAccount() {
     const user = firebase.auth().currentUser;
+    const oldEmail = user.email; // 変更前のメールアドレスを保持
+    const newEmail = this.account.newEmail;
     const promises = [];
     
-    if (this.account.newEmail) promises.push(user.updateEmail(this.account.newEmail));
+    if (newEmail) promises.push(user.updateEmail(newEmail));
     if (this.account.newPass) promises.push(user.updatePassword(this.account.newPass));
     
     Promise.all(promises).then(() => {
         alert("アカウント情報を更新しました");
-        if (this.account.newEmail) this.saveData(true);
+
+        // 【重要】スプレッドシート側のメールアドレスを更新するリクエストを投げる
+        if (newEmail) {
+            // saveData(true) などのメソッドで、GAS側に「変更前」と「変更後」を送り、
+            // スプレッドシートの該当行を特定して書き換えさせる必要があります。
+            this.syncEmailWithSheet(oldEmail, newEmail); 
+        }
+
         this.account.newEmail = '';
         this.account.newPass = '';
     }).catch(err => {
-        // --- 追加：再ログインが必要な場合のエラーハンドリング ---
-        if (err.code === 'auth/user-token-expired' || err.code === 'auth/requires-recent-login') {
-            alert("セキュリティのため、一度ログアウトしてから再度ログインして実行してください。");
-        } else {
-            alert("エラー: " + err.message);
+        alert("エラー: " + err.message);
         }
     });
 },
