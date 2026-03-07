@@ -2708,30 +2708,44 @@ deleteExcelField(category, subField) {
 
                     // --- アカウント・認証 ---
                    updateAccount() {
-        const user = firebase.auth().currentUser;
-        const newEmail = this.account.newEmail;
-        const promises = [];
+    const user = firebase.auth().currentUser;
+    if (!user) return;
+
+    const newEmail = this.account.newEmail;
+    const newPass = this.account.newPass;
+    const promises = [];
+
+    // 入力がある場合のみ処理
+    if (newEmail) promises.push(user.updateEmail(newEmail));
+    if (newPass) promises.push(user.updatePassword(newPass));
+
+    if (promises.length === 0) {
+        alert("変更内容を入力してください");
+        return;
+    }
+
+    this.isSaving = true;
+    Promise.all(promises).then(() => {
+        // Firebase側の更新が成功した後、
+        // 最新の user オブジェクト（特に email）を使用してスプレッドシートを更新する
+        alert("アカウント情報を更新しました。スプレッドシート同期中...");
         
-        if (newEmail) promises.push(user.updateEmail(newEmail));
-        if (this.account.newPass) promises.push(user.updatePassword(this.account.newPass));
-        
-        Promise.all(promises).then(() => {
-            alert("アカウント情報を更新しました");
-            // メールアドレス変更時はスプレッドシート側も同期保存する
-            if (newEmail) {
-                this.saveData(true);
-            }
-            this.account.newEmail = '';
-            this.account.newPass = '';
-        }).catch(err => {
-            // 再認証が必要な場合やセッション切れの処理
-            if (err.code === 'auth/user-token-expired' || err.code === 'auth/requires-recent-login') {
-                alert("セキュリティのため、一度ログアウトしてから再度ログインして実行してください。");
-            } else {
-                alert("エラー: " + err.message);
-            }
-        }); // ← ここで正しく閉じています
-    },
+        // パスワードも変更した場合は、スプレッドシートのパスワード列も上書きするために引数で渡す
+        return this.saveData(true, newPass ? newPass : null);
+    }).then(() => {
+        // 全て完了
+        this.account.newEmail = '';
+        this.account.newPass = '';
+        this.isSaving = false;
+    }).catch(err => {
+        this.isSaving = false;
+        if (err.code === 'auth/requires-recent-login') {
+            alert("セキュリティのため、再ログインが必要です。一度ログアウトしてから再度お試しください。");
+        } else {
+            alert("エラー: " + err.message);
+        }
+    });
+},
 
                     toggleRegisterMode() {
                         this.isRegisterMode = true;
