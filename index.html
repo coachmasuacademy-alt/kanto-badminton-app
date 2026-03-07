@@ -932,15 +932,15 @@
                             </button>
                             <div class="list-group-item bg-light fw-bold text-muted small mt-2">設定・その他</div>
                             <button class="list-group-item list-group-item-action"
-                                :class="{active: activeTab === 'settlement'}" @click="activeTab = 'settlement'">⑬
+                                :class="{active: activeTab === 'settlement'}" @click="activeTab = 'settlement'">⑫
                                 支払明細</button>
                             <button class="list-group-item list-group-item-action"
-                                :class="{active: activeTab === 'account'}" @click="activeTab = 'account'">⑭
+                                :class="{active: activeTab === 'account'}" @click="activeTab = 'account'">⑬
                                 アカウント設定</button>
                             <button
                                 class="list-group-item list-group-item-action fw-bold text-primary d-flex justify-content-between align-items-center"
                                 :class="{active: activeTab === 'chat'}" @click="activeTab = 'chat'">
-                                <span><i class="bi bi-chat-dots-fill"></i> ⑮ メッセージ (運営へ連絡)</span>
+                                <span><i class="bi bi-chat-dots-fill"></i> ⑭ メッセージ (運営へ連絡)</span>
                                 <span v-if="userHasUnread" class="badge bg-danger rounded-pill">!</span>
                             </button>
                         </div>
@@ -976,7 +976,7 @@
                                 </div>
                                 <div v-if="activeTab === 'reg_fee'">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="text-primary"><i class="bi bi-people-fill"></i> ① 連盟登録 (初期) ＆ 春季リーグ</h4>
+    <h4 class="text-primary"><i class="bi bi-people-fill"></i> ② 連盟登録 (初期) ＆ 春季リーグ</h4>
 </div>
 
 <div class="alert alert-info small">
@@ -1199,7 +1199,7 @@
     </div>
 </div>
                                 <div v-if="activeTab === 'kanto_champ'">
-                                    <h4>③ 関東学生選手権</h4>
+                                    <h4>④ 関東学生選手権</h4>
                                     <div class="excel-upload-area"><label
                                             class="form-label fw-bold">申込ファイル(Excel)</label>
                                         <div v-if="entry.kanto_champ.excel_url" class="mt-3">
@@ -1263,7 +1263,7 @@
                                             class="btn btn-primary btn-lg px-5">保存</button></div>
                                 </div>
                                 <div v-if="activeTab === 'east_japan'">
-                                    <h4>④ 東日本大会</h4>
+                                    <h4>⑤ 東日本大会</h4>
                                     <div class="excel-upload-area"><label
                                             class="form-label fw-bold">申込ファイル(Excel)</label>
                                         <div v-if="entry.east_japan.excel_url" class="mt-3">
@@ -1326,7 +1326,7 @@
                                             class="btn btn-primary btn-lg px-5">保存</button></div>
                                 </div>
                                 <div v-if="activeTab === 'autumn_league'">
-                                    <h4>⑤ 秋季リーグ</h4>
+                                    <h4>⑥ 秋季リーグ</h4>
                                     <div class="excel-upload-area"><label
                                             class="form-label fw-bold">申込ファイル(Excel)</label>
                                         <div v-if="entry.autumn_league.excel_url" class="mt-3">
@@ -1383,7 +1383,7 @@
                                             class="btn btn-primary btn-lg px-5">保存</button></div>
                                 </div>
                                 <div v-if="activeTab === 'all_japan_champ'">
-                                    <h4>⑥ インカレ</h4>
+                                    <h4>⑦ インカレ</h4>
                                     <div class="excel-upload-area"><label
                                             class="form-label fw-bold">申込ファイル(Excel)</label>
                                         <div v-if="entry.all_japan_champ.excel_url" class="mt-3">
@@ -1514,7 +1514,7 @@
                                     </div>
                                 </div>
                                 <div v-if="activeTab === 'rookie'">
-                                    <h4>⑧ 新人戦</h4>
+                                    <h4>⑨ 新人戦</h4>
                                     <div class="excel-upload-area"><label class="form-label fw-bold">申込Excel</label>
                                         <div v-if="entry.rookie.excel_url" class="mt-3">
                                             <div class="d-flex align-items-center justify-content-center gap-2"><span
@@ -2299,17 +2299,33 @@ reg_fee: {
                     }
                 },
                 created() {
-                    this.isLoading = true;
+    this.isLoading = true;
 
-                    // 1. ユーザー状態の監視
-                    firebase.auth().onAuthStateChanged(u => {
-                        this.user = u;
-                        // もしデータ受信が既に終わっていれば、ここで初期化
-                        if (u && this.savedRecords.length > 0) {
-                            this.initUserData(u.email);
-                            if (!this.isAdmin) setTimeout(() => this.initUserUnreadListener(), 1000);
-                        }
-                    });
+    // --- 追加：Firestoreから期限設定をリアルタイム受信 ---
+    // これにより管理者が更新した瞬間に、開いているユーザーの画面も更新されます
+    db.collection('config').doc('tournaments').onSnapshot(doc => {
+        if (doc.exists) {
+            this.deadlines = doc.data();
+        }
+    }, (error) => {
+        console.error("期限データの取得に失敗しました:", error);
+    });
+
+    // 1. ユーザー状態の監視（既存の処理）
+    firebase.auth().onAuthStateChanged(u => {
+        this.user = u;
+        if (u && this.savedRecords.length > 0) {
+            this.initUserData(u.email);
+            // 管理者メールアドレス判定
+            if (u.email === ADMIN_ID) {
+                this.isAdmin = true;
+                this.initAdminUnreadListeners();
+            } else {
+                this.isAdmin = false;
+                setTimeout(() => this.initUserUnreadListener(), 1000);
+            }
+        }
+    });
 
                     // 2. データの取得 (GAS API)
                    fetch(GAS_API_URL + "?t=" + new Date().getTime())
