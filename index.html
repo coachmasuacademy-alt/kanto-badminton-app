@@ -2708,31 +2708,31 @@ deleteExcelField(category, subField) {
 
                     // --- アカウント・認証 ---
                    updateAccount() {
-    const user = firebase.auth().currentUser;
-    const oldEmail = user.email; // 変更前のメールアドレスを保持
-    const newEmail = this.account.newEmail;
-    const promises = [];
-    
-    if (newEmail) promises.push(user.updateEmail(newEmail));
-    if (this.account.newPass) promises.push(user.updatePassword(this.account.newPass));
-    
-    Promise.all(promises).then(() => {
-        alert("アカウント情報を更新しました");
+        const user = firebase.auth().currentUser;
+        const newEmail = this.account.newEmail;
+        const promises = [];
+        
+        if (newEmail) promises.push(user.updateEmail(newEmail));
+        if (this.account.newPass) promises.push(user.updatePassword(this.account.newPass));
+        
+        Promise.all(promises).then(() => {
+            alert("アカウント情報を更新しました");
+            // メールアドレス変更時はスプレッドシート側も同期保存する
+            if (newEmail) {
+                this.saveData(true);
+            }
+            this.account.newEmail = '';
+            this.account.newPass = '';
+        }).catch(err => {
+            // 再認証が必要な場合やセッション切れの処理
+            if (err.code === 'auth/user-token-expired' || err.code === 'auth/requires-recent-login') {
+                alert("セキュリティのため、一度ログアウトしてから再度ログインして実行してください。");
+            } else {
+                alert("エラー: " + err.message);
+            }
+        }); // ← ここで正しく閉じています
+    },
 
-        // 【重要】スプレッドシート側のメールアドレスを更新するリクエストを投げる
-        if (newEmail) {
-            // saveData(true) などのメソッドで、GAS側に「変更前」と「変更後」を送り、
-            // スプレッドシートの該当行を特定して書き換えさせる必要があります。
-            this.syncEmailWithSheet(oldEmail, newEmail); 
-        }
-
-        this.account.newEmail = '';
-        this.account.newPass = '';
-    }).catch(err => {
-        alert("エラー: " + err.message);
-        }
-    });
-},
                     toggleRegisterMode() {
                         this.isRegisterMode = true;
                         this.resetSelection();
