@@ -740,17 +740,34 @@
                             <div class="col-12"><textarea class="form-control" v-model="adminNews.content" rows="3"
                                     placeholder="本文"></textarea></div>
                             <div class="col-12">
-                                <label class="form-label small fw-bold"><i class="bi bi-paperclip"></i> 添付ファイル </label>
-                                <input type="file" class="form-control form-control-sm" @change="uploadNewsFile">
-                                <div v-if="adminNews.url" class="mt-1 small text-success"><i
-                                        class="bi bi-check-circle"></i> アップロード完了 <a :href="adminNews.url"
-                                        target="_blank" class="ms-2 text-decoration-none">確認</a></div>
-                                <div v-if="isUploadingNews" class="spinner-border spinner-border-sm mt-1 text-primary">
+                                <label class="form-label small fw-bold">
+                                    <i class="bi bi-paperclip"></i> 添付ファイル（複数選択可）
+                                </label>
+                                <input type="file" class="form-control form-control-sm" @change="uploadNewsFile" multiple>
+                                
+                                <div v-if="adminNews.urls && adminNews.urls.length > 0" class="mt-2">
+                                    <div v-for="(file, idx) in adminNews.urls" :key="idx" 
+                                         class="d-flex align-items-center justify-content-between bg-light border rounded p-1 mb-1" style="font-size: 0.8rem;">
+                                        <div class="text-truncate">
+                                            <i class="bi bi-check-circle text-success me-1"></i> {{ file.name }}
+                                        </div>
+                                        <div>
+                                            <a :href="file.url" target="_blank" class="btn btn-sm btn-link py-0 text-decoration-none">確認</a>
+                                            <button class="btn btn-sm btn-outline-danger py-0 border-0" @click="adminNews.urls.splice(idx, 1)">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div v-if="isUploadingNews" class="mt-2 small text-primary">
+                                    <div class="spinner-border spinner-border-sm" role="status"></div> アップロード中...
                                 </div>
                             </div>
+                        </div> <div class="mt-2">
+                            <button class="btn btn-info text-white fw-bold" @click="addNews"
+                                    :disabled="isUploadingNews">投稿する</button>
                         </div>
-                        <div class="mt-2"><button class="btn btn-info text-white fw-bold" @click="addNews"
-                                :disabled="isUploadingNews">投稿する</button></div>
                         <hr>
                         <h6 class="text-muted small">投稿済みリスト</h6>
                         <ul class="list-group">
@@ -943,9 +960,17 @@
                                                     }}</small>
                                             </div>
                                             <p class="mb-1 mt-2" style="white-space: pre-wrap;">{{ news.content }}</p>
-                                            <div v-if="news.url" class="mt-2 border-top pt-2"><a :href="news.url"
-                                                    target="_blank" class="btn btn-sm btn-outline-primary"><i
-                                                        class="bi bi-paperclip"></i> 添付ファイルを開く</a></div>
+<div v-if="news.urls && news.urls.length > 0" class="mt-2 border-top pt-2">
+    <div v-for="(file, idx) in news.urls" :key="idx" class="d-inline-block me-2 mb-2">
+        <a :href="file.url" target="_blank" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-file-earmark-arrow-down"></i> {{ file.name }} </a>
+    </div>
+</div>
+<div v-else-if="news.url" class="mt-2 border-top pt-2">
+    <a :href="news.url" target="_blank" class="btn btn-sm btn-outline-primary">
+        <i class="bi bi-paperclip"></i> 添付ファイルを開く
+    </a>
+</div>
                                         </div>
                                     </div>
                                 </div>
@@ -2174,7 +2199,7 @@
                             refund_request: '⑪ 返金申請'
                         },
 
-                        adminNews: { date: '', title: '', content: '', url: '' }, isUploadingNews: false,
+                       adminNews: { date: '', title: '', content: '', urls: [] }, isUploadingNews: false,
                         account: { newEmail: '', newPass: '' }, form: { univ_id: '', univ_name: '', user_name: '', division: '3' },
                         memo: '', saveMessage: '',
                         entry: {
@@ -3573,22 +3598,18 @@ downloadTournamentZip() {
 },
                     /* ニュース投稿 (addNews) */
                     addNews() {
-                        if (!this.adminNews.title && !this.adminNews.content) return;
-                        const newMsg = {
-                            date: this.adminNews.date || new Date().toISOString(),
-                            title: this.adminNews.title,
-                            content: this.adminNews.content,
-                            url: this.adminNews.url || ''
-                        };
-                        this.newsList.unshift(newMsg);
-                        this.saveData(true);
-                        this.adminNews = {
-                            date: '',
-                            title: '',
-                            content: '',
-                            url: ''
-                        };
-                    },
+    if (!this.adminNews.title && !this.adminNews.content) return;
+    const newMsg = {
+        date: this.adminNews.date || new Date().toISOString(),
+        title: this.adminNews.title,
+        content: this.adminNews.content,
+        urls: this.adminNews.urls || [] // urls配列を保存
+    };
+    this.newsList.unshift(newMsg);
+    this.saveData(true);
+    // 初期化
+    this.adminNews = { date: '', title: '', content: '', urls: [] };
+},
 
                     /* ニュース削除 (deleteNews) */
                     deleteNews(index) {
@@ -3630,18 +3651,30 @@ downloadTournamentZip() {
                     },
 
                     uploadNewsFile(event) {
-                        const file = event.target.files[0];
-                        if (!file) return;
-                        this.isUploadingNews = true;
-                        const path = `news/${Date.now()}_${file.name}`;
-                        firebase.storage().ref().child(path).put(file).then(s => s.ref.getDownloadURL()).then(url => {
-                            this.adminNews.url = url;
-                            this.isUploadingNews = false;
-                        }).catch(e => {
-                            alert("アップロード失敗: " + e.message);
-                            this.isUploadingNews = false;
-                        });
-                    }
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    this.isUploadingNews = true;
+    
+    const promises = Array.from(files).map(file => {
+        const path = `news/${Date.now()}_${file.name}`;
+        const fileName = file.name; // ★ファイル名を取得しておく
+        return firebase.storage().ref().child(path).put(file)
+            .then(s => s.ref.getDownloadURL())
+            .then(url => {
+                return { name: fileName, url: url }; // ★名前とURLをセットで返す
+            });
+    });
+
+    Promise.all(promises).then(newFiles => {
+        if (!this.adminNews.urls) this.adminNews.urls = [];
+        this.adminNews.urls.push(...newFiles); // ★オブジェクトの配列として追加
+        this.isUploadingNews = false;
+    }).catch(e => {
+        alert("アップロード失敗: " + e.message);
+        this.isUploadingNews = false;
+    });
+}
                 }
             }).mount('#app');
         </script>
