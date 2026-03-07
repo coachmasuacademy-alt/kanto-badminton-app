@@ -1821,19 +1821,39 @@
                                 </div>
 
                                 <div v-if="activeTab === 'account'">
-                                    <h4><i class="bi bi-gear-fill"></i> ⑬ アカウント設定</h4>
-                                    <div class="card mt-4 border-warning">
-                                        <div class="card-header bg-warning bg-opacity-10 fw-bold">メールアドレス・パスワードの変更</div>
-                                        <div class="card-body">
-                                            <div class="mb-3"><label class="form-label">現在のメールアドレス</label><input
-                                                    type="text" class="form-control" :value="user.email" disabled></div>
-                                            <hr>
-                                            <div class="mb-3"><label class="form-label fw-bold">新しいメールアドレス</label><input
-                                                    type="email" v-model="account.newEmail" class="form-control"></div>
-                                            <div class="mb-3"><label class="form-label fw-bold">新しいパスワード</label><input
-                                                    type="password" v-model="account.newPass" class="form-control">
-                                            </div><button class="btn btn-warning text-dark fw-bold"
-                                                @click="updateAccount">変更内容を保存</button>
+    <h4><i class="bi bi-gear-fill"></i> ⑬ アカウント設定</h4>
+    <div class="card mt-4 border-warning">
+        <div class="card-header bg-warning bg-opacity-10 fw-bold">アカウント情報の変更</div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label small text-muted">現在の氏名 (代表者名)</label>
+                    <input type="text" class="form-control bg-light" :value="form.user_name" disabled>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small text-muted">現在のメールアドレス</label>
+                    <input type="text" class="form-control bg-light" :value="user.email" disabled>
+                </div>
+            </div>
+            
+            <hr class="my-4">
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">新しい氏名 (代表者名)</label>
+                <input type="text" v-model="account.newName" class="form-control" placeholder="変更する場合のみ入力">
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">新しいメールアドレス</label>
+                <input type="email" v-model="account.newEmail" class="form-control" placeholder="変更する場合のみ入力">
+            </div>
+            <div class="mb-4">
+                <label class="form-label fw-bold">新しいパスワード</label>
+                <input type="password" v-model="account.newPass" class="form-control" placeholder="6文字以上 / 変更する場合のみ入力">
+            </div>
+
+            <button class="btn btn-warning text-dark fw-bold w-100" @click="updateAccount" :disabled="isSaving">
+                <i class="bi bi-check-circle-fill"></i> 変更内容を保存して同期する
+            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -2135,15 +2155,7 @@
                                         class="btn btn-success btn-approve" @click="toggleApproval(true)"><i
                                             class="bi bi-check-lg"></i> 承認する</button><button v-else
                                         class="btn btn-outline-danger" @click="toggleApproval(false)">承認取消</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <script>
+</div> </div> </div> </div> </div> </div> </div><script>
             const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwhkx3IjExBM8Yl0CM-Ea44BZ4oLqjMmPaxc5FOep3NoGu9ugFFB_p-LnuePTMkry38TQ/exec";
 
             const firebaseConfig = {
@@ -2707,44 +2719,59 @@ deleteExcelField(category, subField) {
                     },
 
                     // --- アカウント・認証 ---
-                   updateAccount() {
+                   async updateAccount() {
     const user = firebase.auth().currentUser;
-    if (!user) return;
+    if (!user) {
+        alert("ログイン情報が取得できません。再ログインしてください。");
+        return;
+    }
 
     const newEmail = this.account.newEmail;
     const newPass = this.account.newPass;
-    const promises = [];
 
-    // 入力がある場合のみ処理
-    if (newEmail) promises.push(user.updateEmail(newEmail));
-    if (newPass) promises.push(user.updatePassword(newPass));
-
-    if (promises.length === 0) {
+    if (!newEmail && !newPass) {
         alert("変更内容を入力してください");
         return;
     }
 
+    if (!confirm("アカウント情報を変更し、スプレッドシートと同期しますか？")) return;
+
     this.isSaving = true;
-    Promise.all(promises).then(() => {
-        // Firebase側の更新が成功した後、
-        // 最新の user オブジェクト（特に email）を使用してスプレッドシートを更新する
-        alert("アカウント情報を更新しました。スプレッドシート同期中...");
+
+    try {
+        // 1. Firebase側のメールアドレスを変更（入力がある場合）
+        if (newEmail) {
+            await user.updateEmail(newEmail);
+            console.log("Firebase Email updated");
+        }
+
+        // 2. Firebase側のパスワードを変更（入力がある場合）
+        if (newPass) {
+            await user.updatePassword(newPass);
+            console.log("Firebase Password updated");
+        }
+
+        // 3. スプレッドシート（GAS）側の情報を更新
+        // saveDataに新しいパスワードを渡して同期させます
+        await this.saveData(true, newPass || null);
+
+        alert("アカウント情報を更新し、スプレッドシートにも反映しました。");
         
-        // パスワードも変更した場合は、スプレッドシートのパスワード列も上書きするために引数で渡す
-        return this.saveData(true, newPass ? newPass : null);
-    }).then(() => {
-        // 全て完了
+        // 入力欄を空にする
         this.account.newEmail = '';
         this.account.newPass = '';
-        this.isSaving = false;
-    }).catch(err => {
-        this.isSaving = false;
+
+    } catch (err) {
+        console.error("Firebase Update Error:", err);
+        // 400エラー（再認証が必要）の対策
         if (err.code === 'auth/requires-recent-login') {
-            alert("セキュリティのため、再ログインが必要です。一度ログアウトしてから再度お試しください。");
+            alert("セキュリティのため、再ログインが必要です。\n一度ログアウトして、今の（変更前の）メール・パスワードで再度ログインしてから、すぐにもう一度この変更操作を行ってください。");
         } else {
-            alert("エラー: " + err.message);
+            alert("エラーが発生しました: " + err.message);
         }
-    });
+    } finally {
+        this.isSaving = false;
+    }
 },
 
                     toggleRegisterMode() {
