@@ -2312,30 +2312,29 @@ reg_fee: {
                     });
 
                     // 2. データの取得 (GAS API)
-                    fetch(GAS_API_URL + "?t=" + new Date().getTime())
-                        .then(r => r.json())
-                        .then(d => {
-                            this.masterData = d.master;
-                            this.savedRecords = d.records; // ここでデータが入る
-                            this.isLoading = false;
+                   fetch(GAS_API_URL + "?t=" + new Date().getTime())
+    .then(r => r.json())
+    .then(d => {
+        this.masterData = d.master;
+        this.savedRecords = d.records;
+        
+        // ★ここを追加：GASから返ってきたニュースデータをVueの変数にセットする
+        if (d.news) {
+            this.newsList = d.news;
+        }
 
-                            // Firestoreの期限設定読み込み
-                            db.collection('config').doc('tournaments').onSnapshot(doc => {
-                                if (doc.exists) { this.deadlines = doc.data() || {}; }
-                            });
+        this.isLoading = false;
 
-                            // ★ここが修正ポイント★
-                            // データ受信が完了した時点で、すでにログイン済みなら初期化を実行する
-                            if (this.user) {
-                                this.initUserData(this.user.email);
-                                if (!this.isAdmin) setTimeout(() => this.initUserUnreadListener(), 1000);
-                            }
+        // ログイン済みの場合の初期化
+        if (this.user) {
+            this.initUserData(this.user.email);
+            if (!this.isAdmin) setTimeout(() => this.initUserUnreadListener(), 1000);
+        }
 
-                            // 管理者用の未読監視
-                            if (this.isAdmin) {
-                                this.initAdminUnreadListeners();
-                            }
-                        })
+        if (this.isAdmin) {
+            this.initAdminUnreadListeners();
+        }
+    })
                         .catch(e => {
                             console.error(e);
                             this.isLoading = false;
