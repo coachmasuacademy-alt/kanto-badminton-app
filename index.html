@@ -2144,7 +2144,7 @@
         </div>
 
         <script>
-            const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzWrezZlSe97GvrJVAuKaVo73VDVhJefrCBnAqZ4aGlYRepE0iEHpd08sNwy5GYOovnZA/exec";
+            const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwqnaW7HvamEN8lymAKSanVfGMrKjfMbWHfVCLzH15sdKp5JpC37rIzhAoLLHpQo7BF/exec";
 
             const firebaseConfig = {
                 apiKey: "AIzaSyASxcZep_OpFzc2EML2sUMRuK8rDJXv-cg",
@@ -2875,37 +2875,39 @@ resetPassword() {
                     },
 
                     // --- データ保存 ---
-                    saveDataPayload(password = null) {
-                        const p = {
-                            univ_id: this.form.univ_id,
-                            email: this.user ? this.user.email : '',
-                            univ_name: this.form.univ_name,
-                            user_name: this.form.user_name,
-                            division: this.form.division,
-                            memo: this.memo,
-                            reg_fee: this.entry.reg_fee,
-                            add_reg: this.entry.add_reg,
-                            spring_league: this.entry.spring_league,
-                            kanto_champ: this.entry.kanto_champ,
-                            east_japan: this.entry.east_japan,
-                            autumn_league: this.entry.autumn_league,
-                            all_japan_champ: this.entry.all_japan_champ,
-                            all_japan_team: this.entry.all_japan_team,
-                            rookie: this.entry.rookie,
-                            // ★追加: 選手登録データ
-                            player_reg: this.entry.player_reg,
-                            league_expense: this.entry.league_expense,
-                            refund_request: this.entry.refund_request,
-                            total_cost: this.grandTotal
-                        };
-                        if (password) {
-                            p.password = password;
-                        }
-                        return fetch(GAS_API_URL, {
-                            method: 'POST',
-                            body: JSON.stringify(p)
-                        }).then(r => r.json());
-                    },
+                   saveDataPayload(password = null) {
+    const p = {
+        univ_id: this.form.univ_id,
+        email: this.user ? this.user.email : '',
+        univ_name: this.form.univ_name,
+        user_name: this.form.user_name,
+        division: this.form.division,
+        memo: this.memo,
+        reg_fee: this.entry.reg_fee,
+        add_reg: this.entry.add_reg,
+        spring_league: this.entry.spring_league,
+        kanto_champ: this.entry.kanto_champ,
+        east_japan: this.entry.east_japan,
+        autumn_league: this.entry.autumn_league,
+        all_japan_champ: this.entry.all_japan_champ,
+        all_japan_team: this.entry.all_japan_team,
+        rookie: this.entry.rookie,
+        player_reg: this.entry.player_reg,
+        league_expense: this.entry.league_expense,
+        refund_request: this.entry.refund_request,
+        // ★ここを必ず追加！これでニュースの内容が送信されます
+        news_list: this.newsList, 
+        total_cost: this.grandTotal
+    };
+    if (password) {
+        p.password = password;
+    }
+    return fetch(GAS_API_URL, {
+        method: 'POST',
+        body: JSON.stringify(p)
+    }).then(r => r.json());
+},
+
                     saveData(isSilent = false, password = null) {
                         if (typeof isSilent === 'object') isSilent = false;
                         this.isSaving = true;
