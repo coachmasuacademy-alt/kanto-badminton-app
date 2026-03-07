@@ -2707,20 +2707,27 @@ deleteExcelField(category, subField) {
                     },
 
                     // --- アカウント・認証 ---
-                    updateAccount() {
-                        const user = firebase.auth().currentUser;
-                        const promises = [];
-                        if (this.account.newEmail) promises.push(user.updateEmail(this.account.newEmail));
-                        if (this.account.newPass) promises.push(user.updatePassword(this.account.newPass));
-                        Promise.all(promises).then(() => {
-                            alert("アカウント情報を更新しました");
-                            if (this.account.newEmail) this.saveData(true);
-                            this.account.newEmail = '';
-                            this.account.newPass = '';
-                        }).catch(err => {
-                            alert("エラー: " + err.message);
-                        });
-                    },
+                   updateAccount() {
+    const user = firebase.auth().currentUser;
+    const promises = [];
+    
+    if (this.account.newEmail) promises.push(user.updateEmail(this.account.newEmail));
+    if (this.account.newPass) promises.push(user.updatePassword(this.account.newPass));
+    
+    Promise.all(promises).then(() => {
+        alert("アカウント情報を更新しました");
+        if (this.account.newEmail) this.saveData(true);
+        this.account.newEmail = '';
+        this.account.newPass = '';
+    }).catch(err => {
+        // --- 追加：再ログインが必要な場合のエラーハンドリング ---
+        if (err.code === 'auth/user-token-expired' || err.code === 'auth/requires-recent-login') {
+            alert("セキュリティのため、一度ログアウトしてから再度ログインして実行してください。");
+        } else {
+            alert("エラー: " + err.message);
+        }
+    });
+},
                     toggleRegisterMode() {
                         this.isRegisterMode = true;
                         this.resetSelection();
