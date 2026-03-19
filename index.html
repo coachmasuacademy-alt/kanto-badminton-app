@@ -360,53 +360,78 @@
         }
 
 @media print {
-            /* 1. 全ての要素を一旦隠す */
-            body * {
-                visibility: hidden;
-            }
-            /* 2. 領収書モーダルとその中身だけを表示する */
-            #receiptModal, #receiptModal * {
-                visibility: visible;
-            }
-            /* 3. モーダルの位置を左上に固定し、余計な部品を消す */
-            #receiptModal {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                display: block !important;
-            }
-            #receiptModal .modal-header,
-            #receiptModal .modal-footer,
-            #receiptModal .btn-close,
-            .no-print {
-                display: none !important;
-            }
-            /* 4. モーダルの装飾をリセット */
-            #receiptModal .modal-content {
-                border: none !important;
-                box-shadow: none !important;
-                background-color: transparent !important;
-            }
-            #receiptModal .modal-dialog {
-                margin: 0;
-                max-width: 100%;
-            }
-            /* 5. 領収書デザインの強制適用 */
-            .receipt-layout {
-                border: 4px double #333 !important;
-                padding: 40px !important;
-                background-color: white !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-            .hanko-box {
-                opacity: 1 !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-        }
+    /* 1. 印刷に不要なナビゲーションやボタンを完全に消去 */
+    .no-print, .btn, .navbar, .menu-list, .save-area, .alert {
+        display: none !important;
+    }
 
+    /* 2. ボディの余白調整 */
+    body {
+        background-color: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* 3. 支払明細タブを表示している場合の設定 */
+    .main-content-card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .report-container {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    /* 4. 領収書モーダルが表示されている場合の設定 */
+    #receiptModal {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        display: block !important;
+    }
+
+    #receiptModal .modal-dialog {
+        max-width: 100% !important;
+        margin: 0 !important;
+    }
+
+    #receiptModal .modal-content {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    /* モーダル背景（黒い透過）を消す */
+    .modal-backdrop {
+        display: none !important;
+    }
+
+    /* 5. 領収書デザインの強制適用 */
+    .receipt-layout {
+        border: 4px double #333 !important;
+        padding: 40px !important;
+        margin: 0 auto !important;
+        background-color: white !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .hanko-box {
+        opacity: 1 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* 6. 非表示にしていた要素を戻す（visibility: hiddenは使わない） */
+    body * {
+        visibility: visible;
+    }
+}
         .receipt-layout {
             border: 4px double #333;
             padding: 40px;
