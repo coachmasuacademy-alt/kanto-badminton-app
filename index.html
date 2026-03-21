@@ -443,6 +443,67 @@
             gap: 10px;
         }
 
+/* 管理者チャット専用レイアウト */
+.admin-chat-container {
+    display: flex;
+    height: 70vh;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.admin-chat-sidebar {
+    width: 300px;
+    border-right: 1px solid #dee2e6;
+    display: flex;
+    flex-direction: column;
+    background: #f8f9fa;
+}
+
+.chat-list-group {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.chat-list-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background 0.2s;
+    position: relative;
+}
+
+.chat-list-item:hover {
+    background-color: #e9ecef;
+}
+
+.chat-list-item.active {
+    background-color: #fff;
+    border-left: 4px solid #0d6efd;
+}
+
+/* 未読がある場合のスタイル（黒字・太字） */
+.chat-list-item.unread {
+    color: #000 !important;
+    font-weight: 800 !important;
+    background-color: #f0f7ff;
+}
+
+.admin-chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+}
+
+.chat-header {
+    padding: 10px 20px;
+    border-bottom: 1px solid #dee2e6;
+    background: #fff;
+    font-weight: bold;
+}
+
         .chat-footer {
             padding: 10px;
             border-top: 1px solid #ddd;
@@ -998,6 +1059,69 @@ html, body {
                                     }}</span><button class="btn btn-sm btn-outline-danger"
                                     @click="deleteNews(i)">削除</button></li>
                         </ul>
+                    </div>
+                </div>
+
+<div class="card mb-4 border-primary">
+                    <div class="card-header bg-dark text-white fw-bold">
+                        <i class="bi bi-chat-dots-fill"></i> 全大学チャット管理 (Teamsスタイル)
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="admin-chat-container">
+                            <div class="admin-chat-sidebar">
+                                <div class="p-2 border-bottom">
+                                    <input type="text" class="form-control form-control-sm" v-model="adminSearchQuery" placeholder="大学を検索...">
+                                </div>
+                                <div class="chat-list-group">
+                                    <div v-for="rec in unreadOnlyAdminRecords" 
+                                         :key="rec.univ_id" 
+                                         class="chat-list-item"
+                                         :class="{ active: adminActiveChatUnivId === rec.univ_id, unread: unreadStatus[rec.univ_id] }"
+                                         @click="selectAdminChat(rec)">
+                                        
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="small">{{ rec.univ_name }}</span>
+                                            <span v-if="unreadStatus[rec.univ_id]" class="badge rounded-pill bg-danger">未読</span>
+                                        </div>
+                                        <div class="text-muted" style="font-size: 0.7rem;">{{ rec.univ_id }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="admin-chat-main">
+                                <div v-if="adminActiveChatUnivId" class="h-100 d-flex" style="display: flex; flex-direction: column;">
+                                    <div class="chat-header d-flex justify-content-between align-items-center">
+                                        <span>{{ adminChatModal.univName }}</span>
+                                        <span class="badge bg-light text-dark border">{{ adminActiveChatUnivId }}</span>
+                                    </div>
+                                    
+                                    <div class="chat-body" id="adminFullChatBody" style="flex: 1; overflow-y: auto; background: #f0f2f5; padding: 20px;">
+                                        <div v-for="msg in adminChatMessages" :key="msg.id" class="msg-row"
+                                             :class="msg.sender === 'admin' ? 'mine' : 'theirs'">
+                                            <div style="max-width: 70%;">
+                                                <div class="msg-bubble shadow-sm">{{ msg.text }}</div>
+                                                <div class="msg-time" v-if="msg.createdAt">
+                                                    {{ new Date(msg.createdAt.seconds * 1000).toLocaleString() }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="chat-footer p-3 bg-light border-top">
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" v-model="chatMessage" 
+                                                   @keyup.enter="sendMessage(true)" placeholder="返信を入力...">
+                                            <button class="btn btn-primary" @click="sendMessage(true)">
+                                                <i class="bi bi-send-fill"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-else class="h-100 d-flex align-items-center justify-content-center text-muted">
+                                    左のリストから大学を選択してチャットを開始してください
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -2711,8 +2835,13 @@ html, body {
                         return list.sort((a, b) => a.univ_id - b.univ_id);
                     },
                     countMen() { return this.adminRecords.filter(r => String(r.univ_id).startsWith('1')).length; },
-                    countWomen() { return this.adminRecords.filter(r => String(r.univ_id).startsWith('2')).length; }
-                },
+                    countWomen() { return this.adminRecords.filter(r => String(r.univ_id).startsWith('2')).length; },
+unreadOnlyAdminRecords() {
+                        // 既存のフィルタ（検索や種別）を通した後のリストから、さらに未読があるものだけを抽出
+                        return this.filteredAdminRecords.filter(rec => this.unreadStatus[rec.univ_id]);
+                    },         
+
+},
                 watch: {
                     activeTab(newVal) {
                         // ユーザーがチャットタブを開いたら既読にする
@@ -2785,7 +2914,35 @@ html, body {
                 },
 
                 methods: {
-                    // --- 期限設定・共通 ---
+                 
+// 大学リストから選択した時の処理
+    selectAdminChat(rec) {
+        this.adminActiveChatUnivId = rec.univ_id;
+        this.adminChatModal.univName = rec.univ_name;
+        
+        // 1. 既読にする
+        this.markMessagesAsRead(rec.univ_id, 'user');
+
+        // 2. リアルタイムリスナーの切り替え
+        if (this.adminChatUnsubscribe) this.adminChatUnsubscribe();
+        
+        this.adminChatUnsubscribe = db.collection('chats').doc(String(rec.univ_id))
+            .collection('messages').orderBy('createdAt', 'asc')
+            .onSnapshot((snapshot) => {
+                this.adminChatMessages = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                // 最下部へスクロール
+                this.$nextTick(() => {
+                    const el = document.getElementById('adminFullChatBody');
+                    if (el) el.scrollTop = el.scrollHeight;
+                });
+            });
+    },
+
+   // --- 期限設定・共通 ---
                     saveDeadlines() {
                         if (!confirm("設定した申込期限を保存・公開しますか？")) return;
                         db.collection('config').doc('tournaments').set(this.deadlines).then(() => {
@@ -2796,6 +2953,7 @@ html, body {
                             alert("保存に失敗しました");
                         });
                     },
+
                     isExpired(key) {
                         if (!this.deadlines[key]) return false;
                         const today = new Date();
@@ -2813,6 +2971,7 @@ html, body {
                             receipt_url: ''
                         });
                     },
+
                     removePlayerRow(index) {
                         if (this.entry.player_reg.length <= 1) {
                             alert("これ以上削除できません");
@@ -2820,6 +2979,7 @@ html, body {
                         }
                         this.entry.player_reg.splice(index, 1);
                     },
+
                     uploadPlayerReceipt(event, index) {
                         const file = event.target.files[0];
                         if (!file) return;
@@ -2837,23 +2997,27 @@ html, body {
 
                     // --- チャット機能 ---
                     async sendMessage(isFromAdmin = false) {
-                        const text = this.chatMessage;
-                        if (!text.trim()) return;
-                        const targetUnivId = isFromAdmin ? this.adminActiveChatUnivId : this.form.univ_id;
-                        if (!targetUnivId) return;
-                        try {
-                            await db.collection('chats').doc(String(targetUnivId)).collection('messages').add({
-                                text: text,
-                                sender: isFromAdmin ? 'admin' : 'user',
-                                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                                read: false
-                            });
-                            this.chatMessage = '';
-                        } catch (e) {
-                            console.error(e);
-                            alert("送信失敗");
-                        }
-                    },
+        const text = this.chatMessage;
+        if (!text.trim()) return;
+        
+        // 管理者なら選択中の大学ID、ユーザーなら自分の大学ID
+        const targetUnivId = isFromAdmin ? this.adminActiveChatUnivId : this.form.univ_id;
+        if (!targetUnivId) return;
+
+        try {
+            await db.collection('chats').doc(String(targetUnivId)).collection('messages').add({
+                text: text,
+                sender: isFromAdmin ? 'admin' : 'user',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                read: false
+            });
+            this.chatMessage = '';
+        } catch (e) {
+            console.error(e);
+            alert("送信失敗");
+        }
+    },
+
                     async markMessagesAsRead(univId, targetSender) {
                         try {
                             const batch = db.batch();
@@ -2870,6 +3034,7 @@ html, body {
                             console.error("既読更新エラー", e);
                         }
                     },
+
                     initUserUnreadListener() {
                         if (!this.form.univ_id) return;
                         db.collection('chats').doc(String(this.form.univ_id)).collection('messages')
@@ -2878,6 +3043,7 @@ html, body {
                                 this.userHasUnread = !snapshot.empty;
                             });
                     },
+
                     subscribeChat(univId) {
                         if (this.chatUnsubscribe) this.chatUnsubscribe();
                         if (!univId) return;
@@ -2894,6 +3060,7 @@ html, body {
                                 });
                             });
                     },
+
                     async deleteUserMessage(msgId) {
                         if (!this.form.univ_id) return;
                         if (!confirm("削除しますか？")) return;
@@ -2903,6 +3070,7 @@ html, body {
                             console.error(e);
                         }
                     },
+
                     initAdminUnreadListeners() {
                         if (!this.savedRecords) return;
                         this.savedRecords.forEach(rec => {
@@ -2914,6 +3082,7 @@ html, body {
                                 });
                         });
                     },
+
                     openAdminChatModal(rec) {
                         this.adminActiveChatUnivId = rec.univ_id;
                         this.adminChatModal.univName = rec.univ_name;
@@ -2933,6 +3102,7 @@ html, body {
                                 });
                             });
                     },
+
                     async deleteAdminMessage(msgId) {
                         if (!this.adminActiveChatUnivId) return;
                         if (!confirm("削除しますか？")) return;
