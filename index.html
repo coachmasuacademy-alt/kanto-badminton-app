@@ -2568,7 +2568,7 @@ html, body {
 
         <script>
 
-            const GAS_API_URL = "https://script.google.com/macros/s/AKfycbza05_JDYx9jXBJmbrE-qCd0ObXwJrWccSauWbdvqt8JC7M6V2jXBzdIvE8-wVkKrN1Bg/exec";
+            const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwdXPjZ2TD2R-qPte6uyL8SXa9T1lX-DisbZ_h6jDsP078nPpFAs2o3YnkDY1MlADd9_w/exec";
 
             const firebaseConfig = {
                 apiKey: "AIzaSyASxcZep_OpFzc2EML2sUMRuK8rDJXv-cg",
@@ -3407,7 +3407,6 @@ html, body {
                             player_reg: this.entry.player_reg,
                             league_expense: this.entry.league_expense,
                             refund_request: this.entry.refund_request,
-                            news_list: this.newsList,
                             total_cost: this.grandTotal
                         };
 
@@ -4361,41 +4360,101 @@ printSingleID(player) {
                         };
                         process();
                     },
-                    /* ニュース投稿 (addNews) */
-                    addNews() {
-                        if (!this.adminNews.title && !this.adminNews.content) return;
-                        const newMsg = {
-                            date: this.adminNews.date || new Date().toISOString(),
-                            title: this.adminNews.title,
-                            content: this.adminNews.content,
-                            urls: this.adminNews.urls || [] // urls配列を保存
-                        };
-                        this.newsList.unshift(newMsg);
-                        this.saveData(true);
-                        // 初期化
-                        this.adminNews = { date: '', title: '', content: '', urls: [] };
-                    },
 
-                    /* ニュース削除 (deleteNews) */
-                    deleteNews(index) {
-                        if (!confirm("このニュースを削除しますか？")) return;
-                        this.newsList.splice(index, 1);
-                        this.saveData(true);
-                    },
+/* --- ニュース投稿 (addNews) --- */
+                    async addNews() {
+    if (!this.adminNews.title && !this.adminNews.content) return;
+    
+    // 投稿内容の作成
+    const newMsg = {
+        date: this.adminNews.date || new Date().toISOString(),
+        title: this.adminNews.title,
+        content: this.adminNews.content,
+        urls: this.adminNews.urls || [] 
+    };
 
+    // リストの先頭に追加（仮追加）
+    this.newsList.unshift(newMsg);
 
-                    /* 追加登録の新しい枠を追加 (addNewReg) */
-                    addNewReg() {
-                        this.entry.add_reg.push({
-                            id: Date.now(),
-                            date: new Date().toLocaleDateString(),
-                            count: 0,
-                            excel_url: '',
-                            payment_id: this.form.univ_id + '02',
-                            receipt_url: '',
-                            confirmed: false
-                        });
-                    },
+    this.isSaving = true; // 保存中フラグ
+    try {
+        // GASの 'update_news' アクションを直接叩く
+        const payload = {
+            action: 'update_news',
+            news_list: this.newsList
+        };
+        
+        const res = await fetch(GAS_API_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+
+        if (result.status === 'success') {
+            this.saveMessage = "ニュースを公開しました";
+            // フォームの初期化
+            this.adminNews = { date: '', title: '', content: '', urls: [] };
+            setTimeout(() => { this.saveMessage = ''; }, 3000);
+        } else {
+            throw new Error("GAS側の保存に失敗しました");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("保存エラーが発生しました。");
+        // 失敗した場合は、先頭に追加したものを削除して戻す
+        this.newsList.shift();
+    } finally {
+        this.isSaving = false;
+    }
+},
+
+/* --- ニュース削除 (deleteNews) --- */
+async deleteNews(index) {
+    if (!confirm("このニュースを削除しますか？")) return;
+    
+    // 削除前のバックアップ
+    const deletedItem = this.newsList[index];
+    this.newsList.splice(index, 1);
+
+    this.isSaving = true;
+    try {
+        const payload = {
+            action: 'update_news',
+            news_list: this.newsList
+        };
+        
+        const res = await fetch(GAS_API_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+
+        if (result.status === 'success') {
+            this.saveMessage = "ニュースを削除しました";
+            setTimeout(() => { this.saveMessage = ''; }, 3000);
+        } else {
+            throw new Error();
+        }
+    } catch (e) {
+        alert("削除の反映に失敗しました。");
+        this.newsList.splice(index, 0, deletedItem); // 元に戻す
+    } finally {
+        this.isSaving = false;
+    }
+},
+
+/* --- 追加登録の枠追加 (修正なし、そのままでOK) --- */
+addNewReg() {
+    this.entry.add_reg.push({
+        id: Date.now(),
+        date: new Date().toLocaleDateString(),
+        count: 0,
+        excel_url: '',
+        payment_id: this.form.univ_id + '02',
+        receipt_url: '',
+        confirmed: false
+    });
+},
 
                     /* 不備連絡メール送信 (sendAlertEmail) */
                     sendAlertEmail(rec) {
