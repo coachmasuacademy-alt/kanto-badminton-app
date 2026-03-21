@@ -17,6 +17,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 
     <style>
         /* 基本スタイル */
@@ -246,18 +249,20 @@
             border-color: #ffeeba;
         }
 
-       .status-done {
-    background-color: #ff9100 !important; /* 鮮やかなオレンジ */
-    color: black !important;
-    border: 1px solid #e67e00 !important;
-    font-weight: bold;
-}
+        .status-done {
+            background-color: #ff9100 !important;
+            /* 鮮やかなオレンジ */
+            color: black !important;
+            border: 1px solid #e67e00 !important;
+            font-weight: bold;
+        }
 
         .status-pending {
-    background-color: #ffda08 !important; /* 鮮やかな黄色 */
-    color: black !important;
-    border: 1px solid #e0c000 !important;
-}
+            background-color: #ffda08 !important;
+            /* 鮮やかな黄色 */
+            color: black !important;
+            border: 1px solid #e0c000 !important;
+        }
 
 
         .status-payout-done {
@@ -359,79 +364,7 @@
             opacity: 0;
         }
 
-@media print {
-    /* 1. 印刷に不要なナビゲーションやボタンを完全に消去 */
-    .no-print, .btn, .navbar, .menu-list, .save-area, .alert {
-        display: none !important;
-    }
 
-    /* 2. ボディの余白調整 */
-    body {
-        background-color: white !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-
-    /* 3. 支払明細タブを表示している場合の設定 */
-    .main-content-card {
-        border: none !important;
-        box-shadow: none !important;
-    }
-
-    .report-container {
-        border: none !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-        width: 100% !important;
-    }
-
-    /* 4. 領収書モーダルが表示されている場合の設定 */
-    #receiptModal {
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 100% !important;
-        height: auto !important;
-        overflow: visible !important;
-        display: block !important;
-    }
-
-    #receiptModal .modal-dialog {
-        max-width: 100% !important;
-        margin: 0 !important;
-    }
-
-    #receiptModal .modal-content {
-        border: none !important;
-        box-shadow: none !important;
-    }
-
-    /* モーダル背景（黒い透過）を消す */
-    .modal-backdrop {
-        display: none !important;
-    }
-
-    /* 5. 領収書デザインの強制適用 */
-    .receipt-layout {
-        border: 4px double #333 !important;
-        padding: 40px !important;
-        margin: 0 auto !important;
-        background-color: white !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-
-    .hanko-box {
-        opacity: 1 !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-
-    /* 6. 非表示にしていた要素を戻す（visibility: hiddenは使わない） */
-    body * {
-        visibility: visible;
-    }
-}
         .receipt-layout {
             border: 4px double #333;
             padding: 40px;
@@ -581,6 +514,300 @@
         [v-cloak] {
             display: none !important;
         }
+
+        /* ▼▼▼ IDカード生成用スタイル（関東学連版） ▼▼▼ */
+        .id-card-wrapper {
+    position: fixed;
+    top: 0;
+    left: -1000px;   /* 画面の左外に配置 */
+    width: 680px;    /* カードの実寸を指定 */
+    height: 1000px;
+    z-index: -1;
+    overflow: visible; /* はみ出しを許容 */
+}
+
+/* カード本体の書式設定（実寸大） */
+.id-card {
+    width: 680px;
+    height: 1000px;
+    background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #3f51b5 100%);
+    color: white;
+    font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif;
+    position: relative;
+    padding: 40px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-align: center;
+    border: 1px solid #000;
+}
+
+/* 内部の文字サイズ調整 */
+.assoc-name { font-size: 42px; font-weight: 900; margin-bottom: 10px; }
+.card-title-box { background: #ffd700; color: #1a237e; padding: 5px 30px; border-radius: 4px; font-size: 32px; display: inline-block; }
+.univ-name-display { font-size: 48px; margin-bottom: 15px; font-weight: bold; margin-top: 50px;}
+.player-name-display { font-size: 86px; font-weight: bold; margin-bottom: 30px; border-bottom: 2px solid rgba(255,255,255,0.5); width: 90%; padding-bottom: 10px; }
+.id-label { font-size: 24px; color: #ffd700; }
+.id-value { font-size: 54px; font-family: monospace; font-weight: bold; }
+.referee-badge { border: 2px solid #ffd700; padding: 10px 20px; font-size: 28px; color: #ffd700; }
+.valid-date { font-size: 32px; font-weight: bold; }
+
+        .id-card::before {
+            content: "KANTO STUDENT";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 80px;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.05);
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        .card-header-area {
+            border-bottom: 4px solid #ffd700;
+            padding-bottom: 20px;
+        }
+
+        .assoc-name {
+            font-size: 42px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+        }
+
+        .card-title-box {
+            background: #ffd700;
+            color: #1a237e;
+            padding: 5px 30px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 32px;
+            display: inline-block;
+        }
+
+        .card-body-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .univ-name-display {
+            font-size: 48px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .player-name-display {
+            font-size: 86px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.5);
+            width: 90%;
+            padding-bottom: 10px;
+        }
+
+        .id-label {
+            font-size: 24px;
+            color: #ffd700;
+        }
+
+        .id-value {
+            font-size: 54px;
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        .card-footer-area {
+            background: rgba(255, 255, 255, 0.1);
+            margin: 0 -40px -40px -40px;
+            padding: 30px;
+        }
+
+        .footer-info {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .referee-badge {
+            border: 2px solid #ffd700;
+            padding: 10px 20px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .valid-thru {
+            text-align: right;
+        }
+
+        .valid-label {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+
+        .valid-date {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+/* IDカードのプレビュー用隠しエリア（通常は見せない） */
+.id-card-wrapper {
+    position: fixed;
+    top: 0;
+    left: -3000px;
+    display: none; /* 通常時はレンダリング対象から外す */
+}
+
+/* 印刷専用エリア（一括IDカード用）も通常時は非表示 */
+.print-only-area {
+    display: none !important;
+}
+
+/* --- 2. 印刷時専用の設定 --- */
+@media print {
+    @page {
+        size: A4;
+        margin: 0 !important;
+    }
+
+    /* 一旦、body内のすべての要素を非表示にする */
+    body * {
+        visibility: hidden !important;
+    }
+
+html, body {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        height: 100vh !important; /* 画面ぴったり1枚分 */
+        width: 100vw !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important; /* はみ出したものは表示しない */
+        background: #fff !important;
+    }
+
+    /* 3. 領収書レイアウトのみを最優先で表示 */
+    .receipt-layout, .receipt-layout * {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+/* 個別モード(isSinglePrintModeがON)の時、2枚目を作らせない */
+    [data-print-mode="single"] .id-card-print-item {
+        page-break-after: avoid !important;
+        page-break-before: avoid !important;
+        page-break-inside: avoid !important;
+        height: 100vh !important; /* 画面の高さに合わせる */
+    }
+
+    /* 一括印刷(全員分)の時は、1人ごとに改ページする */
+    [data-print-mode="batch"] .id-card-print-item {
+        page-break-after: always !important;
+        height: 297mm !important; /* A4ぴったりの高さ */
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+
+    .receipt-layout {
+        position: relative !important;
+        width: 170mm !important; /* A4(210mm)内に収める */
+        max-height: 250mm !important;
+        border: 4px double #333 !important;
+        padding: 40px !important;
+        background-color: #ffffff !important;
+        box-sizing: border-box !important;
+        z-index: 99999 !important;
+
+        /* 改ページを完全に禁止 */
+        page-break-inside: avoid !important;
+        page-break-after: avoid !important;
+        page-break-before: avoid !important;
+    }
+
+    /* 印刷したい対象エリアとその子要素だけを「表示」にする */
+    /* 1. 支払明細エリア (.report-container) */
+    .report-container, .report-container * {
+        visibility: visible !important;
+    }
+    
+    /* 2. 一括IDカード印刷エリア (.print-only-area) */
+    .print-only-area, .print-only-area * {
+        visibility: visible !important;
+    }
+
+    /* 3. モーダル内の領収書レイアウト (.receipt-layout) */
+    .receipt-layout, .receipt-layout * {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    /* 印刷位置の調整：印刷対象を左上に固定 */
+    .report-container, .print-only-area, .receipt-layout {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        display: block !important;
+        width: 100% !important;
+    }
+
+
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: white !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        height: auto !important;
+    }
+
+    /* 印刷エリア：Gridレイアウトで位置を完全に固定 */
+    .print-only-area {
+        display: block !important; /* flexからblockに変更 */
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 210mm !important;
+        height: auto !important;
+    }
+
+    /* カードの親枠：ここが重要！ */
+    .id-card-print-item {
+        width: 210mm !important; /* A4の横幅いっぱい */
+        height: 297mm !important; /* A4の縦幅いっぱい */
+                      
+        /* 中身を上下左右の中央に配置 */
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        
+        position: relative !important;
+        overflow: hidden !important;
+        box-sizing: border-box;
+    }
+
+    /* IDカード本体：中央で適切なサイズに拡大 */
+    .id-card-print-item .id-card {
+        /* scaleを0.6〜0.7程度にすると、A4の中央で存在感のあるサイズになります */
+        /* ハガキサイズに近い見た目なら 0.55 前後を維持してください */
+        transform: scale(0.65) !important; 
+        transform-origin: center center !important;
+        
+        width: 680px !important;
+        height: 1000px !important;
+        border: 1px solid #000 !important;
+        
+        backface-visibility: hidden;
+    }
+}
+
     </style>
 </head>
 
@@ -657,19 +884,23 @@
                                 class="btn btn-primary w-100 py-2">ログイン</button>
                             <button v-else @click="register" class="btn btn-success w-100 py-2"
                                 :disabled="!!regError || !regForm.univ_id">登録して開始</button>
-<div class="mt-4 pt-3 border-top text-center">
-    <p class="small text-muted mb-1">【システムに関するお問い合わせ】</p>
-    <div class="card bg-light border-0">
-        <div class="card-body py-2 px-3">
-            <p class="mb-1 small">登録システム担当者：升</p>
-            <a href="mailto:yujiro.masu.8d@hosei.ac.jp" class="text-decoration-none small">
-                <i class="bi bi-envelope-at"></i> yujiro.masu.8d@hosei.ac.jp
-            </a>
+                            <div class="mt-4 pt-3 border-top text-center">
+                                <p class="small text-muted mb-1">【システムに関するお問い合わせ】</p>
+                                <div class="card bg-light border-0">
+                                    <div class="card-body py-2 px-3">
+                                        <p class="mb-1 small">登録システム担当者：升</p>
+                                        <a href="mailto:yujiro.masu.8d@hosei.ac.jp" class="text-decoration-none small">
+                                            <i class="bi bi-envelope-at"></i> yujiro.masu.8d@hosei.ac.jp
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
-</div>
-
-                </div></div></div></div><div v-else-if="isAdmin">
+                </div>
+            </div>
+            <div v-else-if="isAdmin">
                 <nav class="navbar navbar-dark bg-dark px-3 mb-3 rounded">
                     <span class="navbar-brand mb-0 h1"><i class="bi bi-speedometer2"></i> 管理者ダッシュボード</span>
                     <div class="d-flex gap-2">
@@ -902,8 +1133,13 @@
             <div v-else>
                 <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom no-print">
                     <div>
-                        <h4 class="m-0 d-inline-block me-3">登録管理システム</h4><span class="badge bg-secondary">{{
-                            form.univ_name }} ({{ genderLabel }})</span>
+                        <h4 class="m-0 d-inline-block me-3">登録管理システム</h4>
+<span class="badge bg-secondary" v-if="form.univ_name">
+    {{ form.univ_name }} ({{ genderLabel }})
+</span>
+<span class="badge bg-danger" v-else>
+    大学名読み込み中...
+</span>
                     </div>
                     <div><span class="me-3 small text-muted">{{ user ? user.email : '' }}</span><button @click="logout"
                             class="btn btn-outline-danger btn-sm">ログアウト</button></div>
@@ -1618,23 +1854,32 @@
 
                                 <div v-if="activeTab === 'player_reg'">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <h4 class="text-primary fw-bold"><i class="bi bi-people-fill"></i> ① 選手登録　</h4>
+                                        <h4 class="text-primary fw-bold"><i class="bi bi-people-fill"></i> ① 選手登録</h4>
+
+                                        <button class="btn btn-dark btn-sm fw-bold shadow-sm"
+                                            @click="printAllPlayerCards" v-if="entry.player_reg.some(p => p.name)">
+                                            <i class="bi bi-printer"></i> 全員一括印刷
+                                        </button>
                                     </div>
+
                                     <div class="alert alert-light border small"><i class="bi bi-info-circle"></i>
-                                        必要な人数分を入力し、各選手の「会員証画像」をアップロードしてください。</div>
+                                        必要な人数分を入力し、各選手の「有効期限2027年3月31日の会員証画像」をアップロードしてください。
+                                        <br><span class="text-primary">※氏名を入力すると「ID証」の書き出しが可能になります。</span>
+                                    </div>
 
                                     <div class="table-responsive shadow-sm border rounded mb-3 bg-white">
                                         <table
                                             class="table table-bordered table-striped table-hover align-middle mb-0 text-nowrap"
-                                            style="min-width: 800px;">
+                                            style="min-width: 900px;">
                                             <thead class="table-dark">
                                                 <tr class="text-center small">
                                                     <th style="width: 5%">No.</th>
-                                                    <th style="width: 20%">氏名</th>
-                                                    <th style="width: 20%">フリガナ</th>
+                                                    <th style="width: 15%">氏名</th>
+                                                    <th style="width: 15%">フリガナ</th>
                                                     <th style="width: 15%">会員番号</th>
                                                     <th style="width: 10%">3級審判</th>
-                                                    <th style="width: 25%">会員証画像</th>
+                                                    <th style="width: 20%">会員証画像</th>
+                                                    <th style="width: 10%">ID証</th>
                                                     <th style="width: 5%">削除</th>
                                                 </tr>
                                             </thead>
@@ -1675,6 +1920,14 @@
                                                                     @change="uploadPlayerReceipt($event, index)">
                                                             </label>
                                                         </div>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <button class="btn btn-xs btn-outline-dark py-0" 
+                    style="font-size:0.7rem; height: 24px;" 
+                    @click="printSingleID(player)"
+                    type="button">
+                <i class="bi bi-printer"></i> 印刷
+            </button>
                                                     </td>
                                                     <td class="text-center">
                                                         <button class="btn btn-sm btn-outline-danger border-0"
@@ -1785,9 +2038,9 @@
 
                                 <div v-if="activeTab === 'settlement'">
                                     <div class="d-flex justify-content-between align-items-center mb-4 no-print">
-                                        <h4><i class="bi bi-file-earmark-spreadsheet-fill"></i> ⑫ 支払明細</h4><button
-                                            onclick="window.print()" class="btn btn-dark"><i class="bi bi-printer"></i>
-                                            印刷 / PDF保存</button>
+                                        <h4><i class="bi bi-file-earmark-spreadsheet-fill"></i> ⑫ 支払明細</h4><button @click="downloadSettlementPDF" class="btn btn-dark">
+    <i class="bi bi-file-earmark-pdf"></i> PDFダウンロード
+</button>
                                     </div>
                                     <div class="report-container">
                                         <h3 class="text-center mb-4">令和7年度 関東学生バドミントン連盟 支払明細</h3>
@@ -2103,9 +2356,12 @@
                         </div>
                     </div>
                     <div class="modal-footer py-1">
-                        <button type="button" class="btn btn-sm btn-secondary" @click="detailModal.show = false">閉じる</button>
+                        <button type="button" class="btn btn-sm btn-secondary"
+                            @click="detailModal.show = false">閉じる</button>
                     </div>
-</div> </div> </div>
+                </div>
+            </div>
+        </div>
         <div v-if="receiptData.show" class="modal fade show d-block" id="receiptModal" tabindex="-1"
             style="background: rgba(0,0,0,0.5);">
             <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -2172,12 +2428,19 @@
                         </div>
                     </div>
                     <div class="modal-footer"><button type="button" class="btn btn-secondary"
-                            @click="receiptData.show = false">閉じる</button><button type="button" class="btn btn-primary"
-                            onclick="window.print()"><i class="bi bi-printer"></i> 印刷 / PDF保存</button></div>
+                            @click="receiptData.show = false">閉じる</button>
+
+<button type="button" class="btn btn-primary" @click="downloadReceiptPDF">
+    <i class="bi bi-file-earmark-pdf"></i> PDFダウンロード
+</button>
+</div>
                 </div>
             </div>
+
             <div v-if="modal.show" class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
                 <div class="modal-dialog modal-lg modal-dialog-centered">
+
+
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">{{ modal.univName }} - {{ getCategoryName(modal.category) }}</h5>
@@ -2186,29 +2449,125 @@
                         <div class="modal-body text-center bg-light">
                             <div v-if="modal.url">
                                 <div v-if="modal.url.includes('.xlsx') || modal.url.includes('.xls')">
-                                    <div class="py-5"><i class="bi bi-file-earmark-excel fs-1 text-success"></i>
-                                        <p class="mt-3">Excelファイルが添付されています</p><a :href="modal.url" target="_blank"
-                                            class="btn btn-success"><i class="bi bi-download"></i> ファイルを開く / ダウンロード</a>
+                                    <div class="py-5">
+                                        <i class="bi bi-file-earmark-excel fs-1 text-success"></i>
+                                        <p class="mt-3">Excelファイルが添付されています</p>
+                                        <a :href="modal.url" target="_blank" class="btn btn-success">
+                                            <i class="bi bi-download"></i> ファイルを開く
+                                        </a>
                                     </div>
                                 </div>
-                                <div v-else><img :src="modal.url" class="receipt-modal-img"></div>
+                                <div v-else>
+                                    <img :src="modal.url" class="receipt-modal-img">
+                                </div>
                             </div>
-                            <div v-else class="py-5 text-muted">ファイルはありません。<br><span
-                                    v-if="modal.targetRecord && modal.targetRecord[modal.category] && modal.targetRecord[modal.category].rawObj">申請額:
-                                    {{ formatMoney(modal.targetRecord[modal.category].rawObj.amount) }}</span></div>
+                            <div v-else class="py-5 text-muted">
+                                ファイルはありません。
+                            </div>
                         </div>
                         <div class="modal-footer justify-content-between">
-    <div>
-        <a v-if="modal.url" :href="modal.url" target="_blank"
-            class="btn btn-outline-primary btn-sm">
-            <i class="bi bi-box-arrow-up-right"></i> 元ファイルを表示
-        </a>
-    </div>
-    <div class="d-flex gap-2">
-        <button type="button" class="btn btn-secondary" @click="closeModal">閉じる</button>
-    </div>
+                            <a v-if="modal.url" :href="modal.url" target="_blank"
+                                class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-box-arrow-up-right"></i> 元ファイルを表示
+                            </a>
+                            <button type="button" class="btn btn-secondary" @click="closeModal">閉じる</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 </div>
+             <div v-if="user || isAdmin">
+            <div class="id-card-wrapper">
+                <div id="idCardCanvas" class="id-card">
+                    <div class="card-header-area">
+                        <div class="assoc-name">関東学生バドミントン連盟</div>
+                        <div class="card-title-box">選手登録証 2026</div>
+                    </div>
+                    <div class="card-body-area">
+                        <div class="univ-name-display">{{ form.univ_name }}</div>
+                        <div class="player-name-display">{{ printPlayer.name }}</div>
+                        <div class="meta-info">
+                            <div class="id-label">MEMBER ID</div>
+                            <div class="id-value">{{ printPlayer.member_id || '---------' }}</div>
+                        </div>
+                    </div>
+                    <div class="card-footer-area">
+                        <div class="footer-info">
+                            <div v-if="selectedPlayerForPrint.is_referee === '有'" class="referee-badge">公認3級審判員</div>
+                            <div v-else style="width:100px"></div>
+                            <div class="valid-thru">
+                                <div class="valid-label">VALID THRU</div>
+                                <div class="valid-date">2027.03.31</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="user || isAdmin">
+    
+    <div class="print-only-area" v-if="!receiptData.show && !isSinglePrintMode">
+        <template v-for="(p, index) in entry.player_reg" :key="'all-'+index">
+            <div class="id-card-print-item" v-if="p && p.name && p.name.trim() !== ''">
+                <div class="id-card">
+                    <div class="card-header-area">
+                        <div class="assoc-name">関東学生バドミントン連盟</div>
+                        <div class="card-title-box">選手登録証 2026</div>
+                    </div>
+                    <div class="card-body-area">
+                        <div class="univ-name-display">{{ form.univ_name }}</div>
+                        <div class="player-name-display">{{ p.name }}</div>
+                        <div class="meta-info">
+                            <div class="id-label">MEMBER ID</div>
+                            <div class="id-value">{{ p.member_id || '---------' }}</div>
+                        </div>
+                    </div>
+                    <div class="card-footer-area">
+                        <div class="footer-info">
+                            <div v-if="p.is_referee === '有'" class="referee-badge">公認3級審判員</div>
+                            <div v-else style="width:100px"></div>
+                            <div class="valid-thru">
+                                <div class="valid-label">VALID THRU</div>
+                                <div class="valid-date">2027.03.31</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <div class="print-only-area" v-if="isSinglePrintMode" data-print-mode="single">
+        <div class="id-card-print-item">
+            <div class="id-card">
+                <div class="card-header-area">
+                    <div class="assoc-name">関東学生バドミントン連盟</div>
+                    <div class="card-title-box">選手登録証 2026</div>
+                </div>
+                <div class="card-body-area">
+                    <div class="univ-name-display">{{ form.univ_name }}</div>
+                    <div class="player-name-display">{{ selectedPlayerForPrint.name }}</div>
+                    <div class="meta-info">
+                        <div class="id-label">MEMBER ID</div>
+                        <div class="id-value">{{ selectedPlayerForPrint.member_id || '---------' }}</div>
+                    </div>
+                </div>
+                <div class="card-footer-area">
+                    <div class="footer-info">
+                        <div v-if="selectedPlayerForPrint.is_referee === '有'" class="referee-badge">公認3級審判員</div>
+                        <div v-else style="width:100px"></div>
+                        <div class="valid-thru">
+                            <div class="valid-label">VALID THRU</div>
+                            <div class="valid-date">2027.03.31</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
         <script>
+
             const GAS_API_URL = "https://script.google.com/macros/s/AKfycbza05_JDYx9jXBJmbrE-qCd0ObXwJrWccSauWbdvqt8JC7M6V2jXBzdIvE8-wVkKrN1Bg/exec";
 
             const firebaseConfig = {
@@ -2230,10 +2589,10 @@
             createApp({
                 data() {
                     return {
-                        user: null, isAdmin: false, authEmail: '', authPass: '', authName: '', isRegisterMode: false, regGender: '1',
+                        user: null, isAdmin: false, printPlayer: {}, authEmail: '', authPass: '', authName: '', isRegisterMode: false, regGender: '1',
                         regForm: { univ_id: '' }, regError: '', regUnivName: '', searchQuery: '',
                         isLoading: false, isSaving: false, isUploading: false,
-                        masterData: [], savedRecords: [], newsList: [], activeTab: 'home',
+                        masterData: [], savedRecords: [], newsList: [], activeTab: 'home',selectedPlayerForPrint: {},isSinglePrintMode: false,
 
                         // --- チャット関連 ---
                         chatMessage: '',
@@ -2378,19 +2737,22 @@
 
                     // 1. ユーザー状態の監視（既存の処理）
                     firebase.auth().onAuthStateChanged(u => {
-                        this.user = u;
-                        if (u && this.savedRecords.length > 0) {
-                            this.initUserData(u.email);
-                            // 管理者メールアドレス判定
-                            if (u.email === ADMIN_ID) {
-                                this.isAdmin = true;
-                                this.initAdminUnreadListeners();
-                            } else {
-                                this.isAdmin = false;
-                                setTimeout(() => this.initUserUnreadListener(), 1000);
-                            }
-                        }
-                    });
+    this.user = u;
+    if (u) {
+        // 管理者判定
+        if (u.email === ADMIN_ID) {
+            this.isAdmin = true;
+            if (this.savedRecords.length > 0) this.initAdminUnreadListeners();
+        } else {
+            this.isAdmin = false;
+            // データが既にある場合のみ初期化。ない場合は後の.then()で実行される
+            if (this.savedRecords.length > 0) {
+                this.initUserData(u.email);
+                setTimeout(() => this.initUserUnreadListener(), 1000);
+            }
+        }
+    }
+});
 
                     // 2. データの取得 (GAS API)
                     fetch(GAS_API_URL + "?t=" + new Date().getTime())
@@ -2642,22 +3004,22 @@
                     },
 
                     openReceipt(category) {
-    // 常に最新のrawObjからデータを取得する
-    const raw = this.entry[category].rawObj || this.entry[category];
-    
-    // 金額を再計算（最新の画面入力値を反映）
-    const amount = this.calculateCategoryTotal(category);
-    
-    if (amount <= 0) {
-        alert("金額が0円のため発行できません");
-        return;
-    }
-    
-    this.receiptData.amount = amount;
-    this.receiptData.title = `令和7年度 ${this.getCategoryName(category)} 参加費等`;
-    this.receiptData.show = true;
-    
-    },
+                        // 常に最新のrawObjからデータを取得する
+                        const raw = this.entry[category].rawObj || this.entry[category];
+
+                        // 金額を再計算（最新の画面入力値を反映）
+                        const amount = this.calculateCategoryTotal(category);
+
+                        if (amount <= 0) {
+                            alert("金額が0円のため発行できません");
+                            return;
+                        }
+
+                        this.receiptData.amount = amount;
+                        this.receiptData.title = `令和7年度 ${this.getCategoryName(category)} 参加費等`;
+                        this.receiptData.show = true;
+
+                    },
                     openReceiptArray(index) {
                         const item = this.entry.add_reg[index];
                         const amount = (item.count || 0) * 4000;
@@ -2919,8 +3281,24 @@
 
                     // --- データ初期化 ---
                     initUserData(em) {
-                        const d = this.savedRecords.find(r => r.email === em);
-                        if (!d) return;
+    if (!em || em.trim().toLowerCase() === ADMIN_ID.toLowerCase()) {
+                            console.log("管理者ログインのため、大学データの個別読み込みをスキップします。");
+                            return;
+                        }
+
+    // ログイン中のメールアドレスをきれいに掃除（小文字化 ＋ 空白除去）
+    const loginEmail = em.trim().toLowerCase();
+
+    // 保存されている全データから一致するものを探す
+    const d = this.savedRecords.find(r => {
+        if (!r.email) return false;
+        return r.email.trim().toLowerCase() === loginEmail;
+    });
+
+    if (!d) {
+        console.warn("スプレッドシート内に一致するメールアドレスが見つかりません:", loginEmail);
+        return;
+    }
 
                         // 1. 基本情報のセット
                         this.form.univ_id = d.univ_id;
@@ -3004,43 +3382,56 @@
 
                     // --- データ保存 ---
                     saveDataPayload(password = null) {
-    // --- 追加：データのクリーニング処理 ---
-    // ID、氏名、メールから改行や不要な空白を完全に取り除きます
-    const cleanUnivId = String(this.form.univ_id || '').replace(/[\r\n\s]/g, "").trim();
-    const cleanUserName = String(this.form.user_name || '').replace(/[\r\n]/g, "").trim();
-    const cleanEmail = String(this.user ? this.user.email : '').replace(/[\r\n]/g, "").trim();
+                        // --- 追加：データのクリーニング処理 ---
+                        // ID、氏名、メールから改行や不要な空白を完全に取り除きます
+                        const cleanUnivId = String(this.form.univ_id || '').replace(/[\r\n\s]/g, "").trim();
+                        const cleanUserName = String(this.form.user_name || '').replace(/[\r\n]/g, "").trim();
+                        const cleanEmail = String(this.user ? this.user.email : '').replace(/[\r\n]/g, "").trim();
 
-    const p = {
-        univ_id: cleanUnivId,      // 綺麗にしたIDを使用
-        email: cleanEmail,        // 綺麗にしたメールを使用
-        univ_name: this.form.univ_name,
-        user_name: cleanUserName, // 綺麗にした氏名を使用
-        division: this.form.division,
-        memo: this.memo,
-        reg_fee: this.entry.reg_fee,
-        add_reg: this.entry.add_reg,
-        spring_league: this.entry.spring_league,
-        kanto_champ: this.entry.kanto_champ,
-        east_japan: this.entry.east_japan,
-        autumn_league: this.entry.autumn_league,
-        all_japan_champ: this.entry.all_japan_champ,
-        all_japan_team: this.entry.all_japan_team,
-        rookie: this.entry.rookie,
-        player_reg: this.entry.player_reg,
-        league_expense: this.entry.league_expense,
-        refund_request: this.entry.refund_request,
-        news_list: this.newsList,
-        total_cost: this.grandTotal
-    };
+                        const p = {
+                            univ_id: cleanUnivId,      // 綺麗にしたIDを使用
+                            email: cleanEmail,        // 綺麗にしたメールを使用
+                            univ_name: this.form.univ_name,
+                            user_name: cleanUserName, // 綺麗にした氏名を使用
+                            division: this.form.division,
+                            memo: this.memo,
+                            reg_fee: this.entry.reg_fee,
+                            add_reg: this.entry.add_reg,
+                            spring_league: this.entry.spring_league,
+                            kanto_champ: this.entry.kanto_champ,
+                            east_japan: this.entry.east_japan,
+                            autumn_league: this.entry.autumn_league,
+                            all_japan_champ: this.entry.all_japan_champ,
+                            all_japan_team: this.entry.all_japan_team,
+                            rookie: this.entry.rookie,
+                            player_reg: this.entry.player_reg,
+                            league_expense: this.entry.league_expense,
+                            refund_request: this.entry.refund_request,
+                            news_list: this.newsList,
+                            total_cost: this.grandTotal
+                        };
 
-    if (password) {
-        p.password = password;
-    }
+                        if (password) {
+                            p.password = password;
+                        }
 
-    return fetch(GAS_API_URL, {
-        method: 'POST',
-        body: JSON.stringify(p)
-    }).then(r => r.json());
+                        return fetch(GAS_API_URL, {
+                            method: 'POST',
+                            body: JSON.stringify(p)
+                        }).then(r => r.json());
+                    },
+
+printSingleID(player) {
+    this.isSinglePrintMode = true; // 個別モードをON
+    this.selectedPlayerForPrint = player;
+    
+    this.$nextTick(() => {
+        // HTMLが更新されてから印刷ダイアログを表示
+        window.print();
+        // ダイアログを閉じたらモードをリセット
+        // (ダイアログが開いている間はJSが止まるのでこれでOK)
+        this.isSinglePrintMode = false;
+    });
 },
 
                     saveData(isSilent = false, password = null) {
@@ -3330,22 +3721,22 @@
 
                         const detailText = details.length > 0 ? details.join('\n') : "内訳なし";
                         const parseCat = (obj, key) => {
-    const raw = obj.rawObj || obj;
+                            const raw = obj.rawObj || obj;
 
-    // 振込明細画像(receipt_url)が本当にあるかチェック
-    const hasImage = !!(raw.receipt_url && raw.receipt_url.trim() !== "");
-    
-    // Excelファイルがあるか
-    const hasExcel = !!(raw.excel_url || raw.excel_url_apply || raw.excel_url_reg);
+                            // 振込明細画像(receipt_url)が本当にあるかチェック
+                            const hasImage = !!(raw.receipt_url && raw.receipt_url.trim() !== "");
 
-    return {
-        hasPaymentId: !!raw.payment_id,
-        hasReceipt: hasImage, // 今回のご要望に合わせ「画像があるか」を主軸にします
-        receiptUrl: raw.receipt_url || raw.excel_url || raw.excel_url_apply || raw.excel_url_reg,
-        paymentId: raw.payment_id,
-        rawObj: raw
-    };
-};
+                            // Excelファイルがあるか
+                            const hasExcel = !!(raw.excel_url || raw.excel_url_apply || raw.excel_url_reg);
+
+                            return {
+                                hasPaymentId: !!raw.payment_id,
+                                hasReceipt: hasImage, // 今回のご要望に合わせ「画像があるか」を主軸にします
+                                receiptUrl: raw.receipt_url || raw.excel_url || raw.excel_url_apply || raw.excel_url_reg,
+                                paymentId: raw.payment_id,
+                                rawObj: raw
+                            };
+                        };
 
                         return {
                             univ_id: raw.univ_id,
@@ -3367,11 +3758,11 @@
 
                             // player_reg: 配列なのでそのまま保持
                             player_reg: {
-    // 1人でも名前が入っていれば「確認済み」の状態として扱う
-    confirmed: Array.isArray(pReg) && pReg.some(p => p.name && p.name.trim() !== ""),
-    rawObj: pReg,
-    hasReceipt: Array.isArray(pReg) && pReg.some(p => p.receipt_url)
-},
+                                // 1人でも名前が入っていれば「確認済み」の状態として扱う
+                                confirmed: Array.isArray(pReg) && pReg.some(p => p.name && p.name.trim() !== ""),
+                                rawObj: pReg,
+                                hasReceipt: Array.isArray(pReg) && pReg.some(p => p.receipt_url)
+                            },
                             league_expense: {
                                 confirmed: !!lExp.confirmed,
                                 rawObj: lExp,
@@ -3389,46 +3780,48 @@
                     },
 
                     getAdminStatusClass(cat, key) {
-    // ⑩経費申請・⑪返金申請
-    if (['league_expense', 'refund_request'].includes(key)) {
-        const raw = cat.rawObj || {};
-        const hasFile = !!(raw.excel_url || raw.excel_url_autumn);
-        return hasFile ? 'status-done' : 'status-none'; 
-    }
+                        // ⑩経費申請・⑪返金申請
+                        if (['league_expense', 'refund_request'].includes(key)) {
+                            const raw = cat.rawObj || {};
+                            const hasFile = !!(raw.excel_url || raw.excel_url_autumn);
+                            return hasFile ? 'status-done' : 'status-none';
+                        }
 
-    // ①選手登録の判定
-    if (key === 'player_reg') {
-        const list = Array.isArray(cat.rawObj) ? cat.rawObj : [];
-        // 「名前」が入力されている選手が1人でもいれば「完了（オレンジ）」、いなければ「未完了（黄色）」
-        const hasData = list.some(p => p.name && p.name.trim() !== "");
-        return hasData ? 'status-done' : 'status-pending'; 
-    }
+                        // ①選手登録の判定
+                        if (key === 'player_reg') {
+                            const list = Array.isArray(cat.rawObj) ? cat.rawObj : [];
+                            // 「名前」が入力されている選手が1人でもいれば「完了（オレンジ）」、いなければ「未完了（黄色）」
+                            const hasData = list.some(p => p.name && p.name.trim() !== "");
+                            return hasData ? 'status-done' : 'status-pending';
+                        }
 
-    // ②〜⑨共通：画像があればオレンジ（振込済）、なければ黄色（確認）
-    if (cat.hasReceipt) {
-        return 'status-done'; 
-    }
-    if (cat.hasPaymentId) {
-        return 'status-pending'; 
-    }
+                        // ②〜⑨共通：画像があればオレンジ（振込済）、なければ黄色（確認）
+                        if (cat.hasReceipt) {
+                            return 'status-done';
+                        }
+                        if (cat.hasPaymentId) {
+                            return 'status-pending';
+                        }
 
-    return 'status-none'; 
-},
+                        return 'status-none';
+                    },
 
                     getAdminButtonText(cat, key) {
-    if (key === 'player_reg') {
-        const list = Array.isArray(cat.rawObj) ? cat.rawObj : [];
-        // データがあれば人数を表示（背景はオレンジになる）、なければ「確認」（背景は黄色になる）
-        return list.length > 0 ? `${list.length}名` : '確認';
-    }
-    // 画像があれば「振込済」、なければ「確認」
-    return cat.hasReceipt ? '振込済' : '確認';
-},
+                        if (key === 'player_reg') {
+                            const list = Array.isArray(cat.rawObj) ? cat.rawObj : [];
+                            // データがあれば人数を表示（背景はオレンジになる）、なければ「確認」（背景は黄色になる）
+                            return list.length > 0 ? `${list.length}名` : '確認';
+                        }
+
+
+                        // 画像があれば「振込済」、なければ「確認」
+                        return cat.hasReceipt ? '振込済' : '確認';
+                    },
 
                     getAdminButtonClass(cat, key) {
-    // 緑背景（status-done）の時は白文字、オレンジ背景（status-pending）の時も白文字で見やすく
-    return 'text-white fw-bold';
-},
+                        // 緑背景（status-done）の時は白文字、オレンジ背景（status-pending）の時も白文字で見やすく
+                        return 'text-white fw-bold';
+                    },
 
                     toggleApprovalArray(isApprove) {
                         const item = this.modal.subRecord;
@@ -3460,122 +3853,122 @@
                     },
 
                     async toggleApproval(isApprove) {
-    const rec = this.modal.targetRecord;
-    const cat = this.modal.category;
-    
-    if (!confirm(isApprove ? "承認済みにしますか？" : "承認を取り消しますか？")) return;
+                        const rec = this.modal.targetRecord;
+                        const cat = this.modal.category;
 
-    // 命令（IDとカテゴリ）だけを送る
-    const payload = {
-        action: 'update_status',
-        univ_id: rec.univ_id,
-        category: cat,
-        isApprove: isApprove
-    };
+                        if (!confirm(isApprove ? "承認済みにしますか？" : "承認を取り消しますか？")) return;
 
-    try {
-        const response = await fetch(GAS_API_URL, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
-        const resData = await response.json();
+                        // 命令（IDとカテゴリ）だけを送る
+                        const payload = {
+                            action: 'update_status',
+                            univ_id: rec.univ_id,
+                            category: cat,
+                            isApprove: isApprove
+                        };
 
-        if (resData.status === 'success') {
-            // スプレッドシート側の更新が成功したら、画面上の表示を切り替える
-            rec[cat].confirmed = isApprove;
-            if (rec[cat].rawObj) rec[cat].rawObj.confirmed = isApprove;
-            
-            this.modal.show = false;
-            alert("更新しました");
-        } else {
-            alert("更新に失敗しました。");
-        }
-    } catch (e) {
-        console.error(e);
-        alert("通信エラーが発生しました。");
-    }
-},
+                        try {
+                            const response = await fetch(GAS_API_URL, {
+                                method: 'POST',
+                                body: JSON.stringify(payload)
+                            });
+                            const resData = await response.json();
+
+                            if (resData.status === 'success') {
+                                // スプレッドシート側の更新が成功したら、画面上の表示を切り替える
+                                rec[cat].confirmed = isApprove;
+                                if (rec[cat].rawObj) rec[cat].rawObj.confirmed = isApprove;
+
+                                this.modal.show = false;
+                                alert("更新しました");
+                            } else {
+                                alert("更新に失敗しました。");
+                            }
+                        } catch (e) {
+                            console.error(e);
+                            alert("通信エラーが発生しました。");
+                        }
+                    },
 
                     saveTargetRecord(rec) {
-    // 1. スプレッドシートの元の行データをコピー
-    const payload = { ...rec.raw_data };
+                        // 1. スプレッドシートの元の行データをコピー
+                        const payload = { ...rec.raw_data };
 
-    // 2. 保存すべき各キー（reg_fee, player_reg等）をループ処理
-    this.adminStatusKeys.forEach(key => {
-        let dataToSave = null;
+                        // 2. 保存すべき各キー（reg_fee, player_reg等）をループ処理
+                        this.adminStatusKeys.forEach(key => {
+                            let dataToSave = null;
 
-        if (key === 'add_reg') {
-            dataToSave = rec.add_reg; 
-        } else if (key === 'player_reg') {
-            dataToSave = rec.player_reg.rawObj || [];
-        } else if (rec[key]) {
-            // rawObj（生データ）があればそれを使う。なければオブジェクト自体を使う。
-            dataToSave = rec[key].rawObj || rec[key];
-        }
+                            if (key === 'add_reg') {
+                                dataToSave = rec.add_reg;
+                            } else if (key === 'player_reg') {
+                                dataToSave = rec.player_reg.rawObj || [];
+                            } else if (rec[key]) {
+                                // rawObj（生データ）があればそれを使う。なければオブジェクト自体を使う。
+                                dataToSave = rec[key].rawObj || rec[key];
+                            }
 
-        // --- 重要：二重シリアライズとProxyの除去ロジック ---
-        if (dataToSave) {
-            // もしデータがすでに文字列（"{...}"）なら、一度オブジェクトに戻す
-            if (typeof dataToSave === 'string') {
-                try {
-                    const trimmed = dataToSave.trim();
-                    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-                        dataToSave = JSON.parse(trimmed);
-                    }
-                } catch (e) { console.error("Parse error in save:", key); }
-            }
-            
-            // Vue 3のProxy（監視オブジェクト）を純粋な連想配列（JSON）に変換する
-            // これにより "0","1","2" とバラバラになるのを防ぎます
-            try {
-                dataToSave = JSON.parse(JSON.stringify(dataToSave));
-            } catch (e) {
-                dataToSave = {};
-            }
-        }
+                            // --- 重要：二重シリアライズとProxyの除去ロジック ---
+                            if (dataToSave) {
+                                // もしデータがすでに文字列（"{...}"）なら、一度オブジェクトに戻す
+                                if (typeof dataToSave === 'string') {
+                                    try {
+                                        const trimmed = dataToSave.trim();
+                                        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                                            dataToSave = JSON.parse(trimmed);
+                                        }
+                                    } catch (e) { console.error("Parse error in save:", key); }
+                                }
 
-        // スプレッドシート送信用に、最後に一度だけJSON文字列にする
-        payload[key] = JSON.stringify(dataToSave || {});
-    });
+                                // Vue 3のProxy（監視オブジェクト）を純粋な連想配列（JSON）に変換する
+                                // これにより "0","1","2" とバラバラになるのを防ぎます
+                                try {
+                                    dataToSave = JSON.parse(JSON.stringify(dataToSave));
+                                } catch (e) {
+                                    dataToSave = {};
+                                }
+                            }
 
-    // 数値や文字列データを確実にセット
-    payload.total_cost = Number(rec.total_cost) || 0;
-    payload.memo = rec.memo || "";
-    // 管理者が上書きした際にメールアドレスが管理者のものに変わらないように固定
-    payload.email = rec.raw_data.email; 
+                            // スプレッドシート送信用に、最後に一度だけJSON文字列にする
+                            payload[key] = JSON.stringify(dataToSave || {});
+                        });
 
-    return fetch(GAS_API_URL, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-    })
-    .then(r => r.json())
-    .catch(e => {
-        console.error("Save Error:", e);
-        alert("スプレッドシートの保存に失敗しました。");
-    });
-},
+                        // 数値や文字列データを確実にセット
+                        payload.total_cost = Number(rec.total_cost) || 0;
+                        payload.memo = rec.memo || "";
+                        // 管理者が上書きした際にメールアドレスが管理者のものに変わらないように固定
+                        payload.email = rec.raw_data.email;
 
-approveFromDetail(isApprove = true) {
-            const rec = this.detailModal.record;
-            const cat = this.detailModal.key;
+                        return fetch(GAS_API_URL, {
+                            method: 'POST',
+                            body: JSON.stringify(payload)
+                        })
+                            .then(r => r.json())
+                            .catch(e => {
+                                console.error("Save Error:", e);
+                                alert("スプレッドシートの保存に失敗しました。");
+                            });
+                    },
 
-            const msg = isApprove ? "この内容で承認しますか？" : "承認を取り消しますか？";
-            if (!confirm(msg)) return;
+                    approveFromDetail(isApprove = true) {
+                        const rec = this.detailModal.record;
+                        const cat = this.detailModal.key;
 
-            // 1. 表示用のフラグを更新
-            rec[cat].confirmed = isApprove;
+                        const msg = isApprove ? "この内容で承認しますか？" : "承認を取り消しますか？";
+                        if (!confirm(msg)) return;
 
-            // 2. 保存用の生データ(rawObj)内のフラグも更新
-            if (rec[cat].rawObj) {
-                rec[cat].rawObj.confirmed = isApprove;
-            }
+                        // 1. 表示用のフラグを更新
+                        rec[cat].confirmed = isApprove;
 
-            // 3. 保存実行
-            this.saveTargetRecord(rec).then(() => {
-                alert("更新しました");
-                this.detailModal.show = false; // モーダルを閉じる
-            });
-        }, // 次のメソッドがある場合はここにもカンマが必要です
+                        // 2. 保存用の生データ(rawObj)内のフラグも更新
+                        if (rec[cat].rawObj) {
+                            rec[cat].rawObj.confirmed = isApprove;
+                        }
+
+                        // 3. 保存実行
+                        this.saveTargetRecord(rec).then(() => {
+                            alert("更新しました");
+                            this.detailModal.show = false; // モーダルを閉じる
+                        });
+                    }, // 次のメソッドがある場合はここにもカンマが必要です
 
                     showReceipt(record, catKey, subItem = null) {
                         this.modal.univName = record.univ_name;
@@ -3617,8 +4010,8 @@ approveFromDetail(isApprove = true) {
                             univName: rec.univ_name,
                             loading: false,
                             parsedData: [],
-key: key,      // カテゴリ名（reg_feeなど）
-        record: rec    // レコード本体
+                            key: key,      // カテゴリ名（reg_feeなど）
+                            record: rec    // レコード本体
                         };
 
                         if (key === 'reg_fee') {
@@ -3642,14 +4035,14 @@ key: key,      // カテゴリ名（reg_feeなど）
                             this.detailModal.data = rec.add_reg;
 
                         } else if (key === 'player_reg') {
-    this.detailModal.parsedData = Array.isArray(raw) ? raw.map((p, i) => ({
-        "No": i + 1,
-        "氏名": p.name,
-        "フリガナ": p.kana,
-        "会員番号": p.member_id,
-        "3級審判": p.is_referee,
-        "画像": p.receipt_url // ← 文字列ではなくURLをそのまま渡す
-    })) : [];
+                            this.detailModal.parsedData = Array.isArray(raw) ? raw.map((p, i) => ({
+                                "No": i + 1,
+                                "氏名": p.name,
+                                "フリガナ": p.kana,
+                                "会員番号": p.member_id,
+                                "3級審判": p.is_referee,
+                                "画像": p.receipt_url // ← 文字列ではなくURLをそのまま渡す
+                            })) : [];
                             if (this.detailModal.parsedData.length === 0) {
                                 this.detailModal.type = 'simple';
                                 this.detailModal.data = "登録データなし";
@@ -3714,162 +4107,162 @@ key: key,      // カテゴリ名（reg_feeなど）
                     },
 
                     downloadAllCSV() {
-    // CSVのヘッダー：経理処理に必要な項目を列挙
-    let csv = "\uFEFF大学ID,大学名,部,代表者名,合計請求額," +
-              "②連盟登録費,④関東選手権,⑤東日本,⑥秋季リーグ,⑦インカレ,⑧大学対抗戦,⑨新人戦,備考・メモ\n";
-    
-    this.filteredAdminRecords.forEach(r => {
-        // 各項目の金額を計算（未入力なら0）
-        const regFee = this.calculateCategoryTotalForCSV(r, 'reg_fee');
-        const kanto = this.calculateCategoryTotalForCSV(r, 'kanto_champ');
-        const east = this.calculateCategoryTotalForCSV(r, 'east_japan');
-        const autumn = this.calculateCategoryTotalForCSV(r, 'autumn_league');
-        const allJapan = this.calculateCategoryTotalForCSV(r, 'all_japan_champ');
-        const teamMatch = this.calculateCategoryTotalForCSV(r, 'all_japan_team');
-        const rookie = this.calculateCategoryTotalForCSV(r, 'rookie');
+                        // CSVのヘッダー：経理処理に必要な項目を列挙
+                        let csv = "\uFEFF大学ID,大学名,部,代表者名,合計請求額," +
+                            "②連盟登録費,④関東選手権,⑤東日本,⑥秋季リーグ,⑦インカレ,⑧大学対抗戦,⑨新人戦,備考・メモ\n";
 
-        // メモの改行をスペースに置換
-        const cleanMemo = r.memo ? r.memo.replace(/[\r\n]/g, " ") : "";
-        
-        const row = [
-            r.univ_id,
-            `"${r.univ_name}"`,
-            `"${r.division}部"`,
-            `"${r.raw_data.user_name || ''}"`,
-            r.total_cost,    // 合計金額
-            regFee,          // 連盟登録
-            kanto,           // 関東選手権
-            east,            // 東日本
-            autumn,          // 秋季L
-            allJapan,        // インカレ
-            teamMatch,       // 大学対抗
-            rookie,          // 新人戦
-            `"${cleanMemo}"` // 備考
-        ];
-        csv += row.join(",") + "\n";
-    });
+                        this.filteredAdminRecords.forEach(r => {
+                            // 各項目の金額を計算（未入力なら0）
+                            const regFee = this.calculateCategoryTotalForCSV(r, 'reg_fee');
+                            const kanto = this.calculateCategoryTotalForCSV(r, 'kanto_champ');
+                            const east = this.calculateCategoryTotalForCSV(r, 'east_japan');
+                            const autumn = this.calculateCategoryTotalForCSV(r, 'autumn_league');
+                            const allJapan = this.calculateCategoryTotalForCSV(r, 'all_japan_champ');
+                            const teamMatch = this.calculateCategoryTotalForCSV(r, 'all_japan_team');
+                            const rookie = this.calculateCategoryTotalForCSV(r, 'rookie');
 
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const dateStr = new Date().toLocaleDateString().replace(/\//g, '');
-    saveAs(blob, `関東学連_大学別支払集計_${dateStr}.csv`);
-},
+                            // メモの改行をスペースに置換
+                            const cleanMemo = r.memo ? r.memo.replace(/[\r\n]/g, " ") : "";
 
-// CSV出力用に、レコードから各カテゴリの金額を抽出・計算するヘルパー関数
-calculateCategoryTotalForCSV(rec, key) {
-    const raw = rec[key].rawObj;
-    if (!raw) return 0;
+                            const row = [
+                                r.univ_id,
+                                `"${r.univ_name}"`,
+                                `"${r.division}部"`,
+                                `"${r.raw_data.user_name || ''}"`,
+                                r.total_cost,    // 合計金額
+                                regFee,          // 連盟登録
+                                kanto,           // 関東選手権
+                                east,            // 東日本
+                                autumn,          // 秋季L
+                                allJapan,        // インカレ
+                                teamMatch,       // 大学対抗
+                                rookie,          // 新人戦
+                                `"${cleanMemo}"` // 備考
+                            ];
+                            csv += row.join(",") + "\n";
+                        });
 
-    if (key === 'reg_fee') {
-        return (raw.is_paid_base ? 15000 : 0) + ((raw.count || 0) * 4000);
-    }
-    if (key === 'kanto_champ') {
-        return ((raw.count_s || 0) * 3000) + ((raw.count_d || 0) * 6000) + ((raw.count_m || 0) * 6000);
-    }
-    if (key === 'east_japan') {
-        return ((raw.team || 0) * 20000) + ((raw.count_s || 0) * 3000) + ((raw.count_d || 0) * 6000) + ((raw.count_m || 0) * 6000) + ((raw.ops || 0) * 2000);
-    }
-    if (key === 'autumn_league') {
-        return raw.join ? this.getLeagueFee(rec.division) : 0;
-    }
-    if (key === 'all_japan_champ') {
-        return ((raw.count_s || 0) * 3000) + ((raw.count_d || 0) * 6000) + ((raw.count_m || 0) * 6000) + ((raw.ops_events || 0) * 1000);
-    }
-    if (key === 'all_japan_team') {
-        if (!raw.join) return 0;
-        return (raw.team * 20000) + (raw.ops * 3000);
-    }
-    if (key === 'rookie') {
-        const t = (raw.team_a || 0) + (raw.team_b || 0);
-        return (t * 5000) + ((raw.count_s || 0) * 3000) + ((raw.count_d || 0) * 6000);
-    }
-    return 0;
-},
+                        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+                        const dateStr = new Date().toLocaleDateString().replace(/\//g, '');
+                        saveAs(blob, `関東学連_大学別支払集計_${dateStr}.csv`);
+                    },
+
+                    // CSV出力用に、レコードから各カテゴリの金額を抽出・計算するヘルパー関数
+                    calculateCategoryTotalForCSV(rec, key) {
+                        const raw = rec[key].rawObj;
+                        if (!raw) return 0;
+
+                        if (key === 'reg_fee') {
+                            return (raw.is_paid_base ? 15000 : 0) + ((raw.count || 0) * 4000);
+                        }
+                        if (key === 'kanto_champ') {
+                            return ((raw.count_s || 0) * 3000) + ((raw.count_d || 0) * 6000) + ((raw.count_m || 0) * 6000);
+                        }
+                        if (key === 'east_japan') {
+                            return ((raw.team || 0) * 20000) + ((raw.count_s || 0) * 3000) + ((raw.count_d || 0) * 6000) + ((raw.count_m || 0) * 6000) + ((raw.ops || 0) * 2000);
+                        }
+                        if (key === 'autumn_league') {
+                            return raw.join ? this.getLeagueFee(rec.division) : 0;
+                        }
+                        if (key === 'all_japan_champ') {
+                            return ((raw.count_s || 0) * 3000) + ((raw.count_d || 0) * 6000) + ((raw.count_m || 0) * 6000) + ((raw.ops_events || 0) * 1000);
+                        }
+                        if (key === 'all_japan_team') {
+                            if (!raw.join) return 0;
+                            return (raw.team * 20000) + (raw.ops * 3000);
+                        }
+                        if (key === 'rookie') {
+                            const t = (raw.team_a || 0) + (raw.team_b || 0);
+                            return (t * 5000) + ((raw.count_s || 0) * 3000) + ((raw.count_d || 0) * 6000);
+                        }
+                        return 0;
+                    },
 
                     downloadTournamentCSV() {
-    const key = this.selectedTournament;
-    const catName = this.getCategoryName(key);
-    
-    // 1. CSVヘッダーの定義（大会ごとに適切な項目を設定）
-    let header = "";
-    if (key === 'reg_fee') header = "大学ID,大学名,部,基本金(1.5万),登録人数,連盟登録費,春リーグ参加費,小計";
-    else if (key === 'player_reg') header = "大学ID,大学名,No,氏名,フリガナ,会員番号,3級審判";
-    else if (key === 'add_reg') header = "大学ID,大学名,追加申請日,追加人数,小計";
-    else if (key === 'kanto_champ') header = "大学ID,大学名,シングルス数,ダブルス数,ミックス数,参加費合計";
-    else if (key === 'east_japan') header = "大学ID,大学名,チーム数,運営費人数,S数,D数,M数,参加費合計";
-    else if (key === 'autumn_league') header = "大学ID,大学名,部,秋季L参加費";
-    else if (key === 'all_japan_champ') header = "大学ID,大学名,運営費種目数,S数,D数,M数,参加費合計";
-    else if (key === 'all_japan_team') header = "大学ID,大学名,チーム数,運営費人数,参加費合計";
-    else if (key === 'rookie') header = "大学ID,大学名,団体A,団体B,S数,D数,参加費合計";
-    else if (key === 'league_expense') header = "大学ID,大学名,申請内容,振込状況";
-    else if (key === 'refund_request') header = "大学ID,大学名,返金申請額,振込状況";
+                        const key = this.selectedTournament;
+                        const catName = this.getCategoryName(key);
 
-    let csv = "\uFEFF" + header + "\n";
+                        // 1. CSVヘッダーの定義（大会ごとに適切な項目を設定）
+                        let header = "";
+                        if (key === 'reg_fee') header = "大学ID,大学名,部,基本金(1.5万),登録人数,連盟登録費,春リーグ参加費,小計";
+                        else if (key === 'player_reg') header = "大学ID,大学名,No,氏名,フリガナ,会員番号,3級審判";
+                        else if (key === 'add_reg') header = "大学ID,大学名,追加申請日,追加人数,小計";
+                        else if (key === 'kanto_champ') header = "大学ID,大学名,シングルス数,ダブルス数,ミックス数,参加費合計";
+                        else if (key === 'east_japan') header = "大学ID,大学名,チーム数,運営費人数,S数,D数,M数,参加費合計";
+                        else if (key === 'autumn_league') header = "大学ID,大学名,部,秋季L参加費";
+                        else if (key === 'all_japan_champ') header = "大学ID,大学名,運営費種目数,S数,D数,M数,参加費合計";
+                        else if (key === 'all_japan_team') header = "大学ID,大学名,チーム数,運営費人数,参加費合計";
+                        else if (key === 'rookie') header = "大学ID,大学名,団体A,団体B,S数,D数,参加費合計";
+                        else if (key === 'league_expense') header = "大学ID,大学名,申請内容,振込状況";
+                        else if (key === 'refund_request') header = "大学ID,大学名,返金申請額,振込状況";
 
-    // 2. データの抽出
-    this.filteredAdminRecords.forEach(r => {
-        const base = `${r.univ_id},"${r.univ_name}"`;
-        const raw = r[key].rawObj;
-        let line = "";
+                        let csv = "\uFEFF" + header + "\n";
 
-        if (key === 'reg_fee') {
-            const baseFee = raw.is_paid_base ? 15000 : 0;
-            const regAmount = (raw.count || 0) * 4000;
-            const leagueFee = this.getLeagueFee(r.division); // 春リーグ費
-            line = `${base},"${r.division}部",${baseFee},${raw.count || 0},${regAmount},${leagueFee},${baseFee + regAmount + leagueFee}`;
-        } 
-        else if (key === 'player_reg') {
-            const players = Array.isArray(raw) ? raw : [];
-            players.forEach((p, idx) => {
-                csv += `${base},${idx + 1},"${p.name || ''}","${p.kana || ''}","${p.member_id || ''}",${p.is_referee || '無'}\n`;
-            });
-            return; // 選手登録は複数行になるためここで終了
-        }
-        else if (key === 'add_reg') {
-            const list = Array.isArray(r.add_reg) ? r.add_reg : [];
-            list.forEach(item => {
-                if(item.count > 0) {
-                    csv += `${base},${item.date || ''},${item.count},${item.count * 4000}\n`;
-                }
-            });
-            return;
-        }
-        else if (key === 'kanto_champ') {
-            const total = this.calculateCategoryTotalForCSV(r, key);
-            line = `${base},${raw.count_s || 0},${raw.count_d || 0},${raw.count_m || 0},${total}`;
-        }
-        else if (key === 'east_japan') {
-            const total = this.calculateCategoryTotalForCSV(r, key);
-            line = `${base},${raw.team || 0},${raw.ops || 0},${raw.count_s || 0},${raw.count_d || 0},${raw.count_m || 0},${total}`;
-        }
-        else if (key === 'autumn_league') {
-            const total = raw.join ? this.getLeagueFee(r.division) : 0;
-            line = `${base},"${r.division}部",${total}`;
-        }
-        else if (key === 'all_japan_champ') {
-            const total = this.calculateCategoryTotalForCSV(r, key);
-            line = `${base},${raw.ops_events || 0},${raw.count_s || 0},${raw.count_d || 0},${raw.count_m || 0},${total}`;
-        }
-        else if (key === 'all_japan_team') {
-            const total = raw.join ? (raw.team * 20000 + raw.ops * 3000) : 0;
-            line = `${base},${raw.team || 0},${raw.ops || 0},${total}`;
-        }
-        else if (key === 'rookie') {
-            const total = this.calculateCategoryTotalForCSV(r, key);
-            line = `${base},${raw.team_a || 0},${raw.team_b || 0},${raw.count_s || 0},${raw.count_d || 0},${total}`;
-        }
-        else if (key === 'league_expense') {
-            line = `${base},"${(raw.excel_url?'春':'')}${(raw.excel_url_autumn?' 秋':'')} 申請あり",${raw.confirmed ? '振込済' : '未振込'}`;
-        }
-        else if (key === 'refund_request') {
-            line = `${base},${raw.amount || 0},${raw.confirmed ? '振込済' : '未振込'}`;
-        }
+                        // 2. データの抽出
+                        this.filteredAdminRecords.forEach(r => {
+                            const base = `${r.univ_id},"${r.univ_name}"`;
+                            const raw = r[key].rawObj;
+                            let line = "";
 
-        if (line) csv += line + "\n";
-    });
+                            if (key === 'reg_fee') {
+                                const baseFee = raw.is_paid_base ? 15000 : 0;
+                                const regAmount = (raw.count || 0) * 4000;
+                                const leagueFee = this.getLeagueFee(r.division); // 春リーグ費
+                                line = `${base},"${r.division}部",${baseFee},${raw.count || 0},${regAmount},${leagueFee},${baseFee + regAmount + leagueFee}`;
+                            }
+                            else if (key === 'player_reg') {
+                                const players = Array.isArray(raw) ? raw : [];
+                                players.forEach((p, idx) => {
+                                    csv += `${base},${idx + 1},"${p.name || ''}","${p.kana || ''}","${p.member_id || ''}",${p.is_referee || '無'}\n`;
+                                });
+                                return; // 選手登録は複数行になるためここで終了
+                            }
+                            else if (key === 'add_reg') {
+                                const list = Array.isArray(r.add_reg) ? r.add_reg : [];
+                                list.forEach(item => {
+                                    if (item.count > 0) {
+                                        csv += `${base},${item.date || ''},${item.count},${item.count * 4000}\n`;
+                                    }
+                                });
+                                return;
+                            }
+                            else if (key === 'kanto_champ') {
+                                const total = this.calculateCategoryTotalForCSV(r, key);
+                                line = `${base},${raw.count_s || 0},${raw.count_d || 0},${raw.count_m || 0},${total}`;
+                            }
+                            else if (key === 'east_japan') {
+                                const total = this.calculateCategoryTotalForCSV(r, key);
+                                line = `${base},${raw.team || 0},${raw.ops || 0},${raw.count_s || 0},${raw.count_d || 0},${raw.count_m || 0},${total}`;
+                            }
+                            else if (key === 'autumn_league') {
+                                const total = raw.join ? this.getLeagueFee(r.division) : 0;
+                                line = `${base},"${r.division}部",${total}`;
+                            }
+                            else if (key === 'all_japan_champ') {
+                                const total = this.calculateCategoryTotalForCSV(r, key);
+                                line = `${base},${raw.ops_events || 0},${raw.count_s || 0},${raw.count_d || 0},${raw.count_m || 0},${total}`;
+                            }
+                            else if (key === 'all_japan_team') {
+                                const total = raw.join ? (raw.team * 20000 + raw.ops * 3000) : 0;
+                                line = `${base},${raw.team || 0},${raw.ops || 0},${total}`;
+                            }
+                            else if (key === 'rookie') {
+                                const total = this.calculateCategoryTotalForCSV(r, key);
+                                line = `${base},${raw.team_a || 0},${raw.team_b || 0},${raw.count_s || 0},${raw.count_d || 0},${total}`;
+                            }
+                            else if (key === 'league_expense') {
+                                line = `${base},"${(raw.excel_url ? '春' : '')}${(raw.excel_url_autumn ? ' 秋' : '')} 申請あり",${raw.confirmed ? '振込済' : '未振込'}`;
+                            }
+                            else if (key === 'refund_request') {
+                                line = `${base},${raw.amount || 0},${raw.confirmed ? '振込済' : '未振込'}`;
+                            }
 
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    saveAs(blob, `${catName}_詳細リスト_${new Date().toLocaleDateString().replace(/\//g, '')}.csv`);
-},
+                            if (line) csv += line + "\n";
+                        });
+
+                        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+                        saveAs(blob, `${catName}_詳細リスト_${new Date().toLocaleDateString().replace(/\//g, '')}.csv`);
+                    },
 
                     downloadTournamentZip() {
                         const key = this.selectedTournament;
@@ -4046,7 +4439,129 @@ calculateCategoryTotalForCSV(rec, key) {
                             alert("アップロード失敗: " + e.message);
                             this.isUploadingNews = false;
                         });
-                    }
+                    },
+
+                    async downloadPlayerIdCard(player) {
+    if (!player.name) {
+        alert("氏名が入力されていません。");
+        return;
+    }
+    
+    // 1. 印刷用データにセット
+    this.printPlayer = player;
+    this.isSaving = true;
+
+    this.$nextTick(() => {
+        setTimeout(async () => {
+            const element = document.getElementById("idCardCanvas");
+            if (!element) {
+                this.isSaving = false;
+                return;
+            }
+
+            try {
+                // 2. html2canvasでカードをキャプチャ
+                const canvas = await html2canvas(element, {
+                    scale: 3,           // 画質を上げる
+                    useCORS: true,      // 外部画像対策
+                    backgroundColor: null,
+                    allowTaint: false
+                });
+
+                const imgData = canvas.toDataURL("image/jpeg", 1.0);
+                const { jsPDF } = window.jspdf;
+                
+                // 3. PDFの作成 (縦向き, ミリ単位, A4サイズ)
+                const pdf = new jsPDF("p", "mm", "a4");
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                
+                // カードのサイズ計算 (A4の横幅に対して少し余白を持たせる)
+                const margin = 20;
+                const imgWidth = pdfWidth - (margin * 2); 
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                // 中央配置の計算
+                const x = margin;
+                const y = (pdfHeight - imgHeight) / 2;
+
+                // 4. PDFに貼り付けて保存
+                pdf.addImage(imgData, "JPEG", x, y, imgWidth, imgHeight);
+                
+                const safeName = player.name.replace(/[\s/\\?%*:|"<>]/g, "_");
+                pdf.save(`ID証_${this.form.univ_name}_${safeName}.pdf`);
+
+            } catch (error) {
+                console.error("PDF生成失敗:", error);
+                alert("ID証PDFの作成に失敗しました。");
+            } finally {
+                this.isSaving = false;
+            }
+        }, 400); // 描画待ち
+    });
+},
+
+
+                    // ✅ ID証（一括）の印刷機能
+                    printAllPlayerCards() {
+    this.isSinglePrintMode = false; // 個別モードをOFF（一括モード）
+    const hasData = this.entry.player_reg && this.entry.player_reg.some(p => p.name && p.name.trim() !== "");
+    if (!hasData) {
+        alert("氏名が入力されている選手がいないため、印刷できません。");
+        return;
+    }
+    this.$nextTick(() => {
+        window.print();
+    });
+},
+
+// ==========================================
+    // ここから追加：PDFダウンロード機能
+    // ==========================================
+    async downloadReceiptPDF() {
+        const element = document.querySelector(".receipt-layout");
+        await this.generatePDF(element, `領収書_${this.form.univ_name}.pdf`);
+    },
+    async downloadSettlementPDF() {
+        const element = document.querySelector(".report-container");
+        await this.generatePDF(element, `支払明細_${this.form.univ_name}.pdf`);
+    },
+    async generatePDF(element, filename) {
+    if (!element) return;
+    this.isSaving = true;
+    try {
+        const canvas = await html2canvas(element, {
+            scale: 2, // 高画質
+            useCORS: true,
+            backgroundColor: "#ffffff"
+        });
+        const imgData = canvas.toDataURL("image/jpeg", 0.9);
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF("p", "mm", "a4");
+        
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfPageWidth = pdf.internal.pageSize.getWidth();
+        const pdfPageHeight = pdf.internal.pageSize.getHeight();
+        
+        // --- 余白の設定（ここを調整してください） ---
+        const margin = 15; // 左右に15mmずつの余白をもたせる
+        const imgWidth = pdfPageWidth - (margin * 2); // 余白を引いた実質的な画像幅
+        const imgHeight = (imgProps.height * imgWidth) / imgProps.width; // 比率を維持して高さを計算
+        
+        // --- 配置の計算 ---
+        const x = margin; // 左端から余白分だけ右に
+        const y = (pdfPageHeight - imgHeight) / 2; // 上下中央に配置
+
+        // PDFに画像を追加（x, y, 幅, 高さ）
+        pdf.addImage(imgData, "JPEG", x, y, imgWidth, imgHeight);
+        pdf.save(filename);
+    } catch (error) {
+        console.error("PDF生成失敗:", error);
+        alert("PDFの作成に失敗しました。");
+    } finally {
+        this.isSaving = false;
+    }
+}
                 }
             }).mount('#app');
         </script>
