@@ -1992,77 +1992,70 @@ html, body {
                                     </div>
 
                                     <div class="table-responsive shadow-sm border rounded mb-3 bg-white">
-                                        <table
-                                            class="table table-bordered table-striped table-hover align-middle mb-0 text-nowrap"
-                                            style="min-width: 900px;">
-                                            <thead class="table-dark">
-                                                <tr class="text-center small">
-                                                    <th style="width: 5%">No.</th>
-                                                    <th style="width: 15%">氏名</th>
-                                                    <th style="width: 15%">フリガナ</th>
-                                                    <th style="width: 15%">会員番号</th>
-                                                    <th style="width: 10%">3級審判</th>
-                                                    <th style="width: 20%">会員証画像</th>
-                                                    <th style="width: 10%">ID証</th>
-                                                    <th style="width: 5%">削除</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr v-for="(player, index) in entry.player_reg" :key="index">
-                                                    <td class="text-center fw-bold">{{ index + 1 }}</td>
-                                                    <td><input type="text" v-model="player.name"
-                                                            class="form-control form-control-sm" placeholder="山田 太郎">
-                                                    </td>
-                                                    <td><input type="text" v-model="player.kana"
-                                                            class="form-control form-control-sm" placeholder="ヤマダ タロウ">
-                                                    </td>
-                                                    <td><input type="text" v-model="player.member_id"
-                                                            class="form-control form-control-sm" placeholder="1234567">
-                                                    </td>
-                                                    <td>
-                                                        <select v-model="player.is_referee"
-                                                            class="form-select form-select-sm text-center">
-                                                            <option value="無">無</option>
-                                                            <option value="有">有</option>
-                                                        </select>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <div v-if="player.receipt_url"
-                                                            class="d-flex align-items-center justify-content-center gap-2">
-                                                            <span class="badge bg-success">登録済</span>
-                                                            <a :href="player.receipt_url" target="_blank"
-                                                                class="btn btn-xs btn-outline-primary py-0"
-                                                                style="font-size:0.7rem">確認</a>
-                                                            <i class="bi bi-x-circle-fill text-danger"
-                                                                style="cursor:pointer"
-                                                                @click="player.receipt_url=''"></i>
-                                                        </div>
-                                                        <div v-else>
-                                                            <label class="btn btn-sm btn-outline-secondary py-0 w-100">
-                                                                <i class="bi bi-upload"></i> 画像選択
-                                                                <input type="file" style="display:none" accept="image/*"
-                                                                    @change="uploadPlayerReceipt($event, index)">
-                                                            </label>
-                                                        </div>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <button class="btn btn-xs btn-outline-dark py-0" 
-                    style="font-size:0.7rem; height: 24px;" 
-                    @click="printSingleID(player)"
-                    type="button">
-                <i class="bi bi-printer"></i> 印刷
-            </button>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <button class="btn btn-sm btn-outline-danger border-0"
-                                                            @click="removePlayerRow(index)" tabindex="-1">
-                                                            <i class="bi bi-trash-fill"></i>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
+    <table class="table table-bordered table-striped table-hover align-middle mb-0 text-nowrap" style="min-width: 1000px;">
+        <thead class="table-dark">
+            <tr class="text-center small">
+                <th style="width: 5%">No.</th>
+                <th style="width: 8%">背番号</th> <th style="width: 15%">氏名</th>
+                <th style="width: 15%">フリガナ</th>
+                <th style="width: 15%">会員番号</th>
+                <th style="width: 10%">3級審判</th>
+                <th style="width: 15%">会員証画像</th>
+                <th style="width: 10%">ID証</th>
+                <th style="width: 7%">削除</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr v-for="(player, index) in entry.player_reg" :key="index">
+                <td class="text-center fw-bold">{{ index + 1 }}</td>
+                
+                <td>
+                    <input type="text" v-model="player.back_number" 
+                           class="form-control form-control-sm text-center" placeholder="0">
+                </td>
+
+                <td><input type="text" v-model="player.name" class="form-control form-control-sm" placeholder="山田 太郎"></td>
+                
+                <td><input type="text" v-model="player.kana" class="form-control form-control-sm" placeholder="ヤマダ タロウ"></td>
+                
+                <td><input type="text" v-model="player.member_id" class="form-control form-control-sm" placeholder="1234567"></td>
+                
+                <td>
+                    <select v-model="player.is_referee" class="form-select form-select-sm text-center">
+                        <option value="無">無</option>
+                        <option value="有">有</option>
+                    </select>
+                </td>
+                
+                <td class="text-center">
+                    <div v-if="player.receipt_url" class="d-flex align-items-center justify-content-center gap-2">
+                        <span class="badge bg-success">登録済</span>
+                        <a :href="player.receipt_url" target="_blank" class="btn btn-xs btn-outline-primary py-0" style="font-size:0.7rem">確認</a>
+                        <i class="bi bi-x-circle-fill text-danger" style="cursor:pointer" @click="player.receipt_url=''"></i>
+                    </div>
+                    <div v-else>
+                        <label class="btn btn-sm btn-outline-secondary py-0 w-100">
+                            <i class="bi bi-upload"></i> 画像選択
+                            <input type="file" style="display:none" accept="image/*" @change="uploadPlayerReceipt($event, index)">
+                        </label>
+                    </div>
+                </td>
+                
+                <td class="text-center">
+                    <button class="btn btn-xs btn-outline-dark py-0" style="font-size:0.7rem; height: 24px;" @click="printSingleID(player)" type="button">
+                        <i class="bi bi-printer"></i> 印刷
+                    </button>
+                </td>
+                
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-danger border-0" @click="removePlayerRow(index)" tabindex="-1">
+                        <i class="bi bi-trash-fill"></i>
+                    </button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
 
                                     <div class="d-flex justify-content-center mb-5">
                                         <button class="btn btn-success rounded-pill px-4" @click="addPlayerRow">
@@ -2688,11 +2681,11 @@ html, body {
                 </div>
             </div>
         </div>
-    </div>
+    </div></div></div></div>
 
         <script>
 
-            const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwdXPjZ2TD2R-qPte6uyL8SXa9T1lX-DisbZ_h6jDsP078nPpFAs2o3YnkDY1MlADd9_w/exec";
+            const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzmjsXL_PnAh0uIfLuQ6kEXNinHEWT_tGjYGGQdo63zgkAOvgJJK4Y2hhwC7sM8vZ58/exec";
 
             const firebaseConfig = {
                 apiKey: "AIzaSyASxcZep_OpFzc2EML2sUMRuK8rDJXv-cg",
@@ -2777,7 +2770,7 @@ lastInteraction: {}, // ★追加：最新のやり取り時刻を保存する
                             rookie: { excel_url: '', team_a: 0, team_b: 0, count_s: 0, count_d: 0, payment_id: '', receipt_url: '' },
 
                             player_reg: [
-                                { name: '', kana: '', member_id: '', is_referee: '無', receipt_url: '' }
+                                { back_number: '', name: '', kana: '', member_id: '', is_referee: '無', receipt_url: '' }
                             ],
                             league_expense: {
                                 excel_url: '',        // 1:春リーグ申請書
@@ -2974,7 +2967,8 @@ chatListAdminRecords() {
                     // --- 選手登録（一括入力）関連 ---
                     addPlayerRow() {
                         this.entry.player_reg.push({
-                            name: '',
+back_number: '',                            
+name: '',
                             kana: '',
                             member_id: '',
                             is_referee: '無',
@@ -3857,7 +3851,8 @@ printSingleID(player) {
                                     rec.univ_id,
                                     rec.univ_name,
                                     index + 1,
-                                    p.name || '',
+p.back_number || '',                                    
+p.name || '',
                                     p.kana || '',
                                     p.member_id || '',
                                     p.is_referee || '無',
