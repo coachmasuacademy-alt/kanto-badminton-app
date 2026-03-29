@@ -4457,145 +4457,151 @@ p.name || '',
                         saveAs(blob, `${catName}_詳細リスト_${new Date().toLocaleDateString().replace(/\//g, '')}.csv`);
                     },
 
-                    downloadTournamentZip() {
-                        const key = this.selectedTournament;
-                        const zip = new JSZip();
-                        let count = 0;
-                        this.isZipping = true;
-                        let targets = [];
+                    async downloadTournamentZip() {
+    const key = this.selectedTournament;
+    const zip = new JSZip();
+    let count = 0;
+    this.isZipping = true;
+    let targets = [];
 
-                        if (key === 'add_reg') {
-                            // 追加登録の5つのスロット名を定義
-                            const addRegNames = ["1_春リーグ追加", "2_関東選手権追加", "3_東日本大会追加", "4_秋リーグ追加", "5_新人戦追加"];
+    // --- ファイルリストの作成 (拡張子は後で判別するのでここでは付けない) ---
+    if (key === 'add_reg') {
+        const addRegNames = ["1_春リーグ追加", "2_関東選手権追加", "3_東日本大会追加", "4_秋リーグ追加", "5_新人戦追加"];
+        this.filteredAdminRecords.forEach(r => {
+            if (Array.isArray(r.add_reg)) {
+                r.add_reg.forEach((item, idx) => {
+                    if (item && item.excel_url) {
+                        const tournamentName = addRegNames[idx] || `追加登録_${idx + 1}`;
+                        const safeUniv = r.univ_name.replace(/[\\/:*?"<>|]/g, "_");
+                        const safeDate = item.date ? item.date.replace(/[^0-9]/g, '') : '';
+                        targets.push({
+                            name: `${r.univ_id}_${safeUniv}_${tournamentName}_${safeDate}`,
+                            url: item.excel_url
+                        });
+                    }
+                });
+            }
+        });
+    } else if (key === 'reg_fee') {
+        this.filteredAdminRecords.forEach(r => {
+            const raw = r.reg_fee.rawObj;
+            const safeUniv = r.univ_name.replace(/[\\/:*?"<>|]/g, "_");
+            if (raw.excel_url) targets.push({ name: `${r.univ_id}_${safeUniv}_1_春登録`, url: raw.excel_url });
+            if (raw.excel_url_apply) targets.push({ name: `${r.univ_id}_${safeUniv}_2_春リーグ申込`, url: raw.excel_url_apply });
+            if (raw.excel_url_reg) targets.push({ name: `${r.univ_id}_${safeUniv}_3_レギュラー登録`, url: raw.excel_url_reg });
+        });
+    } else if (key === 'player_reg') {
+        this.filteredAdminRecords.forEach(r => {
+            const list = Array.isArray(r.player_reg.rawObj) ? r.player_reg.rawObj : [];
+            const safeUniv = r.univ_name.replace(/[\\/:*?"<>|]/g, "_");
+            list.forEach((p, idx) => {
+                if (p.receipt_url) {
+                    const safePlayerName = (p.name || 'no_name').replace(/[\\/:*?"<>|]/g, "_");
+                    targets.push({
+                        name: `${r.univ_id}_${safeUniv}_${safePlayerName}_会員証`,
+                        url: p.receipt_url
+                    });
+                }
+            });
+        });
+    } else {
+        targets = this.filteredAdminRecords
+            .filter(r => r[key].rawObj && (r[key].rawObj.excel_url || r[key].rawObj.excel_url_apply))
+            .map(r => {
+                const url = r[key].rawObj.excel_url || r[key].rawObj.excel_url_apply;
+                return {
+                    name: `${r.univ_id}_${r.univ_name.replace(/[\\/:*?"<>|]/g, "_")}_${this.getCategoryName(key)}`,
+                    url: url
+                };
+            });
+    }
 
-                            this.filteredAdminRecords.forEach(r => {
-                                if (Array.isArray(r.add_reg)) {
-                                    r.add_reg.forEach((item, idx) => {
-                                        if (item && item.excel_url) {
-                                            // 0〜4番目なら大会名を使用、それ以降（念のため）は番号を表示
-                                            const tournamentName = addRegNames[idx] || `追加登録_${idx + 1}`;
-                                            // 日付の記号を除去して安全なファイル名にする
-                                            const safeDate = item.date ? item.date.replace(/[^0-9]/g, '') : '';
+    if (targets.length === 0) {
+        alert("対象のファイルがありません。");
+        this.isZipping = false;
+        return;
+    }
 
-                                            targets.push({
-                                                name: `${r.univ_id}_${r.univ_name}_${tournamentName}_${safeDate}.xlsx`,
-                                                url: item.excel_url
-                                            });
-                                        }
-                                    });
-                                }
-                            });
-                        } else if (key === 'reg_fee') {
-                            this.filteredAdminRecords.forEach(r => {
-                                const raw = r.reg_fee.rawObj;
-                                if (raw.excel_url) {
-                                    targets.push({ name: `${r.univ_id}_${r.univ_name}_1_春登録.xlsx`, url: raw.excel_url });
-                                }
-                                if (raw.excel_url_apply) {
-                                    targets.push({ name: `${r.univ_id}_${r.univ_name}_2_春リーグ申込.xlsx`, url: raw.excel_url_apply });
-                                }
-                                if (raw.excel_url_reg) {
-                                    targets.push({ name: `${r.univ_id}_${r.univ_name}_3_レギュラー登録.xlsx`, url: raw.excel_url_reg });
-                                }
-                            });
-                        } else if (key === 'player_reg') {
-                            this.filteredAdminRecords.forEach(r => {
-                                const list = Array.isArray(r.player_reg.rawObj) ? r.player_reg.rawObj : [];
-                                list.forEach((p, idx) => {
-                                    if (p.receipt_url) {
-                                        let ext = p.receipt_url.includes(".png") ? "png" : "jpg";
-                                        targets.push({
-                                            name: `${r.univ_id}_${r.univ_name}_${p.name}_${idx}.${ext}`,
-                                            url: p.receipt_url
-                                        });
-                                    }
-                                });
-                            });
-                        } else {
-                            targets = this.filteredAdminRecords.filter(r => r[key].rawObj && r[key].rawObj.excel_url)
-                                .map(r => ({
-                                    name: `${r.univ_id}_${r.univ_name}_${this.getCategoryName(key)}.xlsx`,
-                                    url: r[key].rawObj.excel_url
-                                }));
-                        }
+    // --- 非同期でのダウンロードとバイナリ解析による拡張子判別 ---
+    try {
+        await Promise.all(targets.map(async (target) => {
+            try {
+                const response = await fetch(target.url);
+                if (!response.ok) throw new Error("Network error");
+                
+                const buffer = await response.arrayBuffer();
+                const view = new Uint8Array(buffer);
 
-                        if (targets.length === 0) {
-                            alert("対象のファイルがありません。");
-                            this.isZipping = false;
-                            return;
-                        }
+                // --- 拡張子の自動判別ロジック (マジックナンバー) ---
+                let extension = "";
+                if (view[0] === 0x50 && view[1] === 0x4B) {
+                    extension = ".xlsx"; // PK (OpenXML)
+                } else if (view[0] === 0xD0 && view[1] === 0xCF && view[2] === 0x11 && view[3] === 0xE0) {
+                    extension = ".xls";  // ﾐﾏ爍ｱ (Legacy Excel)
+                } else if (view[0] === 0x89 && view[1] === 0x50 && view[2] === 0x4E && view[3] === 0x47) {
+                    extension = ".png";  // PNG
+                } else if (view[0] === 0xFF && view[1] === 0xD8) {
+                    extension = ".jpg";  // JPEG
+                } else if (view[0] === 0x25 && view[1] === 0x50 && view[2] === 0x44 && view[3] === 0x46) {
+                    extension = ".pdf";  // %PDF
+                } else {
+                    // 判別不能な場合はURLから推測
+                    const urlPart = target.url.split('?')[0];
+                    const urlExt = urlPart.split('.').pop();
+                    extension = urlExt ? "." + urlExt : ".xlsx";
+                }
 
-                        const process = async () => {
-                            try {
-                                const promises = targets.map(async (target) => {
-                                    try {
-                                        const response = await fetch(target.url);
-                                        if (!response.ok) throw new Error("Network error");
-                                        const blob = await response.blob();
-                                        zip.file(target.name, blob);
-                                        count++;
-                                    } catch (err) {
-                                        console.error(`Failed to load ${target.name}`, err);
-                                    }
-                                });
-                                await Promise.all(promises);
-                                if (count === 0) {
-                                    alert("ファイルのダウンロードに失敗しました。");
-                                } else {
-                                    const content = await zip.generateAsync({ type: "blob" });
-                                    saveAs(content, `${this.getCategoryName(key)}_一括ダウンロード.zip`);
-                                }
-                            } catch (e) {
-                                console.error(e);
-                                alert("ZIP作成中にエラーが発生しました。");
-                            } finally {
-                                this.isZipping = false;
-                            }
-                        };
-                        process();
-                    },
+                // ZIPにバイナリとして追加
+                zip.file(target.name + extension, buffer, { binary: true });
+                count++;
+            } catch (err) {
+                console.error(`Failed to load ${target.name}`, err);
+            }
+        }));
 
-/* --- ニュース投稿 (addNews) --- */
-                    async addNews() {
+        if (count === 0) {
+            alert("ファイルの取得に失敗しました。");
+        } else {
+            const content = await zip.generateAsync({
+                type: "blob",
+                compression: "DEFLATE",
+                compressionOptions: { level: 6 }
+            });
+            const dateStr = new Date().toLocaleDateString().replace(/\//g, '');
+            saveAs(content, `${this.getCategoryName(key)}_一括ダウンロード_${dateStr}.zip`);
+        }
+    } catch (e) {
+        console.error(e);
+        alert("ZIP作成中にエラーが発生しました。");
+    } finally {
+        this.isZipping = false;
+    }
+},
+
+async addNews() {
     if (!this.adminNews.title && !this.adminNews.content) return;
-    
-    // 投稿内容の作成
     const newMsg = {
         date: this.adminNews.date || new Date().toISOString(),
         title: this.adminNews.title,
         content: this.adminNews.content,
-        urls: this.adminNews.urls || [] 
+        urls: JSON.parse(JSON.stringify(this.adminNews.urls || [])) // 参照を切るためにDeep Copy
     };
-
-    // リストの先頭に追加（仮追加）
     this.newsList.unshift(newMsg);
-
-    this.isSaving = true; // 保存中フラグ
+    this.isSaving = true;
     try {
-        // GASの 'update_news' アクションを直接叩く
-        const payload = {
-            action: 'update_news',
-            news_list: this.newsList
-        };
-        
-        const res = await fetch(GAS_API_URL, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
+        const payload = { action: 'update_news', news_list: this.newsList };
+        const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify(payload) });
         const result = await res.json();
-
         if (result.status === 'success') {
             this.saveMessage = "ニュースを公開しました";
-            // フォームの初期化
             this.adminNews = { date: '', title: '', content: '', urls: [] };
             setTimeout(() => { this.saveMessage = ''; }, 3000);
         } else {
-            throw new Error("GAS側の保存に失敗しました");
+            throw new Error();
         }
     } catch (e) {
         console.error(e);
         alert("保存エラーが発生しました。");
-        // 失敗した場合は、先頭に追加したものを削除して戻す
         this.newsList.shift();
     } finally {
         this.isSaving = false;
