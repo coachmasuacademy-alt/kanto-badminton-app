@@ -1202,9 +1202,26 @@ html, body {
                                     formatMoney(rec.total_cost) }}</td>
                                 <td v-for="key in adminStatusKeys" :key="key" style="min-width: 100px;">
                                     <div :class="['status-badge', getAdminStatusClass(rec[key], key)]">
-                                        <div v-if="key === 'add_reg'"><span class="small"
-                                                v-if="rec.add_reg.length > 0">{{ rec.add_reg.length }}件申請</span><span
-                                                class="small" v-else>-</span></div>
+                                        <div v-if="key === 'add_reg'">
+    <div v-if="rec.add_reg_active && rec.add_reg_active.length > 0">
+        <div v-for="(item, idx) in rec.add_reg_active" :key="idx" 
+             class="pb-1 mb-1" :class="{'border-bottom border-secondary border-opacity-25': idx < rec.add_reg_active.length - 1}">
+            <div style="font-size: 0.65rem;" class="fw-bold">{{ item.tournament.replace('追加', '') }}({{ item.count }}名)</div>
+            <div v-if="item.receipt_url">
+                <button class="btn btn-link p-0 text-decoration-none fw-bold"
+                    :class="getAdminButtonClass(rec[key], key)"
+                    @click.stop="showReceipt(rec, 'add_reg', item)">
+                    <i class="bi" :class="item.confirmed ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill'"></i>
+                    {{ item.confirmed ? '承認済' : '確認' }}
+                </button>
+            </div>
+            <div v-else>
+                <span style="font-size: 0.7rem;">{{ item.payment_id }}</span>
+            </div>
+        </div>
+    </div>
+    <div v-else>-</div>
+</div>
                                         <div v-else>
                                             <div v-if="rec[key].hasReceipt || rec[key].receiptUrl">
                                                 <button class="btn btn-link p-0 text-decoration-none fw-bold"
@@ -1223,12 +1240,12 @@ html, body {
                                     </div>
                                     <div class="text-center mt-1">
                                         <template v-if="key === 'add_reg'">
-                                            <button v-if="rec.add_reg.length > 0"
-                                                class="btn btn-sm btn-outline-secondary py-0" style="font-size: 0.7rem;"
-                                                @click="openDetailModal(rec, key)">
-                                                <i class="bi bi-list-ul"></i> 詳細・DL
-                                            </button>
-                                        </template>
+    <button v-if="rec.add_reg_active && rec.add_reg_active.length > 0"
+        class="btn btn-sm btn-outline-secondary py-0" style="font-size: 0.7rem;"
+        @click="openDetailModal(rec, key)">
+        <i class="bi bi-list-ul"></i> 詳細・DL
+    </button>
+</template>
                                         <template v-else>
                                             <button
                                                 v-if="rec[key].rawObj && (rec[key].rawObj.excel_url || rec[key].rawObj.excel_url_apply || rec[key].rawObj.excel_url_reg)"
@@ -2700,6 +2717,10 @@ html, body {
             const ADMIN_PASS = "admin1234";
 
             firebase.initializeApp(firebaseConfig);
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION)
+                .catch(function(error) {
+                    console.error("ログイン保持設定のエラー:", error);
+                });
             const { createApp } = Vue;
             const db = firebase.firestore();
 
@@ -3877,11 +3898,20 @@ p.name || '',
                             }
                         };
                         const rFee = safeParse(raw.reg_fee, {});
+                        
                         let aReg = safeParse(raw.add_reg, []);
                         if (!Array.isArray(aReg)) {
-                            if (aReg.count) aReg = [aReg];
-                            else aReg = [];
+                            // オブジェクト化してしまったデータを配列に戻す
+                            if (aReg && typeof aReg === 'object' && Object.keys(aReg).length > 0) {
+                                aReg = Object.values(aReg);
+                            } else if (aReg && aReg.count) {
+                                aReg = [aReg];
+                            } else {
+                                aReg = [];
+                            }
                         }
+
+const activeAddReg = aReg.filter(item => item.count > 0 || item.excel_url || item.receipt_url);
                         const sLig = safeParse(raw.spring_league, {});
                         const kChamp = safeParse(raw.kanto_champ, {});
                         const eJapan = safeParse(raw.east_japan, {});
@@ -3891,7 +3921,15 @@ p.name || '',
                         const rookie = safeParse(raw.rookie, {});
                         const lExp = safeParse(raw.league_expense, {});
                         const refReq = safeParse(raw.refund_request, {});
-                        const pReg = safeParse(raw.player_reg, []);
+                        let pReg = safeParse(raw.player_reg, []);
+                        if (!Array.isArray(pReg)) {
+                            // 選手登録も同様に配列に戻す
+                            if (pReg && typeof pReg === 'object' && Object.keys(pReg).length > 0) {
+                                pReg = Object.values(pReg);
+                            } else {
+                                pReg = [];
+                            }
+                        }
 
                         let details = [];
                         if (rFee.is_paid_base) details.push(`基本金: ¥15,000`);
@@ -3941,6 +3979,7 @@ p.name || '',
                             // 各 parseCat の後ろに、第2引数としてカテゴリ名を正しく追加します
                             reg_fee: parseCat(rFee, 'reg_fee'),
                             add_reg: aReg,
+add_reg_active: activeAddReg,
                             spring_league: parseCat(sLig, 'spring_league'),
                             kanto_champ: parseCat(kChamp, 'kanto_champ'),
                             east_japan: parseCat(eJapan, 'east_japan'),
@@ -3987,6 +4026,14 @@ p.name || '',
                             const hasData = list.some(p => p.name && p.name.trim() !== "");
                             return hasData ? 'status-done' : 'status-pending';
                         }
+
+if (key === 'add_reg') {
+        const list = Array.isArray(cat) ? cat : [];
+        const activeList = list.filter(item => item.count > 0 || item.excel_url || item.receipt_url);
+        if (activeList.length === 0) return 'status-none';
+        if (activeList.some(item => item.receipt_url)) return 'status-done';
+        return 'status-pending';
+    }
 
                         // ②〜⑨共通：画像があればオレンジ（振込済）、なければ黄色（確認）
                         if (cat.hasReceipt) {
