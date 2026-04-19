@@ -2188,7 +2188,32 @@ html, body {
     <h4><i class="bi bi-gear-fill"></i> ⑬ アカウント設定</h4>
     
     <div class="card mt-4 border-warning">
+        <div class="card-header bg-warning text-dark fw-bold">
+            <i class="bi bi-person-badge"></i> アカウント情報の変更
         </div>
+        <div class="card-body">
+            <div class="alert alert-light border small text-muted">
+                <i class="bi bi-info-circle"></i> 変更したい項目のみ入力して「更新する」ボタンを押してください。
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">代表者名</label>
+                <input type="text" class="form-control" v-model="form.user_name" placeholder="代表者名">
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">新しいメールアドレス</label>
+                <input type="email" class="form-control" v-model="account.newEmail" placeholder="変更する場合のみ入力">
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">新しいパスワード (6文字以上)</label>
+                <input type="password" class="form-control" v-model="account.newPass" placeholder="変更する場合のみ入力">
+            </div>
+            <div class="text-end mt-3">
+                <button class="btn btn-warning fw-bold text-dark px-5" @click="updateAccount" :disabled="isSaving">
+                    <i class="bi bi-arrow-clockwise"></i> アカウント情報を更新する
+                </button>
+            </div>
+        </div>
+    </div>
 
     <div class="card mt-4 border-info">
         <div class="card-header bg-info text-white fw-bold"><i class="bi bi-image"></i> 大学ロゴ設定 (リーグ戦Viewer用)</div>
@@ -3205,30 +3230,34 @@ name: '',
                         const newEmail = this.account.newEmail;
                         const newPass = this.account.newPass;
 
-                        if (!newEmail && !newPass) {
-                            alert("変更内容を入力してください");
+                        // ★変更点1: 代表者名が空欄になっていないかをチェック
+                        if (!this.form.user_name || this.form.user_name.trim() === '') {
+                            alert("代表者名を入力してください。");
                             return;
                         }
+
+                        // ★変更点2: 「メールとパスワードが両方空ならエラー」の処理を削除しました
 
                         if (!confirm("アカウント情報を変更し、スプレッドシートと同期しますか？")) return;
 
                         this.isSaving = true;
 
                         try {
-                            // 1. Firebase側のメールアドレスを変更（入力がある場合）
+                            // 1. Firebase側のメールアドレスを変更（入力がある場合のみ）
                             if (newEmail) {
                                 await user.updateEmail(newEmail);
                                 console.log("Firebase Email updated");
                             }
 
-                            // 2. Firebase側のパスワードを変更（入力がある場合）
+                            // 2. Firebase側のパスワードを変更（入力がある場合のみ）
                             if (newPass) {
                                 await user.updatePassword(newPass);
                                 console.log("Firebase Password updated");
                             }
 
                             // 3. スプレッドシート（GAS）側の情報を更新
-                            // saveDataに新しいパスワードを渡して同期させます
+                            // 代表者名は v-model="form.user_name" で既に紐付いているので、
+                            // saveData を呼ぶだけで自動的に新しい名前が保存されます。
                             await this.saveData(true, newPass || null);
 
                             alert("アカウント情報を更新し、スプレッドシートにも反映しました。");
