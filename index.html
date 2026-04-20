@@ -869,6 +869,20 @@ html, body {
     }
 }
 
+/* ▼▼▼ 選手登録テーブル用のスクロール設定 ▼▼▼ */
+        .player-table-container {
+            max-height: 60vh; /* 縦幅を画面の高さの60%に制限（ここを超えるとスクロールになる） */
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+
+        .player-table-container thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10; /* 他のセルより前面に出す */
+            box-shadow: 0 1px 0 0 #212529; /* スクロール時に枠線が消えないようにするための設定 */
+        }
+
     </style>
 </head>
 
@@ -1928,18 +1942,23 @@ html, body {
                                         <br><span class="text-primary">※氏名を入力すると「ID証」の書き出しが可能になります。</span>
                                     </div>
 
-                                    <div class="table-responsive shadow-sm border rounded mb-3 bg-white">
-    <table class="table table-bordered table-striped table-hover align-middle mb-0 text-nowrap" style="min-width: 1000px;">
+                                    <div class="table-responsive player-table-container shadow-sm border rounded mb-3 bg-white">
+                                        <table class="table table-bordered table-striped table-hover align-middle mb-0 text-nowrap" style="min-width: 1450px;">
         <thead class="table-dark">
             <tr class="text-center small">
-                <th style="width: 5%">No.</th>
-                <th style="width: 8%">背番号</th> <th style="width: 15%">氏名</th>
-                <th style="width: 15%">フリガナ</th>
-                <th style="width: 15%">会員番号</th>
-                <th style="width: 10%">3級審判</th>
-                <th style="width: 15%">会員証画像</th>
-                <th style="width: 10%">ID証</th>
-                <th style="width: 7%">削除</th>
+                <th style="width: 3%">No.</th>
+                <th style="width: 5%">背番号</th> 
+                <th style="width: 10%">氏名</th>
+                <th style="width: 10%">フリガナ</th>
+                <th style="width: 5%">学年</th> <th style="width: 8%">出身県</th>
+                <th style="width: 10%">ジュニア</th>
+                <th style="width: 12%">中学校</th>
+                <th style="width: 12%">高校</th>
+                <th style="width: 10%">会員番号</th>
+                <th style="width: 6%">3級審判</th>
+                <th style="width: 9%">会員証画像</th>
+                <th style="width: 5%">ID証</th>
+                <th style="width: 5%">削除</th>
             </tr>
         </thead>
         <tbody>
@@ -1952,8 +1971,22 @@ html, body {
                 </td>
 
                 <td><input type="text" v-model="player.name" class="form-control form-control-sm" placeholder="山田 太郎"></td>
-                
                 <td><input type="text" v-model="player.kana" class="form-control form-control-sm" placeholder="ヤマダ タロウ"></td>
+                
+                <td>
+                    <select v-model="player.grade" class="form-select form-select-sm text-center">
+                        <option value="">-</option>
+                        <option value="1">1年</option>
+                        <option value="2">2年</option>
+                        <option value="3">3年</option>
+                        <option value="4">4年</option>
+                     </select>
+                </td>
+                
+                <td><input type="text" v-model="player.pref" class="form-control form-control-sm" placeholder="東京都"></td>
+                <td><input type="text" v-model="player.junior" class="form-control form-control-sm" placeholder="○○ジュニア"></td>
+                <td><input type="text" v-model="player.jhs" class="form-control form-control-sm" placeholder="○○中学校"></td>
+                <td><input type="text" v-model="player.hs" class="form-control form-control-sm" placeholder="○○高校"></td>
                 
                 <td><input type="text" v-model="player.member_id" class="form-control form-control-sm" placeholder="1234567"></td>
                 
@@ -2196,9 +2229,29 @@ html, body {
                 <i class="bi bi-info-circle"></i> 変更したい項目のみ入力して「更新する」ボタンを押してください。
             </div>
             <div class="mb-3">
-                <label class="form-label fw-bold">代表者名</label>
-                <input type="text" class="form-control" v-model="form.user_name" placeholder="代表者名">
-            </div>
+                <div class="mb-3">
+    <label class="form-label fw-bold">代表者名（主務）</label>
+    <input type="text" class="form-control" v-model="form.user_name" placeholder="氏名を入力">
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-6">
+        <label class="form-label fw-bold">部長</label>
+        <input type="text" class="form-control" v-model="form.president" placeholder="部長氏名">
+    </div>
+    <div class="col-md-6">
+        <label class="form-label fw-bold">監督</label>
+        <input type="text" class="form-control" v-model="form.manager" placeholder="監督氏名">
+    </div>
+    <div class="col-md-6">
+        <label class="form-label fw-bold">コーチ1</label>
+        <input type="text" class="form-control" v-model="form.coach1" placeholder="コーチ氏名">
+    </div>
+    <div class="col-md-6">
+        <label class="form-label fw-bold">コーチ2</label>
+        <input type="text" class="form-control" v-model="form.coach2" placeholder="コーチ氏名">
+    </div>
+</div>
             <div class="mb-3">
                 <label class="form-label fw-bold">新しいメールアドレス</label>
                 <input type="email" class="form-control" v-model="account.newEmail" placeholder="変更する場合のみ入力">
@@ -2579,7 +2632,7 @@ html, body {
 
         <script>
 
-            const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwBBQHjzSAXXNTD0nq2b1LgUtH8xhvyq8KCSCxb7lv3Z5Ze86IRMp2itRlQoa3-mHSPOQ/exec";
+            const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxeB5jHG_JC24dGZR-mCoO3BVRVqArADUrcW-Kim9cNXB0jGCysu6mmo8Qjh5zzJwi3Rg/exec";
 
             const firebaseConfig = {
                 apiKey: "AIzaSyASxcZep_OpFzc2EML2sUMRuK8rDJXv-cg",
@@ -2641,7 +2694,18 @@ lastInteraction: {}, // ★追加：最新のやり取り時刻を保存する
 
                         adminNews: { date: '', title: '', content: '', urls: [] }, isUploadingNews: false,
                         account: { newEmail: '', newPass: '' }, isUploadingLogo: false,
-form: { univ_id: '', univ_name: '', user_name: '', division: '3', logo_url: '' },
+form: { 
+    univ_id: '', 
+    univ_name: '', 
+    user_name: '', 
+    division: '3', 
+    logo_url: '',
+    // --- 追加項目 ---
+    president: '', // 部長
+    manager: '',   // 監督
+    coach1: '',    // コーチ1
+    coach2: ''     // コーチ2
+},
                         memo: '', saveMessage: '',
                         entry: {
 
@@ -2669,7 +2733,7 @@ form: { univ_id: '', univ_name: '', user_name: '', division: '3', logo_url: '' }
                             rookie: { excel_url: '', team_a: 0, team_b: 0, count_s: 0, count_d: 0, payment_id: '', receipt_url: '' },
 
                             player_reg: [
-                                { back_number: '', name: '', kana: '', member_id: '', is_referee: '無', receipt_url: '' }
+                                { back_number: '', name: '', kana: '', grade: '', pref: '', junior: '', jhs: '', hs: '', member_id: '', is_referee: '無', receipt_url: '' }
                             ],
                             league_expense: {
                                 excel_url: '',        // 1:春リーグ申請書
@@ -2853,9 +2917,14 @@ chatListAdminRecords() {
                     // --- 選手登録（一括入力）関連 ---
                     addPlayerRow() {
                         this.entry.player_reg.push({
-back_number: '',                            
-name: '',
+                            back_number: '',                            
+                            name: '',
                             kana: '',
+                            grade: '', // ★追加
+                            pref: '',
+                            junior: '',
+                            jhs: '',
+                            hs: '',
                             member_id: '',
                             is_referee: '無',
                             receipt_url: ''
@@ -3387,6 +3456,10 @@ name: '',
                         this.form.user_name = d.user_name || '';
                         this.form.division = d.division;
 this.form.logo_url = d.logo_url || '';
+this.form.president = d.president || '';
+this.form.manager = d.manager || '';
+this.form.coach1 = d.coach1 || '';
+this.form.coach2 = d.coach2 || '';
                         if (d.memo) this.memo = d.memo;
 
                         // 2. データ復元用のヘルパー関数
@@ -3477,6 +3550,10 @@ this.form.logo_url = d.logo_url || '';
                             user_name: cleanUserName, // 綺麗にした氏名を使用
                             division: this.form.division,
 logo_url: this.form.logo_url,
+president: this.form.president,
+    manager: this.form.manager,
+    coach1: this.form.coach1,
+    coach2: this.form.coach2,
                             memo: this.memo,
                             reg_fee: this.entry.reg_fee,
                             add_reg: this.entry.add_reg,
@@ -3733,7 +3810,7 @@ printSingleID(player) {
                     },
                     // ★追加: 選手登録名簿のCSVダウンロード
                     downloadPlayerRegList() {
-                        let csv = "\uFEFF大学ID,大学名,No,氏名,フリガナ,会員番号,3級審判,画像URL\n";
+                        let csv = "\uFEFF大学ID,大学名,No,背番号,氏名,フリガナ,学年,出身県,ジュニア,中学校,高校,会員番号,3級審判,画像URL\n"; // ★ヘッダー修正
                         this.filteredAdminRecords.forEach(rec => {
                             const players = Array.isArray(rec.player_reg.rawObj) ? rec.player_reg.rawObj : [];
                             players.forEach((p, index) => {
@@ -3741,9 +3818,14 @@ printSingleID(player) {
                                     rec.univ_id,
                                     rec.univ_name,
                                     index + 1,
-p.back_number || '',                                    
-p.name || '',
+                                    p.back_number || '',                                    
+                                    p.name || '',
                                     p.kana || '',
+                                    p.grade || '', // ★追加
+                                    p.pref || '',
+                                    p.junior || '',
+                                    p.jhs || '',
+                                    p.hs || '',
                                     p.member_id || '',
                                     p.is_referee || '無',
                                     p.receipt_url || ''
@@ -3751,9 +3833,7 @@ p.name || '',
                                 csv += row.join(",") + "\n";
                             });
                         });
-                        const blob = new Blob([csv], {
-                            type: "text/csv"
-                        });
+                        const blob = new Blob([csv], { type: "text/csv" });
                         saveAs(blob, `全大学_選手登録名簿_${new Date().toLocaleDateString().replace(/\//g, '')}.csv`);
                     },
 
@@ -4146,11 +4226,17 @@ if (key === 'add_reg') {
                         } else if (key === 'player_reg') {
                             this.detailModal.parsedData = Array.isArray(raw) ? raw.map((p, i) => ({
                                 "No": i + 1,
+                                "背番号": p.back_number || '',
                                 "氏名": p.name,
                                 "フリガナ": p.kana,
+                                "学年": p.grade || '', // ★追加
+                                "出身県": p.pref || '',
+                                "ジュニア": p.junior || '',
+                                "中学校": p.jhs || '',
+                                "高校": p.hs || '',
                                 "会員番号": p.member_id,
                                 "3級審判": p.is_referee,
-                                "画像": p.receipt_url // ← 文字列ではなくURLをそのまま渡す
+                                "画像": p.receipt_url
                             })) : [];
                             if (this.detailModal.parsedData.length === 0) {
                                 this.detailModal.type = 'simple';
@@ -4293,8 +4379,8 @@ if (key === 'add_reg') {
 
                         // 1. CSVヘッダーの定義（大会ごとに適切な項目を設定）
                         let header = "";
-                        if (key === 'reg_fee') header = "大学ID,大学名,部,基本金(1.5万),登録人数,連盟登録費,春リーグ参加費,小計";
-                        else if (key === 'player_reg') header = "大学ID,大学名,No,氏名,フリガナ,会員番号,3級審判";
+            if (key === 'reg_fee') header = "大学ID,大学名,部,基本金(1.5万),登録人数,連盟登録費,春リーグ参加費,小計";
+            else if (key === 'player_reg') header = "大学ID,大学名,No,背番号,氏名,フリガナ,学年,出身県,ジュニア,中学校,高校,会員番号,3級審判";
                         else if (key === 'add_reg') header = "大学ID,大学名,追加申請日,追加人数,小計";
                         else if (key === 'kanto_champ') header = "大学ID,大学名,シングルス数,ダブルス数,ミックス数,参加費合計";
                         else if (key === 'east_japan') header = "大学ID,大学名,チーム数,運営費人数,S数,D数,M数,参加費合計";
@@ -4322,7 +4408,7 @@ if (key === 'add_reg') {
                             else if (key === 'player_reg') {
                                 const players = Array.isArray(raw) ? raw : [];
                                 players.forEach((p, idx) => {
-                                    csv += `${base},${idx + 1},"${p.name || ''}","${p.kana || ''}","${p.member_id || ''}",${p.is_referee || '無'}\n`;
+                                    csv += `${base},${idx + 1},"${p.back_number || ''}","${p.name || ''}","${p.kana || ''}","${p.grade || ''}","${p.pref || ''}","${p.junior || ''}","${p.jhs || ''}","${p.hs || ''}","${p.member_id || ''}",${p.is_referee || '無'}\n`; // ★ p.grade を追加
                                 });
                                 return; // 選手登録は複数行になるためここで終了
                             }
