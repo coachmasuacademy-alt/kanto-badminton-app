@@ -3522,8 +3522,8 @@ this.form.coach2 = d.coach2 || '';
 
                             // 追加登録内のID補完
                             this.entry.add_reg.forEach((item, idx) => {
-                                // 01は連盟登録なので、追加登録は02, 03, 04, 05, 06と連番にする
-                                item.payment_id = this.form.univ_id + '0' + (idx + 2);
+                                // 本大会(03〜08)と重複しないように、追加登録は11からの連番(11〜15)にする
+                                item.payment_id = this.form.univ_id + String(11 + idx);
                             });
 
                             this.entry.kanto_champ.payment_id = this.form.univ_id + '03';
