@@ -1437,16 +1437,25 @@ html, body {
                                                             class="bi bi-check-circle-fill"></i> 登録済み</span>
                                                     <div class="mb-3"><img :src="entry.reg_fee.receipt_url"
                                                             class="receipt-preview"></div>
-                                                    <div class="d-flex justify-content-center gap-2"><a
-                                                            :href="entry.reg_fee.receipt_url" target="_blank"
-                                                            class="btn btn-sm btn-secondary"><i class="bi bi-eye"></i>
-                                                            拡大</a><button class="btn btn-sm btn-outline-danger"
-                                                            @click="deleteReceipt('reg_fee')"><i
-                                                                class="bi bi-trash"></i> 削除</button><button
-                                                            class="btn btn-sm btn-outline-dark"
-                                                            @click="openReceipt('reg_fee')"><i
-                                                                class="bi bi-receipt"></i> 領収書</button></div>
-                                                </div>
+                                                    <div class="d-flex justify-content-center gap-2 mb-2">
+    <a :href="entry.reg_fee.receipt_url" target="_blank" class="btn btn-sm btn-secondary">
+        <i class="bi bi-eye"></i> 拡大
+    </a>
+    <button class="btn btn-sm btn-outline-danger" @click="deleteReceipt('reg_fee')">
+        <i class="bi bi-trash"></i> 削除
+    </button>
+</div>
+
+<div class="mt-2 border-top pt-2">
+    <div class="small text-muted mb-1 text-center"><i class="bi bi-receipt"></i> 領収書を分割発行</div>
+    <div class="d-flex flex-wrap justify-content-center gap-1">
+        <button class="btn btn-sm btn-outline-dark" style="font-size: 0.75rem;" @click="openReceipt('reg_fee', 'all')">合計</button>
+        <button class="btn btn-sm btn-outline-dark" style="font-size: 0.75rem;" @click="openReceipt('reg_fee', 'count')">連盟登録</button>
+        <button class="btn btn-sm btn-outline-dark" style="font-size: 0.75rem;" @click="openReceipt('reg_fee', 'base')">年度初め</button>
+        <button class="btn btn-sm btn-outline-dark" style="font-size: 0.75rem;" @click="openReceipt('reg_fee', 'spring')">春季リーグ</button>
+    </div>
+</div></div>
+
                                                 <div v-else><span class="badge badge-missing mb-2">未登録</span>
                                                     <div class="mt-2"><input type="file"
                                                             class="form-control form-control-sm w-75 mx-auto"
@@ -3151,23 +3160,45 @@ chatListAdminRecords() {
                         this.saveData(true);
                     },
 
-                    openReceipt(category) {
-                        // 常に最新のrawObjからデータを取得する
-                        const raw = this.entry[category].rawObj || this.entry[category];
+                    openReceipt(category, subType = 'all') {
+    let amount = 0;
+    let title = '';
 
-                        // 金額を再計算（最新の画面入力値を反映）
-                        const amount = this.calculateCategoryTotal(category);
+    // 「②連盟登録」タブの場合の金額・但し書き切り分け
+    if (category === 'reg_fee') {
+        const countFee = (this.entry.reg_fee.count || 0) * 4000;
+        const baseFee = this.entry.reg_fee.is_paid_base ? 15000 : 0;
+        const springFee = this.calcSpringLeague;
 
-                        if (amount <= 0) {
-                            alert("金額が0円のため発行できません");
-                            return;
-                        }
+        if (subType === 'all') {
+            amount = countFee + baseFee + springFee;
+            title = "令和8年度 連盟登録 ＆ 春季リーグ 参加費等";
+        } else if (subType === 'count') {
+            amount = countFee;
+            title = "令和8年度 選手登録費（関東学連選手登録費＋全日本学連選手登録費）";
+        } else if (subType === 'base') {
+            amount = baseFee;
+            title = "令和8年度 団体登録費（関東学連維持費 ＋ 全日本学連加盟金）";
+        } else if (subType === 'spring') {
+            amount = springFee;
+            title = "令和8年度 春季リーグ戦 参加費";
+        }
+    } else {
+        // 他の大会タブ（関東選手権など）
+        amount = this.calculateCategoryTotal(category);
+        title = `令和8年度 ${this.getCategoryName(category)} 参加費等`;
+    }
 
-                        this.receiptData.amount = amount;
-                        this.receiptData.title = `令和7年度 ${this.getCategoryName(category)} 参加費等`;
-                        this.receiptData.show = true;
+    if (amount <= 0) {
+        alert("金額が0円のため発行できません");
+        return;
+    }
 
-                    },
+    this.receiptData.amount = amount;
+    this.receiptData.title = title;
+    this.receiptData.show = true;
+},
+
                     openReceiptArray(index) {
                         const item = this.entry.add_reg[index];
                         const amount = (item.count || 0) * 4000;
