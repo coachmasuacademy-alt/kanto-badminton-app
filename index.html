@@ -1579,6 +1579,10 @@ html, body {
                                                 accept=".xlsx, .xls" @change="uploadExcel($event, 'kanto_champ')"></div>
                                     </div>
                                     <div class="count-input-group mb-4">
+<div class="alert alert-info small py-2 mb-3">
+        <i class="bi bi-info-circle-fill"></i>
+        <strong>参加費：</strong>シングルス 1人3,000円 ｜ ダブルス 1組6,000円 ｜ ミックス 1人3,000円
+    </div>
                                         <div class="row g-3">
                                             <div class="col-md-4"><label
                                                     class="form-label small fw-bold">シングルス</label><input type="number"
@@ -1643,7 +1647,13 @@ html, body {
                                                 accept=".xlsx, .xls" @change="uploadExcel($event, 'east_japan')"></div>
                                     </div>
                                     <div class="count-input-group mb-4">
-                                        <div class="row g-3">
+<div class="alert alert-info small py-2 mb-3">
+        <i class="bi bi-info-circle-fill"></i>
+        <strong>参加費ガイド：</strong><br>
+        ・個人戦：シングルス 1人3,000円 ｜ ダブルス 1組6,000円 ｜ ミックス 1人3,000円<br>
+        ・団体戦：1チーム 20,000円<br>
+        ・運営費：1人 2,000円
+    </div>                                        <div class="row g-3">
                                             <div class="col-md-6"><label>団体チーム数</label><input type="number"
                                                     v-model.number="entry.east_japan.team" class="form-control"></div>
                                             <div class="col-md-6"><label>運営費人数</label><input type="number"
@@ -1764,7 +1774,12 @@ html, body {
                                         </div>
                                     </div>
                                     <div class="count-input-group mb-4">
-                                        <div class="row g-3">
+<div class="alert alert-info small py-2 mb-3">
+        <i class="bi bi-info-circle-fill"></i>
+        <strong>参加費ガイド：</strong><br>
+        ・個人戦：シングルス 1人3,000円 ｜ ダブルス 1組6,000円 ｜ ミックス 1人3,000円<br>
+        ・運営費：1種目につき 1人1,000円
+    </div>                                        <div class="row g-3">
                                             <div class="col-md-6"><label>運営費種目数</label><input type="number"
                                                     v-model.number="entry.all_japan_champ.ops_events"
                                                     class="form-control"></div>
