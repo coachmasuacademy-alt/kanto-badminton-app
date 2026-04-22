@@ -2786,9 +2786,9 @@ form: {
                     calcRegAndSpring() { return this.calcRegFee + this.calcSpringLeague; },
                     calcAddReg() { return 4000 * this.addRegCount; },
                     calcAutumnLeague() { return this.entry.autumn_league.join ? this.getLeagueFee(this.form.division) : 0; },
-                    calcKantoChamp() { const e = this.entry.kanto_champ; return ((e.count_s || 0) * 3000) + ((e.count_d || 0) * 6000) + ((e.count_m || 0) * 6000); },
-                    calcEastJapan() { const e = this.entry.east_japan; return ((e.team || 0) * 20000) + ((e.count_s || 0) * 3000) + ((e.count_d || 0) * 6000) + ((e.count_m || 0) * 6000) + ((e.ops || 0) * 2000); },
-                    calcAllJapanChamp() { const e = this.entry.all_japan_champ; return ((e.count_s || 0) * 3000) + ((e.count_d || 0) * 6000) + ((e.count_m || 0) * 6000) + ((e.ops_events || 0) * 1000); },
+                    calcKantoChamp() { const e = this.entry.kanto_champ; return ((e.count_s || 0) * 3000) + ((e.count_d || 0) * 6000) + ((e.count_m || 0) * 3000); },
+                    calcEastJapan() { const e = this.entry.east_japan; return ((e.team || 0) * 20000) + ((e.count_s || 0) * 3000) + ((e.count_d || 0) * 6000) + ((e.count_m || 0) * 3000) + ((e.ops || 0) * 2000); },
+                    calcAllJapanChamp() { const e = this.entry.all_japan_champ; return ((e.count_s || 0) * 3000) + ((e.count_d || 0) * 6000) + ((e.count_m || 0) * 3000) + ((e.ops_events || 0) * 1000); },
                     calcAllJapanTeam() { if (!this.entry.all_japan_team.join) return 0; return (this.entry.all_japan_team.team * 20000) + (this.entry.all_japan_team.ops * 3000); },
                     calcRookie() { const e = this.entry.rookie; const t = (e.team_a || 0) + (e.team_b || 0); return (t * 5000) + ((e.count_s || 0) * 3000) + ((e.count_d || 0) * 6000); },
                     grandTotal() { return this.calcRegAndSpring + this.calcAddReg + this.calcAutumnLeague + this.calcKantoChamp + this.calcEastJapan + this.calcAllJapanChamp + this.calcAllJapanTeam + this.calcRookie; },
@@ -4382,17 +4382,17 @@ if (key === 'add_reg') {
                             return (raw.is_paid_base ? 15000 : 0) + ((raw.count || 0) * 4000);
                         }
                         if (key === 'kanto_champ') {
-                            return ((raw.count_s || 0) * 3000) + ((raw.count_d || 0) * 6000) + ((raw.count_m || 0) * 6000);
+                            return ((raw.count_s || 0) * 3000) + ((raw.count_d || 0) * 6000) + ((raw.count_m || 0) * 3000);
                         }
-                        if (key === 'east_japan') {
-                            return ((raw.team || 0) * 20000) + ((raw.count_s || 0) * 3000) + ((raw.count_d || 0) * 6000) + ((raw.count_m || 0) * 6000) + ((raw.ops || 0) * 2000);
-                        }
+                       if (key === 'east_japan') {
+    return ((raw.team || 0) * 20000) + ((raw.count_s || 0) * 3000) + ((raw.count_d || 0) * 6000) + ((raw.count_m || 0) * 3000) + ((raw.ops || 0) * 2000);
+}
                         if (key === 'autumn_league') {
                             return raw.join ? this.getLeagueFee(rec.division) : 0;
                         }
                         if (key === 'all_japan_champ') {
-                            return ((raw.count_s || 0) * 3000) + ((raw.count_d || 0) * 6000) + ((raw.count_m || 0) * 6000) + ((raw.ops_events || 0) * 1000);
-                        }
+    return ((raw.count_s || 0) * 3000) + ((raw.count_d || 0) * 6000) + ((raw.count_m || 0) * 3000) + ((raw.ops_events || 0) * 1000);
+}
                         if (key === 'all_japan_team') {
                             if (!raw.join) return 0;
                             return (raw.team * 20000) + (raw.ops * 3000);
