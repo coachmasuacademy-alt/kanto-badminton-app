@@ -1129,8 +1129,6 @@ html, body {
                                 <th>⑦インカレ</th>
                                 <th>⑧大学対抗戦</th>
                                 <th>⑨新人戦</th>
-                                <th>⑩経費申請</th>
-                                <th>⑪返金申請</th>
                                 <th>備考・連絡</th>
                             </tr>
                         </thead>
@@ -1255,10 +1253,10 @@ html, body {
                             </button>
                             <div class="list-group-item bg-light fw-bold text-muted small mt-2">設定・その他</div>
                             <button class="list-group-item list-group-item-action"
-                                :class="{active: activeTab === 'settlement'}" @click="activeTab = 'settlement'">⑫
+                                :class="{active: activeTab === 'settlement'}" @click="activeTab = 'settlement'">⑩
                                 支払明細</button>
                             <button class="list-group-item list-group-item-action"
-                                :class="{active: activeTab === 'account'}" @click="activeTab = 'account'">⑬
+                                :class="{active: activeTab === 'account'}" @click="activeTab = 'account'">⑪
                                 アカウント設定</button>
                             
                         </div>
@@ -2062,94 +2060,10 @@ html, body {
                                     </div>
                                 </div>
 
-                                <div v-if="activeTab === 'league_expense'">
-                                    <h4>⑩ 経費申請</h4>
-                                    <div class="alert alert-info small">
-                                        <i class="bi bi-info-circle"></i> 春・秋それぞれの申請書Excelをアップロードしてください。
-                                        <br>※アップロードすると自動的に運営へメッセージが送信されます。
-                                    </div>
-
-                                    <div class="row g-2 mb-3">
-                                        <div class="col-md-6">
-                                            <div
-                                                class="excel-upload-area h-100 p-3 border rounded bg-light text-center">
-                                                <label class="form-label fw-bold small text-primary">1: 春リーグ 申請書</label>
-                                                <div v-if="entry.league_expense.excel_url" class="mt-2">
-                                                    <div class="btn-group w-100">
-                                                        <a :href="entry.league_expense.excel_url" target="_blank"
-                                                            class="btn btn-sm btn-primary">確認</a>
-                                                        <button class="btn btn-sm btn-outline-danger"
-                                                            @click="deleteExcelField('league_expense', 'excel_url')">削除</button>
-                                                    </div>
-                                                </div>
-                                                <input v-else type="file" class="form-control form-control-sm"
-                                                    accept=".xlsx, .xls"
-                                                    @change="uploadAndNotify($event, 'excel_url', '春リーグ経費申請書')">
-                                            </div>
-                                        </div>
-
-                                        <div class="col-md-6">
-                                            <div
-                                                class="excel-upload-area h-100 p-3 border rounded bg-light text-center">
-                                                <label class="form-label fw-bold small text-primary">2: 秋リーグ 申請書</label>
-                                                <div v-if="entry.league_expense.excel_url_autumn" class="mt-2">
-                                                    <div class="btn-group w-100">
-                                                        <a :href="entry.league_expense.excel_url_autumn" target="_blank"
-                                                            class="btn btn-sm btn-primary">確認</a>
-                                                        <button class="btn btn-sm btn-outline-danger"
-                                                            @click="deleteExcelField('league_expense', 'excel_url_autumn')">削除</button>
-                                                    </div>
-                                                </div>
-                                                <input v-else type="file" class="form-control form-control-sm"
-                                                    accept=".xlsx, .xls"
-                                                    @change="uploadAndNotify($event, 'excel_url_autumn', '秋リーグ経費申請書')">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="text-center mt-4">
-                                        <div v-if="entry.league_expense.confirmed" class="alert alert-success fw-bold">
-                                            <i class="bi bi-check-all"></i> 運営による振込処理が完了しました
-                                        </div>
-                                        <div v-else class="alert alert-secondary">
-                                            ステータス：確認中（振込をお待ちください）
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div v-if="activeTab === 'refund_request'">
-                                    <h4>⑪ 返金申請</h4>
-                                    <div class="excel-upload-area"><label class="form-label fw-bold">申請書Excel</label>
-                                        <div v-if="entry.refund_request.excel_url" class="mt-3">
-                                            <div class="d-flex align-items-center justify-content-center gap-2"><span
-                                                    class="badge bg-success">UP済み</span><a
-                                                    :href="entry.refund_request.excel_url" target="_blank"
-                                                    class="btn btn-sm btn-primary"><i class="bi bi-search"></i>
-                                                    確認</a><button class="btn btn-sm btn-outline-danger"
-                                                    @click="deleteExcel('refund_request')"><i class="bi bi-trash"></i>
-                                                    削除</button></div>
-                                        </div>
-                                        <div v-else><input type="file" class="form-control w-75 mx-auto"
-                                                accept=".xlsx, .xls" @change="uploadExcel($event, 'refund_request')">
-                                        </div>
-                                    </div>
-                                    <div class="mt-3"><label>申請金額</label>
-                                        <div class="input-group"><span class="input-group-text">¥</span><input
-                                                type="number" v-model.number="entry.refund_request.amount"
-                                                class="form-control"></div>
-                                    </div>
-                                    <div class="text-center mt-3">
-                                        <div v-if="entry.refund_request.confirmed" class="alert alert-success">振込完了
-                                        </div>
-                                        <div v-else class="alert alert-secondary">処理待ち</div>
-                                    </div>
-                                    <div class="save-area"><button @click="saveData"
-                                            class="btn btn-primary btn-lg px-5">保存</button></div>
-                                </div>
-
+                                                            
                                 <div v-if="activeTab === 'settlement'">
                                     <div class="d-flex justify-content-between align-items-center mb-4 no-print">
-                                        <h4><i class="bi bi-file-earmark-spreadsheet-fill"></i> ⑫ 支払明細</h4><button @click="downloadSettlementPDF" class="btn btn-dark">
+                                        <h4><i class="bi bi-file-earmark-spreadsheet-fill"></i> ⑩ 支払明細</h4><button @click="downloadSettlementPDF" class="btn btn-dark">
     <i class="bi bi-file-earmark-pdf"></i> PDFダウンロード
 </button>
                                     </div>
@@ -2242,7 +2156,7 @@ html, body {
 
 
                                 <div v-if="activeTab === 'account'">
-    <h4><i class="bi bi-gear-fill"></i> ⑬ アカウント設定</h4>
+    <h4><i class="bi bi-gear-fill"></i> ⑪ アカウント設定</h4>
     
     <div class="card mt-4 border-warning">
         <div class="card-header bg-warning text-dark fw-bold">
@@ -2712,9 +2626,7 @@ lastInteraction: {}, // ★追加：最新のやり取り時刻を保存する
                             all_japan_champ: '⑦ インカレ',
                             all_japan_team: '⑧ 大学対抗戦',
                             rookie: '⑨ 新人戦',
-                            league_expense: '⑩ 経費申請',
-                            refund_request: '⑪ 返金申請'
-                        },
+                          },
 
                         adminNews: { date: '', title: '', content: '', urls: [] }, isUploadingNews: false,
                         account: { newEmail: '', newPass: '' }, isUploadingLogo: false,
@@ -2759,12 +2671,7 @@ form: {
                             player_reg: [
                                 { back_number: '', name: '', kana: '', grade: '', pref: '', junior: '', jhs: '', hs: '', member_id: '', is_referee: '無', receipt_url: '' }
                             ],
-                            league_expense: {
-                                excel_url: '',        // 1:春リーグ申請書
-                                excel_url_autumn: '',  // 2:秋リーグ申請書
-                                confirmed: false      // 管理者の振込完了チェック用
-                            },
-                            refund_request: { excel_url: '', amount: 0, confirmed: false }
+                            
                         },
                         adminFilterType: 'all', adminSearchQuery: '',
                         adminStatusKeys: [
@@ -2776,9 +2683,8 @@ form: {
                             'autumn_league',    // ⑥ 秋季L
                             'all_japan_champ',  // ⑦ インカレ
                             'all_japan_team',   // ⑧ 大学対抗戦
-                            'rookie',           // ⑨ 新人戦
-                            'league_expense',   // ⑩ 経費申請
-                            'refund_request'    // ⑪ 返金申請
+                            'rookie'           // ⑨ 新人戦
+                            
                         ],
                         selectedTournament: 'reg_fee', isZipping: false, isGeneratingList: false,
                         modal: { show: false, univName: '', category: '', url: '', subRecord: null },
@@ -3278,27 +3184,7 @@ chatListAdminRecords() {
                             });
                     },
 
-                    async uploadAndNotify(event, field, label) {
-                        const file = event.target.files[0];
-                        if (!file) return;
-                        this.isUploading = true;
-                        const path = `excel/${this.form.univ_id}/league_expense_${field}_${Date.now()}_${file.name}`;
-                        try {
-                            const snapshot = await firebase.storage().ref().child(path).put(file);
-                            const url = await snapshot.ref.getDownloadURL();
-                            this.entry.league_expense[field] = url;
-                            await this.saveData(true);
-                            // チャットメッセージをセットして送信
-                            this.chatMessage = `【自動通知】${label}をアップロードしました。確認をお願いします。`;
-                            await this.sendMessage(false);
-                            this.isUploading = false;
-                            alert(`${label}のアップロードと運営への連絡が完了しました。`);
-                        } catch (e) {
-                            console.error(e);
-                            alert("エラーが発生しました。");
-                            this.isUploading = false;
-                        }
-                    },
+                    
 
                     // 2. この関数を uploadExcel のすぐ下などに追加する
                     deleteExcelField(category, subField) {
@@ -3530,8 +3416,7 @@ this.form.coach2 = d.coach2 || '';
                         mergeData('all_japan_champ', d.all_japan_champ); // ⑦ インカレ
                         mergeData('all_japan_team', d.all_japan_team);   // ⑧ 大学対抗戦
                         mergeData('rookie', d.rookie);               // ⑨ 新人戦
-                        mergeData('league_expense', d.league_expense); // ⑩ 経費申請
-                        mergeData('refund_request', d.refund_request); // ⑪ 返金申請
+                        
 
                         // 4. 配列データ（追加登録・選手登録）の特別処理
                         // 追加登録
@@ -3611,8 +3496,6 @@ president: this.form.president,
                             all_japan_team: this.entry.all_japan_team,
                             rookie: this.entry.rookie,
                             player_reg: this.entry.player_reg,
-                            league_expense: this.entry.league_expense,
-                            refund_request: this.entry.refund_request,
                             total_cost: this.grandTotal
                         };
 
@@ -3914,8 +3797,6 @@ const activeAddReg = aReg.filter(item => item.count > 0 || item.excel_url || ite
                         const ajChamp = safeParse(raw.all_japan_champ, {});
                         const ajTeam = safeParse(raw.all_japan_team, {});
                         const rookie = safeParse(raw.rookie, {});
-                        const lExp = safeParse(raw.league_expense, {});
-                        const refReq = safeParse(raw.refund_request, {});
                         let pReg = safeParse(raw.player_reg, []);
                         if (!Array.isArray(pReg)) {
                             // 選手登録も同様に配列に戻す
@@ -3942,9 +3823,7 @@ const activeAddReg = aReg.filter(item => item.count > 0 || item.excel_url || ite
                         }
                         if (rFee.excel_url) details.push(`連盟登録: Excelあり`);
                         if (aReg.some(r => r.excel_url)) details.push(`追加登録: Excelあり`);
-                        if (lExp.excel_url) details.push(`経費申請: ¥${lExp.amount}`);
-                        if (refReq.excel_url) details.push(`返金申請: ¥${refReq.amount}`);
-
+                        
                         const detailText = details.length > 0 ? details.join('\n') : "内訳なし";
                         const parseCat = (obj, key) => {
                             const raw = obj.rawObj || obj;
@@ -3990,30 +3869,12 @@ add_reg_active: activeAddReg,
                                 rawObj: pReg,
                                 hasReceipt: Array.isArray(pReg) && pReg.some(p => p.receipt_url)
                             },
-                            league_expense: {
-                                confirmed: !!lExp.confirmed,
-                                rawObj: lExp,
-                                hasReceipt: !!lExp.excel_url || !!lExp.excel_url_autumn,
-                                receiptUrl: lExp.excel_url || lExp.excel_url_autumn
-                            },
-                            refund_request: {
-                                confirmed: !!refReq.confirmed,
-                                rawObj: refReq,
-                                hasReceipt: !!refReq.excel_url,
-                                receiptUrl: refReq.excel_url
-                            },
+                            
                             raw_data: raw
                         };
                     },
 
                     getAdminStatusClass(cat, key) {
-                        // ⑩経費申請・⑪返金申請
-                        if (['league_expense', 'refund_request'].includes(key)) {
-                            const raw = cat.rawObj || {};
-                            const hasFile = !!(raw.excel_url || raw.excel_url_autumn);
-                            return hasFile ? 'status-done' : 'status-none';
-                        }
-
                         // ①選手登録の判定
                         if (key === 'player_reg') {
                             const list = Array.isArray(cat.rawObj) ? cat.rawObj : [];
@@ -4306,16 +4167,7 @@ if (key === 'add_reg') {
                             html += '</div>';
                             this.detailModal.data = html;
                         }
-                        // ★追加：経費申請の詳細表示（春・秋のファイルを表示）
-                        else if (key === 'league_expense') {
-                            this.detailModal.type = 'simple';
-                            let html = '<div class="list-group text-start shadow-sm">';
-                            if (raw.excel_url) html += `<a href="${raw.excel_url}" target="_blank" class="list-group-item list-group-item-action text-primary">1: 春リーグ 経費申請書 <i class="bi bi-box-arrow-up-right"></i></a>`;
-                            if (raw.excel_url_autumn) html += `<a href="${raw.excel_url_autumn}" target="_blank" class="list-group-item list-group-item-action text-primary">2: 秋リーグ 経費申請書 <i class="bi bi-box-arrow-up-right"></i></a>`;
-                            if (!raw.excel_url && !raw.excel_url_autumn) html += '<div class="list-group-item text-muted">申請書未提出</div>';
-                            html += '</div>';
-                            this.detailModal.data = html;
-                        }
+                       
                         else {
                             if (raw && raw.excel_url) {
                                 this.detailModal.type = 'entry';
@@ -4340,9 +4192,8 @@ if (key === 'add_reg') {
                             all_japan_champ: 'インカレ',
                             all_japan_team: '大学対抗戦',
                             rookie: '新人戦',
-                            player_reg: '選手登録',
-                            league_expense: '経費申請',
-                            refund_request: '返金申請'
+                            player_reg: '選手登録'
+                            
                         };
                         return names[key] || key;
                     },
@@ -4434,8 +4285,7 @@ if (key === 'add_reg') {
                         else if (key === 'all_japan_champ') header = "大学ID,大学名,運営費種目数,S数,D数,M数,参加費合計";
                         else if (key === 'all_japan_team') header = "大学ID,大学名,チーム数,運営費人数,参加費合計";
                         else if (key === 'rookie') header = "大学ID,大学名,団体A,団体B,S数,D数,参加費合計";
-                        else if (key === 'league_expense') header = "大学ID,大学名,申請内容,振込状況";
-                        else if (key === 'refund_request') header = "大学ID,大学名,返金申請額,振込状況";
+                        
 
                         let csv = "\uFEFF" + header + "\n";
 
@@ -4491,12 +4341,7 @@ if (key === 'add_reg') {
                                 const total = this.calculateCategoryTotalForCSV(r, key);
                                 line = `${base},${raw.team_a || 0},${raw.team_b || 0},${raw.count_s || 0},${raw.count_d || 0},${total}`;
                             }
-                            else if (key === 'league_expense') {
-                                line = `${base},"${(raw.excel_url ? '春' : '')}${(raw.excel_url_autumn ? ' 秋' : '')} 申請あり",${raw.confirmed ? '振込済' : '未振込'}`;
-                            }
-                            else if (key === 'refund_request') {
-                                line = `${base},${raw.amount || 0},${raw.confirmed ? '振込済' : '未振込'}`;
-                            }
+                            
 
                             if (line) csv += line + "\n";
                         });
