@@ -1183,25 +1183,21 @@ html, body {
                                         </div>
                                     </div>
                                     <div class="text-center mt-1">
-                                        <template v-if="key === 'add_reg'">
-    <button v-if="rec.add_reg_active && rec.add_reg_active.length > 0"
-        class="btn btn-sm btn-outline-secondary py-0" style="font-size: 0.7rem;"
-        @click="openDetailModal(rec, key)">
-        <i class="bi bi-list-ul"></i> 詳細・DL
-    </button>
-</template>
+                                       <template v-if="key === 'add_reg'">
+                                            <button v-if="rec.add_reg_active && rec.add_reg_active.length > 0"
+                                                class="btn btn-sm btn-outline-secondary py-0" style="font-size: 0.7rem;"
+                                                @click="openDetailModal(rec, key, rec.add_reg_active)">
+                                                <i class="bi bi-list-ul"></i> 詳細・DL
+                                            </button>
+                                        </template>
                                         <template v-else>
                                             <button
-                                                v-if="rec[key].rawObj && (rec[key].rawObj.excel_url || rec[key].rawObj.excel_url_apply || rec[key].rawObj.excel_url_reg)"
                                                 class="btn btn-sm btn-outline-secondary py-0" style="font-size: 0.7rem;"
                                                 @click="openDetailModal(rec, key)">
                                                 <i class="bi bi-list-ul"></i> 詳細・DL
                                             </button>
-                                            <span
-                                                v-else-if="rec[key].rawObj && (rec[key].rawObj.join || rec[key].rawObj.amount)"
-                                                class="btn btn-sm btn-outline-secondary py-0" style="font-size: 0.7rem;"
-                                                @click="openDetailModal(rec, key)">詳細</span>
                                         </template>
+                                    </div>
                                     </div>
                                 </td>
                                 <td style="max-width: 200px;">
@@ -1307,61 +1303,44 @@ html, body {
 
                                     <div class="row g-2 mb-3">
                                         <div class="col-md-4">
-                                            <div
-                                                class="excel-upload-area h-100 p-2 border rounded bg-light text-center">
+                                            <div class="excel-upload-area h-100 p-2 border rounded bg-light text-center">
                                                 <label class="form-label fw-bold small text-primary">1: 春登録ファイル</label>
                                                 <div v-if="entry.reg_fee.excel_url" class="mt-2">
                                                     <div class="d-grid gap-1">
                                                         <span class="badge bg-success">UP済み</span>
-                                                        <a :href="entry.reg_fee.excel_url" target="_blank"
-                                                            class="btn btn-sm btn-primary">確認</a>
-                                                        <button class="btn btn-sm btn-outline-danger"
-                                                            @click="deleteExcelField('reg_fee', 'excel_url')">削除</button>
+                                                        <a :href="entry.reg_fee.excel_url" target="_blank" class="btn btn-sm btn-primary">確認</a>
+                                                        <button class="btn btn-sm btn-outline-danger" @click="deleteExcelField('reg_fee', 'excel_url')" :disabled="isCurrentTabExpired">削除</button>
                                                     </div>
                                                 </div>
-                                                <input v-else type="file" class="form-control form-control-sm"
-                                                    accept=".xlsx, .xls"
-                                                    @change="uploadExcel($event, 'reg_fee', 'excel_url')">
+                                                <input v-else type="file" class="form-control form-control-sm" accept=".xlsx, .xls" @change="uploadExcel($event, 'reg_fee', 'excel_url')" :disabled="isCurrentTabExpired">
                                             </div>
                                         </div>
 
                                         <div class="col-md-4">
-                                            <div
-                                                class="excel-upload-area h-100 p-2 border rounded bg-light text-center">
-                                                <label class="form-label fw-bold small text-primary">2:
-                                                    春リーグ_申込ファイル</label>
+                                            <div class="excel-upload-area h-100 p-2 border rounded bg-light text-center">
+                                                <label class="form-label fw-bold small text-primary">2: 春リーグ_申込ファイル</label>
                                                 <div v-if="entry.reg_fee.excel_url_apply" class="mt-2">
                                                     <div class="d-grid gap-1">
                                                         <span class="badge bg-success">UP済み</span>
-                                                        <a :href="entry.reg_fee.excel_url_apply" target="_blank"
-                                                            class="btn btn-sm btn-primary">確認</a>
-                                                        <button class="btn btn-sm btn-outline-danger"
-                                                            @click="deleteExcelField('reg_fee', 'excel_url_apply')">削除</button>
+                                                        <a :href="entry.reg_fee.excel_url_apply" target="_blank" class="btn btn-sm btn-primary">確認</a>
+                                                        <button class="btn btn-sm btn-outline-danger" @click="deleteExcelField('reg_fee', 'excel_url_apply')" :disabled="isCurrentTabExpired">削除</button>
                                                     </div>
                                                 </div>
-                                                <input v-else type="file" class="form-control form-control-sm"
-                                                    accept=".xlsx, .xls"
-                                                    @change="uploadExcel($event, 'reg_fee', 'excel_url_apply')">
+                                                <input v-else type="file" class="form-control form-control-sm" accept=".xlsx, .xls" @change="uploadExcel($event, 'reg_fee', 'excel_url_apply')" :disabled="isCurrentTabExpired">
                                             </div>
                                         </div>
 
                                         <div class="col-md-4">
-                                            <div
-                                                class="excel-upload-area h-100 p-2 border rounded bg-light text-center">
-                                                <label class="form-label fw-bold small text-primary">3:
-                                                    春リーグ_レギュラー登録</label>
+                                            <div class="excel-upload-area h-100 p-2 border rounded bg-light text-center">
+                                                <label class="form-label fw-bold small text-primary">3: 春リーグ_レギュラー登録</label>
                                                 <div v-if="entry.reg_fee.excel_url_reg" class="mt-2">
                                                     <div class="d-grid gap-1">
                                                         <span class="badge bg-success">UP済み</span>
-                                                        <a :href="entry.reg_fee.excel_url_reg" target="_blank"
-                                                            class="btn btn-sm btn-primary">確認</a>
-                                                        <button class="btn btn-sm btn-outline-danger"
-                                                            @click="deleteExcelField('reg_fee', 'excel_url_reg')">削除</button>
+                                                        <a :href="entry.reg_fee.excel_url_reg" target="_blank" class="btn btn-sm btn-primary">確認</a>
+                                                        <button class="btn btn-sm btn-outline-danger" @click="deleteExcelField('reg_fee', 'excel_url_reg')" :disabled="isCurrentTabExpired">削除</button>
                                                     </div>
                                                 </div>
-                                                <input v-else type="file" class="form-control form-control-sm"
-                                                    accept=".xlsx, .xls"
-                                                    @change="uploadExcel($event, 'reg_fee', 'excel_url_reg')">
+                                                <input v-else type="file" class="form-control form-control-sm" accept=".xlsx, .xls" @change="uploadExcel($event, 'reg_fee', 'excel_url_reg')" :disabled="isCurrentTabExpired">
                                             </div>
                                         </div>
                                     </div>
@@ -1369,55 +1348,60 @@ html, body {
                                     <div v-if="isUploading" class="text-center my-2 text-primary">
                                         <div class="spinner-border spinner-border-sm"></div> アップロード中...
                                     </div>
-                                    <div class="count-input-group mb-4">
+                                    
+
+
+<div class="count-input-group mb-4">
                                         <h6 class="border-bottom pb-2 mb-3">登録数入力（自動計算用）</h6>
                                         <div class="row g-3">
-                                            <div class="col-md-5"><label class="form-label small fw-bold">連盟登録人数</label>
-                                                <div class="input-group"><input type="number"
-                                                        v-model.number="entry.reg_fee.count" class="form-control"
-                                                        min="0"><span class="input-group-text">人</span></div>
+                                            <div class="col-md-5">
+                                                <label class="form-label small fw-bold">連盟登録人数</label>
+                                                <div class="input-group">
+                                                    <input type="number" v-model.number="entry.reg_fee.count" class="form-control" min="0" :disabled="isCurrentTabExpired">
+                                                    <span class="input-group-text">人</span>
+                                                </div>
                                                 <div class="form-text text-end">× ¥4,000 (関東¥2,000+全日本¥2,000)</div>
                                             </div>
                                         </div>
                                     </div>
+                                    
                                     <div class="card mb-4 border-secondary">
                                         <div class="card-body">
-                                            <div class="form-check form-switch"><input class="form-check-input"
-                                                    type="checkbox" v-model="entry.reg_fee.is_paid_base"
-                                                    id="baseFeeCheck"><label class="form-check-label fw-bold"
-                                                    for="baseFeeCheck">年度初め納入金 (¥15,000) を支払う</label></div>
-                                            <div class="small text-muted ms-4 mt-1">※関東学連維持費(¥10,000) + 全日本学連加盟金(¥5,000)
-                                                = ¥15,000</div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" v-model="entry.reg_fee.is_paid_base" id="baseFeeCheck" :disabled="isCurrentTabExpired">
+                                                <label class="form-check-label fw-bold" for="baseFeeCheck">年度初め納入金 (¥15,000) を支払う</label>
+                                            </div>
+                                            <div class="small text-muted ms-4 mt-1">※関東学連維持費(¥10,000) + 全日本学連加盟金(¥5,000) = ¥15,000</div>
                                         </div>
                                     </div>
+                                    
                                     <div class="card border-primary mb-4">
-                                        <div class="card-header bg-primary text-white bg-opacity-75"><i
-                                                class="bi bi-trophy-fill"></i> 春季リーグ戦 エントリー</div>
+                                        <div class="card-header bg-primary text-white bg-opacity-75">
+                                            <i class="bi bi-trophy-fill"></i> 春季リーグ戦 エントリー
+                                        </div>
                                         <div class="card-body">
                                             <div class="d-flex align-items-center mb-2">
-                                                <div class="form-check form-switch me-4"><input class="form-check-input"
-                                                        type="checkbox" v-model="entry.spring_league.join"
-                                                        id="springJoin"><label class="form-check-label fw-bold"
-                                                        for="springJoin">春季リーグ戦に参加する</label></div>
-                                                <div v-if="entry.spring_league.join" class="d-flex align-items-center">
-                                                    <label class="me-2 small fw-bold">所属部:</label><select
-                                                        v-model="form.division" class="form-select form-select-sm"
-                                                        style="width:auto;">
-                                                        <option value="1">1部</option>
-                                                        <option value="2">2部</option>
-                                                        <option value="3">3部</option>
-                                                        <option value="4">4部</option>
-                                                        <option value="5">5部</option>
-                                                        <option value="6">6部</option>
-                                                    </select>
-                                                </div>
+                                                <input class="form-check-input" type="checkbox" v-model="entry.spring_league.join" id="springJoin" :disabled="isCurrentTabExpired">
+                                                <label class="form-check-label fw-bold ms-2" for="springJoin">春季リーグ戦に参加する</label>
+                                            </div>
+                                            <div v-if="entry.spring_league.join" class="d-flex align-items-center mb-2 ms-4">
+                                                <label class="me-2 small fw-bold">所属部:</label>
+                                                <select v-model="form.division" class="form-select form-select-sm" style="width:auto;" :disabled="isCurrentTabExpired">
+                                                    <option value="1">1部</option>
+                                                    <option value="2">2部</option>
+                                                    <option value="3">3部</option>
+                                                    <option value="4">4部</option>
+                                                    <option value="5">5部</option>
+                                                    <option value="6">6部</option>
+                                                </select>
                                             </div>
                                             <div v-if="entry.spring_league.join" class="ms-4">
-                                                <p class="mb-0 text-primary fw-bold">参加費: {{
-                                                    formatMoney(calcSpringLeague) }}</p>
+                                                <p class="mb-0 text-primary fw-bold">参加費: {{ formatMoney(calcSpringLeague) }}</p>
                                             </div>
                                         </div>
                                     </div>
+
+
                                     <div class="payment-box">
                                         <div class="text-center">
                                             <h5 class="text-dark mb-1">合計支払額: <strong>{{ formatMoney(calcRegAndSpring)
@@ -1508,8 +1492,7 @@ html, body {
                                                 <div class="col-md-5">
                                                     <label class="form-label small fw-bold">追加人数</label>
                                                     <div class="input-group">
-                                                        <input type="number" v-model.number="app.count"
-                                                            class="form-control" min="0">
+                                                       <input type="number" v-model.number="app.count" class="form-control" min="0" :disabled="isCurrentTabExpired">
                                                         <span class="input-group-text">人</span>
                                                     </div>
                                                 </div>
@@ -1583,17 +1566,11 @@ html, body {
     </div>
                                         <div class="row g-3">
                                             <div class="col-md-4"><label
-                                                    class="form-label small fw-bold">シングルス</label><input type="number"
-                                                    v-model.number="entry.kanto_champ.count_s" class="form-control"
-                                                    min="0"></div>
+                                                    class="form-label small fw-bold">シングルス</label><input type="number" v-model.number="entry.kanto_champ.count_s" class="form-control" min="0" :disabled="isCurrentTabExpired"></div>
                                             <div class="col-md-4"><label
-                                                    class="form-label small fw-bold">ダブルス</label><input type="number"
-                                                    v-model.number="entry.kanto_champ.count_d" class="form-control"
-                                                    min="0"></div>
+                                                    class="form-label small fw-bold">ダブルス</label><input type="number" v-model.number="entry.kanto_champ.count_d" class="form-control" min="0" :disabled="isCurrentTabExpired"></div>
                                             <div class="col-md-4"><label
-                                                    class="form-label small fw-bold">ミックス</label><input type="number"
-                                                    v-model.number="entry.kanto_champ.count_m" class="form-control"
-                                                    min="0"></div>
+                                                    class="form-label small fw-bold">ミックス</label><input type="number" v-model.number="entry.kanto_champ.count_m" class="form-control" min="0" :disabled="isCurrentTabExpired"></div>
                                         </div>
                                     </div>
                                     <div class="payment-box">
@@ -1652,19 +1629,11 @@ html, body {
         ・団体戦：1チーム 20,000円<br>
         ・運営費：1人 2,000円
     </div>                                        <div class="row g-3">
-                                            <div class="col-md-6"><label>団体チーム数</label><input type="number"
-                                                    v-model.number="entry.east_japan.team" class="form-control"></div>
-                                            <div class="col-md-6"><label>運営費人数</label><input type="number"
-                                                    v-model.number="entry.east_japan.ops" class="form-control"></div>
-                                            <div class="col-md-4"><label>シングルス</label><input type="number"
-                                                    v-model.number="entry.east_japan.count_s" class="form-control">
-                                            </div>
-                                            <div class="col-md-4"><label>ダブルス</label><input type="number"
-                                                    v-model.number="entry.east_japan.count_d" class="form-control">
-                                            </div>
-                                            <div class="col-md-4"><label>ミックス</label><input type="number"
-                                                    v-model.number="entry.east_japan.count_m" class="form-control">
-                                            </div>
+                                            <div class="col-md-6"><label>団体チーム数</label><input type="number" v-model.number="entry.east_japan.team" class="form-control" :disabled="isCurrentTabExpired"></div>
+                                            <div class="col-md-6"><label>運営費人数</label><input type="number" v-model.number="entry.east_japan.ops" class="form-control" :disabled="isCurrentTabExpired"></div>
+                                            <div class="col-md-4"><label>シングルス</label><input type="number" v-model.number="entry.east_japan.count_s" class="form-control" :disabled="isCurrentTabExpired"></div>
+                                            <div class="col-md-4"><label>ダブルス</label><input type="number" v-model.number="entry.east_japan.count_d" class="form-control" :disabled="isCurrentTabExpired"></div>
+                                            <div class="col-md-4"><label>ミックス</label><input type="number" v-model.number="entry.east_japan.count_m" class="form-control" :disabled="isCurrentTabExpired"></div>
                                         </div>
                                     </div>
                                     <div class="payment-box">
@@ -1716,8 +1685,7 @@ html, body {
                                     </div>
                                     <div class="card border-primary mb-4">
                                         <div class="card-body">
-                                            <div class="form-check form-switch"><input class="form-check-input"
-                                                    type="checkbox" v-model="entry.autumn_league.join"><label
+                                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" v-model="entry.autumn_league.join" :disabled="isCurrentTabExpired"><label
                                                     class="form-check-label fw-bold">参加する</label></div>
                                             <div v-if="entry.autumn_league.join" class="mt-2">参加費: {{
                                                 formatMoney(calcAutumnLeague) }}</div>
@@ -1778,19 +1746,10 @@ html, body {
         ・個人戦：シングルス 1人3,000円 ｜ ダブルス 1組6,000円 ｜ ミックス 1人3,000円<br>
         ・運営費：1種目につき 1人1,000円
     </div>                                        <div class="row g-3">
-                                            <div class="col-md-6"><label>運営費種目数</label><input type="number"
-                                                    v-model.number="entry.all_japan_champ.ops_events"
-                                                    class="form-control"></div>
-                                            <div class="col-md-6"></div>
-                                            <div class="col-md-4"><label>シングルス</label><input type="number"
-                                                    v-model.number="entry.all_japan_champ.count_s" class="form-control">
-                                            </div>
-                                            <div class="col-md-4"><label>ダブルス</label><input type="number"
-                                                    v-model.number="entry.all_japan_champ.count_d" class="form-control">
-                                            </div>
-                                            <div class="col-md-4"><label>ミックス</label><input type="number"
-                                                    v-model.number="entry.all_japan_champ.count_m" class="form-control">
-                                            </div>
+                                            <div class="col-md-6"><label>運営費種目数</label><input type="number" v-model.number="entry.all_japan_champ.ops_events" class="form-control" :disabled="isCurrentTabExpired"></div>
+<div class="col-md-4"><label>シングルス</label><input type="number" v-model.number="entry.all_japan_champ.count_s" class="form-control" :disabled="isCurrentTabExpired"></div>
+<div class="col-md-4"><label>ダブルス</label><input type="number" v-model.number="entry.all_japan_champ.count_d" class="form-control" :disabled="isCurrentTabExpired"></div>
+<div class="col-md-4"><label>ミックス</label><input type="number" v-model.number="entry.all_japan_champ.count_m" class="form-control" :disabled="isCurrentTabExpired"></div>
                                         </div>
                                     </div>
                                     <div class="payment-box">
@@ -1828,8 +1787,7 @@ html, body {
                                     <h4>⑧ 大学対抗戦</h4>
                                     <div class="card border-primary mb-4">
                                         <div class="card-body">
-                                            <div class="form-check form-switch"><input class="form-check-input"
-                                                    type="checkbox" v-model="entry.all_japan_team.join"><label
+                                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" v-model="entry.all_japan_team.join" :disabled="isCurrentTabExpired"><label
                                                     class="form-check-label fw-bold">参加する</label></div>
                                         </div>
                                     </div>
@@ -1850,12 +1808,8 @@ html, body {
                                                     @change="uploadExcel($event, 'all_japan_team')"></div>
                                         </div>
                                         <div class="row g-3">
-                                            <div class="col-6"><label>チーム数</label><input type="number"
-                                                    v-model.number="entry.all_japan_team.team" class="form-control">
-                                            </div>
-                                            <div class="col-6"><label>運営費</label><input type="number"
-                                                    v-model.number="entry.all_japan_team.ops" class="form-control">
-                                            </div>
+                                            <div class="col-6"><label>チーム数</label><input type="number" v-model.number="entry.all_japan_team.team" class="form-control" :disabled="isCurrentTabExpired"></div>
+                                            <div class="col-6"><label>運営費</label><input type="number" v-model.number="entry.all_japan_team.ops" class="form-control" :disabled="isCurrentTabExpired"></div>
                                         </div>
                                         <div class="payment-box">
                                             <div class="text-center">
@@ -1908,14 +1862,10 @@ html, body {
                                     </div>
                                     <div class="count-input-group mb-4">
                                         <div class="row g-3">
-                                            <div class="col-6"><label>団体A</label><input type="number"
-                                                    v-model.number="entry.rookie.team_a" class="form-control"></div>
-                                            <div class="col-6"><label>団体B</label><input type="number"
-                                                    v-model.number="entry.rookie.team_b" class="form-control"></div>
-                                            <div class="col-6"><label>シングルス</label><input type="number"
-                                                    v-model.number="entry.rookie.count_s" class="form-control"></div>
-                                            <div class="col-6"><label>ダブルス</label><input type="number"
-                                                    v-model.number="entry.rookie.count_d" class="form-control"></div>
+                                            <div class="col-6"><label>団体A</label><input type="number" v-model.number="entry.rookie.team_a" class="form-control" :disabled="isCurrentTabExpired"></div>
+<div class="col-6"><label>団体B</label><input type="number" v-model.number="entry.rookie.team_b" class="form-control" :disabled="isCurrentTabExpired"></div>
+<div class="col-6"><label>シングルス</label><input type="number" v-model.number="entry.rookie.count_s" class="form-control" :disabled="isCurrentTabExpired"></div>
+<div class="col-6"><label>ダブルス</label><input type="number" v-model.number="entry.rookie.count_d" class="form-control" :disabled="isCurrentTabExpired"></div>
                                         </div>
                                     </div>
                                     <div class="payment-box">
@@ -2023,7 +1973,7 @@ html, body {
                     <div v-if="player.receipt_url" class="d-flex align-items-center justify-content-center gap-2">
                         <span class="badge bg-success">登録済</span>
                         <a :href="player.receipt_url" target="_blank" class="btn btn-xs btn-outline-primary py-0" style="font-size:0.7rem">確認</a>
-                        <i class="bi bi-x-circle-fill text-danger" style="cursor:pointer" @click="player.receipt_url=''"></i>
+                        <i v-if="!isCurrentTabExpired" class="bi bi-x-circle-fill text-danger" style="cursor:pointer" @click="player.receipt_url=''"></i>
                     </div>
                     <div v-else>
                         <label class="btn btn-sm btn-outline-secondary py-0 w-100">
@@ -2040,7 +1990,7 @@ html, body {
                 </td>
                 
                 <td class="text-center">
-                    <button class="btn btn-sm btn-outline-danger border-0" @click="removePlayerRow(index)" tabindex="-1">
+                    <button class="btn btn-sm btn-outline-danger border-0" @click="removePlayerRow(index)" tabindex="-1" :disabled="isCurrentTabExpired">
                         <i class="bi bi-trash-fill"></i>
                     </button>
                 </td>
@@ -2050,7 +2000,7 @@ html, body {
 </div>
 
                                     <div class="d-flex justify-content-center mb-5">
-                                        <button class="btn btn-success rounded-pill px-4" @click="addPlayerRow">
+                                       <button class="btn btn-success rounded-pill px-4" @click="addPlayerRow" :disabled="isCurrentTabExpired">
                                             <i class="bi bi-plus-lg"></i> 選手を追加する
                                         </button>
                                     </div>
@@ -2243,13 +2193,12 @@ html, body {
     </div>
     </div>
 
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-
+</div>
         <div v-if="showDeadlineModal" class="modal fade show d-block" style="background: rgba(0,0,0,0.5);"
             tabindex="-1">
             <div class="modal-dialog modal-dialog-centered">
@@ -2258,6 +2207,8 @@ html, body {
                         <h5 class="modal-title fw-bold text-dark"><i class="bi bi-calendar-check"></i> 申込期限の設定</h5>
                         <button type="button" class="btn-close" @click="showDeadlineModal = false"></button>
                     </div>
+
+
                     <div class="modal-body">
                         <div class="alert alert-light border small"><i class="bi bi-info-circle"></i>
                             設定した日付はユーザー画面に表示されます。</div>
@@ -2275,9 +2226,7 @@ html, body {
                 </div>
             </div>
         </div>
-
-        
-
+   
         <div v-if="detailModal.show" class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
             <div class="modal-dialog modal-dialog-scrollable">
                 <div class="modal-content">
@@ -2285,13 +2234,21 @@ html, body {
                         <h6 class="modal-title fw-bold">{{ detailModal.title }}</h6><button type="button"
                             class="btn-close small" @click="detailModal.show = false"></button>
                     </div>
-                    <div class="modal-body">
+
+
+
+
+<div class="modal-body">
                         <div v-if="detailModal.loading" class="text-center py-5">
                             <div class="spinner-border text-primary" role="status"></div>
-                            <p class="mt-2 text-muted">Excelファイルを読み込んでいます...</p>
+                            <p class="mt-2 text-muted">ファイルを読み込んでいます...</p>
                         </div>
+                        
                         <div v-else-if="detailModal.parsedData && detailModal.parsedData.length > 0">
-                            <div class="alert alert-success small py-1 mb-2"><i class="bi bi-table"></i> 名簿プレビュー</div>
+                            <div class="alert alert-success small py-2 mb-2 d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-table"></i> 名簿プレビュー</span>
+                                <a v-if="detailModal.downloadUrl" :href="detailModal.downloadUrl" target="_blank" class="btn btn-sm btn-primary fw-bold"><i class="bi bi-download"></i> ExcelをDL</a>
+                            </div>
                             <div class="table-responsive" style="max-height: 400px;">
                                 <table class="table table-sm table-bordered table-striped small mb-0 text-nowrap">
                                     <thead class="table-light sticky-top">
@@ -2299,15 +2256,11 @@ html, body {
                                             <th v-for="(val, k) in detailModal.parsedData[0]" :key="k">{{ k }}</th>
                                         </tr>
                                     </thead>
-
                                     <tbody>
                                         <tr v-for="(row, idx) in detailModal.parsedData" :key="idx">
                                             <td v-for="(val, k) in row" :key="k">
                                                 <div v-if="k === '画像'">
-                                                    <a v-if="val" :href="val" target="_blank"
-                                                        class="btn btn-sm btn-primary py-0" style="font-size: 0.8rem;">
-                                                        <i class="bi bi-card-image"></i> 画像確認
-                                                    </a>
+                                                    <a v-if="val" :href="val" target="_blank" class="btn btn-sm btn-primary py-0" style="font-size: 0.8rem;"><i class="bi bi-card-image"></i> 画像確認</a>
                                                     <span v-else class="text-muted small">-</span>
                                                 </div>
                                                 <span v-else>{{ val }}</span>
@@ -2316,47 +2269,58 @@ html, body {
                                     </tbody>
                                 </table>
                             </div>
-                            <div class="text-center mt-3"><button class="btn btn-sm btn-secondary"
-                                    @click="detailModal.parsedData = []">一覧を閉じる</button></div>
+                            <div class="text-center mt-3"><button class="btn btn-sm btn-secondary" @click="detailModal.parsedData = []">プレビューを閉じる</button></div>
                         </div>
 
                         <div v-else>
                             <div v-if="detailModal.type === 'array_list'">
                                 <div class="list-group">
-                                    <div v-for="(item, idx) in detailModal.data" :key="idx"
-                                        class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div v-for="(item, idx) in detailModal.data" :key="idx" class="list-group-item d-flex justify-content-between align-items-center">
                                         <div>
                                             <div class="fw-bold">申請日: {{ item.date }}</div>
                                             <div class="small">人数: {{ item.count }}名 / ID: {{ item.payment_id }}</div>
                                         </div>
-                                        <div><span v-if="item.confirmed" class="badge bg-success">承認済</span><span
-                                                v-else-if="item.receipt_url"
-                                                class="badge bg-warning text-dark">確認中</span><span v-else
-                                                class="badge bg-secondary">未完</span><a v-if="item.excel_url"
-                                                :href="item.excel_url" target="_blank"
-                                                class="ms-2 btn btn-sm btn-outline-primary py-0">Excel</a><button
-                                                v-if="item.excel_url" class="ms-1 btn btn-sm btn-outline-info py-0"
-                                                @click="previewExcel(item.excel_url)">見る</button><button
-                                                v-if="item.receipt_url"
-                                                class="ms-1 btn btn-sm btn-outline-secondary py-0"
-                                                @click="showReceipt({univ_name:detailModal.univName}, 'add_reg', item)">振込</button>
+                                        <div>
+                                            <span v-if="item.confirmed" class="badge bg-success">承認済</span>
+                                            <span v-else-if="item.receipt_url" class="badge bg-warning text-dark">確認中</span>
+                                            <span v-else class="badge bg-secondary">未完</span>
+                                            
+                                            <button v-if="item.excel_url" class="ms-2 btn btn-sm btn-info py-0 text-white" @click="previewExcel(item.excel_url)">プレビュー</button>
+                                            <a v-if="item.excel_url" :href="item.excel_url" target="_blank" class="ms-1 btn btn-sm btn-primary py-0"><i class="bi bi-download"></i> DL</a>
+                                            <button v-if="item.receipt_url" class="ms-1 btn btn-sm btn-outline-secondary py-0" @click="showReceipt({univ_name:detailModal.univName}, 'add_reg', item)">振込</button>
                                         </div>
                                     </div>
+                                    <div v-if="!detailModal.data || detailModal.data.length === 0" class="text-center text-muted p-3">追加登録はありません。</div>
+                                </div>
+                            </div>
+                            
+                            <div v-else-if="detailModal.type === 'reg_fee_list'">
+                                <div class="list-group text-start shadow-sm">
+                                    <div v-for="file in detailModal.files" :key="file.name" class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span class="text-primary fw-bold">{{ file.name }}</span>
+                                        <div>
+                                            <button v-if="file.type === 'excel'" class="btn btn-sm btn-info text-white me-2" @click="previewExcel(file.url)">プレビュー</button>
+                                            <a :href="file.url" target="_blank" class="btn btn-sm btn-primary"><i class="bi bi-download"></i> DL</a>
+                                        </div>
+                                    </div>
+                                    <div v-if="!detailModal.files || detailModal.files.length === 0" class="p-3 text-muted text-center">提出されたファイルはありません。</div>
                                 </div>
                             </div>
 
                             <div v-else-if="detailModal.type === 'entry'">
-                                <div class="text-center text-muted py-4"><i
-                                        class="bi bi-file-earmark-excel fs-1 text-secondary"></i>
-                                    <p class="mt-2">データが表示できませんでした。<br>ダウンロードして確認してください。</p>
+                                <div class="text-center text-muted py-4">
+                                    <i class="bi bi-file-earmark-excel fs-1 text-secondary"></i>
+                                    <p class="mt-2">データが表示できませんでした。<br>直接ダウンロードして確認してください。</p>
+                                    <a v-if="detailModal.downloadUrl" :href="detailModal.downloadUrl" target="_blank" class="btn btn-success mt-2"><i class="bi bi-download"></i> ファイルをダウンロード</a>
                                 </div>
                             </div>
+
                             <div v-else class="text-center py-4">
-                                <div v-if="detailModal.type === 'simple'" v-html="detailModal.data"></div>
-                                <h5 v-else>{{ detailModal.data }}</h5>
+                                <h5 class="text-muted">{{ detailModal.data }}</h5>
                             </div>
                         </div>
                     </div>
+
                     <div class="modal-footer py-1">
                         <button type="button" class="btn btn-sm btn-secondary"
                             @click="detailModal.show = false">閉じる</button>
@@ -2438,6 +2402,7 @@ html, body {
 </div>
                 </div>
             </div>
+</div>
 
             <div v-if="modal.show" class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
                 <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -2477,7 +2442,7 @@ html, body {
                     </div>
                 </div>
             </div>
-</div>
+
              <div v-if="user || isAdmin">
             <div class="id-card-wrapper">
                 <div id="idCardCanvas" class="id-card">
@@ -2566,7 +2531,10 @@ html, body {
                 </div>
             </div>
         </div>
-    </div></div></div></div>
+    </div>
+    </div>
+    </div>
+</div>
 
         <script>
 
@@ -2600,20 +2568,7 @@ firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION)
                         isLoading: false, isSaving: false, isUploading: false,
                         masterData: [], savedRecords: [], newsList: [], activeTab: 'home',selectedPlayerForPrint: {},isSinglePrintMode: false,
 
-                        // --- チャット関連 ---
-                        chatMessage: '',
-                        messages: [],
-                        chatUnsubscribe: null,
-                        userHasUnread: false, // ユーザーの未読状態
-
-                        adminActiveChatUnivId: null,
-                        adminChatModal: { show: false, univName: '' },
-                        adminChatMessages: [],
-                        adminChatUnsubscribe: null,
-                        unreadStatus: {}, // 管理者の未読状態管理 { univId: boolean }
-                        hasHistoryStatus: {}, // ★追加：履歴（メッセージの存在）を管理する
-lastInteraction: {}, // ★追加：最新のやり取り時刻を保存する
-
+                       
                         // --- 期限管理 ---
                         deadlines: {}, showDeadlineModal: false,
                         categoryLabels: {
@@ -2688,7 +2643,7 @@ form: {
                         ],
                         selectedTournament: 'reg_fee', isZipping: false, isGeneratingList: false,
                         modal: { show: false, univName: '', category: '', url: '', subRecord: null },
-                        detailModal: { show: false, title: '', type: '', data: null, univName: '', loading: false, parsedData: [] },
+                        detailModal: { show: false, title: '', type: '', data: null, files: [], downloadUrl: null, univName: '', loading: false, parsedData: [], key: '', record: null },
                         receiptData: { show: false, amount: 0, title: '' }, parsedMemberList: []
                     }
                 },
@@ -2723,21 +2678,13 @@ form: {
                     },
                     countMen() { return this.adminRecords.filter(r => String(r.univ_id).startsWith('1')).length; },
                     countWomen() { return this.adminRecords.filter(r => String(r.univ_id).startsWith('2')).length; },
-chatListAdminRecords() {
-    return this.filteredAdminRecords.filter(rec => {
-        const id = String(rec.univ_id);
-        const hasUnread = !!this.unreadStatus[id];
-        const hasHistory = !!this.hasHistoryStatus[id];
 
-        if (this.adminSearchQuery) return true;
-        return hasUnread || hasHistory;
-    }).sort((a, b) => {
-        // ★修正：最新時刻を比較する（新しい方が上）
-        const timeA = this.lastInteraction[a.univ_id] || 0;
-        const timeB = this.lastInteraction[b.univ_id] || 0;
-        return timeB - timeA; 
-    });
-},
+isCurrentTabExpired() {
+    // 期限管理の対象外タブ（ここに 'player_reg' を入れたのは大正解です！）
+    const noDeadlineTabs = ['home', 'settlement', 'account', 'player_reg'];
+    if (noDeadlineTabs.includes(this.activeTab)) return false;
+    return this.isExpired(this.activeTab);
+}
 },              
                     created() {
                     this.isLoading = true;
@@ -3540,17 +3487,16 @@ printSingleID(player) {
                     },
 
                     // --- Excelプレビュー ---
-                    async previewExcel(url) {
+                   async previewExcel(url) {
                         if (!url) return;
                         this.detailModal.loading = true;
                         this.detailModal.parsedData = [];
+                        this.detailModal.downloadUrl = url; // プレビュー中もDLできるようにセット
                         try {
                             const res = await fetch(url);
                             if (!res.ok) throw new Error("Fetch failed");
                             const ab = await res.arrayBuffer();
-                            const wb = XLSX.read(ab, {
-                                type: "array"
-                            });
+                            const wb = XLSX.read(ab, { type: "array" });
                             const resultList = [];
                             wb.SheetNames.forEach(sheetName => {
                                 const isTeam = sheetName.includes("団体");
@@ -3559,41 +3505,24 @@ printSingleID(player) {
                                 const isMixed = sheetName.includes("ミックス");
                                 if (!isTeam && !isSingle && !isDouble && !isMixed) return;
                                 const ws = wb.Sheets[sheetName];
-                                const data = XLSX.utils.sheet_to_json(ws, {
-                                    header: 1
-                                });
+                                const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
                                 const startRow = 5;
                                 for (let i = startRow; i < data.length; i += 2) {
                                     const row1 = data[i] || [];
                                     const row2 = data[i + 1] || [];
                                     if (!row1[1] && !row1[6]) continue;
-                                    const createRow = (kubun, name, kana, grade, regNum) => {
-                                        return {
-                                            "大学名": this.detailModal.univName,
-                                            "種目": sheetName,
-                                            "区分": kubun,
-                                            "氏名": name,
-                                            "フリガナ": kana,
-                                            "学年": grade,
-                                            "登録番号": regNum
-                                        };
-                                    };
+                                    const createRow = (kubun, name, kana, grade, regNum) => ({
+                                        "大学名": this.detailModal.univName, "種目": sheetName, "区分": kubun,
+                                        "氏名": name, "フリガナ": kana, "学年": grade, "登録番号": regNum
+                                    });
                                     if (isTeam || isSingle) {
-                                        if (row1[1]) {
-                                            const name = (row2[1] || "") + " " + (row2[2] || "");
-                                            if (name.trim()) resultList.push(createRow(isTeam ? "A/前" : "No." + row1[0], name, (row1[1] || "") + " " + (row1[2] || ""), row1[3], row1[4]));
-                                        }
-                                        if (row1[6]) {
-                                            const name = (row2[6] || "") + " " + (row2[7] || "");
-                                            if (name.trim()) resultList.push(createRow(isTeam ? "B/後" : "No." + row1[5], name, (row1[6] || "") + " " + (row1[7] || ""), row1[8], row1[9]));
-                                        }
+                                        if (row1[1]) resultList.push(createRow(isTeam ? "A/前" : "No." + row1[0], (row2[1] || "") + " " + (row2[2] || ""), (row1[1] || "") + " " + (row1[2] || ""), row1[3], row1[4]));
+                                        if (row1[6]) resultList.push(createRow(isTeam ? "B/後" : "No." + row1[5], (row2[6] || "") + " " + (row2[7] || ""), (row1[6] || "") + " " + (row1[7] || ""), row1[8], row1[9]));
                                     } else if (isDouble || isMixed) {
                                         if (row1[1]) {
                                             const p1 = (row2[1] || "") + " " + (row2[2] || "");
                                             const p2 = (row2[5] || "") + " " + (row2[6] || "");
-                                            if (p1.trim()) {
-                                                resultList.push(createRow("No." + row1[0], `${p1} / ${p2}`, `${row1[1]} ${row1[2]} / ${row1[5]} ${row1[6]}`, `${row1[3]} / ${row1[7]}`, `${row1[4] || ""} / ${row1[8] || ""}`));
-                                            }
+                                            if (p1.trim()) resultList.push(createRow("No." + row1[0], `${p1} / ${p2}`, `${row1[1]} ${row1[2]} / ${row1[5]} ${row1[6]}`, `${row1[3]} / ${row1[7]}`, `${row1[4] || ""} / ${row1[8] || ""}`));
                                         }
                                     }
                                 }
@@ -3610,6 +3539,7 @@ printSingleID(player) {
                             this.detailModal.loading = false;
                         }
                     },
+
 
                     // --- 管理者：ダウンロード機能 ---
                     async downloadAllParticipantsExcel() {
@@ -4095,93 +4025,86 @@ if (key === 'add_reg') {
                     },
 
 
-                    openDetailModal(rec, key) {
-                        const raw = rec[key].rawObj;
-                        let title = `${rec.univ_name} - ${this.getCategoryName(key)}`;
-                        this.detailModal = {
-                            show: true,
-                            title: title,
-                            type: '',
-                            data: null,
-                            univName: rec.univ_name,
-                            loading: false,
-                            parsedData: [],
-                            key: key,      // カテゴリ名（reg_feeなど）
-                            record: rec    // レコード本体
-                        };
+openDetailModal(rec, key, addRegData = null) {
+                        console.log("=== 詳細ボタンがクリックされました ===");
+                        console.log("対象の大学:", rec.univ_name, "カテゴリ:", key);
 
-                        if (key === 'reg_fee') {
+                        try {
+                            const catData = rec[key] || {};
+                            const raw = catData.rawObj || {};
+                            
+                            // 確実にデータをリセットしてからセットする
+                            this.detailModal.title = `${rec.univ_name} - ${this.getCategoryName(key)}`;
                             this.detailModal.type = 'simple';
-                            if (raw.receipt_url) {
-                                // ここで生成した文字列が、HTMLの v-html 箇所に流し込まれます
-                                this.detailModal.data = `<div class="text-center">
-            <p class="small text-muted">振込明細画像</p>
-            <img src="${raw.receipt_url}" style="max-width:100%; max-height:450px; border:2px solid #eee; border-radius:8px; shadow: 0 4px 8px rgba(0,0,0,0.1);">
-            <div class="mt-2">
-                <a href="${raw.receipt_url}" target="_blank" class="btn btn-sm btn-outline-primary">別ウィンドウで開く</a>
-            </div>
-        </div>`;
-                            } else {
-                                this.detailModal.data = '<div class="text-center text-muted py-5">振込明細画像は登録されていません。</div>';
-                            }
+                            this.detailModal.data = null;
+                            this.detailModal.files = [];
+                            this.detailModal.downloadUrl = null;
+                            this.detailModal.univName = rec.univ_name;
+                            this.detailModal.loading = false;
+                            this.detailModal.parsedData = [];
+                            this.detailModal.key = key;
+                            this.detailModal.record = rec;
 
-                        } else if (key === 'add_reg') {
-                            // (既存の追加登録ロジック)
-                            this.detailModal.type = 'array_list';
-                            this.detailModal.data = rec.add_reg;
-
-                        } else if (key === 'player_reg') {
-                            this.detailModal.parsedData = Array.isArray(raw) ? raw.map((p, i) => ({
-                                "No": i + 1,
-                                "背番号": p.back_number || '',
-                                "氏名": p.name,
-                                "フリガナ": p.kana,
-                                "学年": p.grade || '', // ★追加
-                                "出身県": p.pref || '',
-                                "ジュニア": p.junior || '',
-                                "中学校": p.jhs || '',
-                                "高校": p.hs || '',
-                                "会員番号": p.member_id,
-                                "3級審判": p.is_referee,
-                                "画像": p.receipt_url
-                            })) : [];
-                            if (this.detailModal.parsedData.length === 0) {
-                                this.detailModal.type = 'simple';
-                                this.detailModal.data = "登録データなし";
+                            // ① 選手登録の場合
+                            if (key === 'player_reg') {
+                                this.detailModal.parsedData = Array.isArray(raw) ? raw.map((p, i) => ({
+                                    "No": i + 1,
+                                    "背番号": p.back_number || '',
+                                    "氏名": p.name,
+                                    "フリガナ": p.kana,
+                                    "学年": p.grade || '',
+                                    "出身県": p.pref || '',
+                                    "ジュニア": p.junior || '',
+                                    "中学校": p.jhs || '',
+                                    "高校": p.hs || '',
+                                    "会員番号": p.member_id,
+                                    "3級審判": p.is_referee,
+                                    "画像": p.receipt_url
+                                })) : [];
+                                if (this.detailModal.parsedData.length === 0) {
+                                    this.detailModal.data = "登録データはありません。";
+                                }
+                            } 
+                            // ③ 追加登録の場合
+                            else if (key === 'add_reg') {
+                                this.detailModal.type = 'array_list';
+                                this.detailModal.data = addRegData || rec.add_reg || [];
+                            } 
+                            // ② 連盟登録の場合（3つのファイルを表示）
+                            else if (key === 'reg_fee') {
+                                this.detailModal.type = 'reg_fee_list';
+                                if (raw.excel_url) this.detailModal.files.push({ name: '1: 春登録ファイル', url: raw.excel_url, type: 'excel' });
+                                if (raw.excel_url_apply) this.detailModal.files.push({ name: '2: 春リーグ 申込ファイル', url: raw.excel_url_apply, type: 'excel' });
+                                if (raw.excel_url_reg) this.detailModal.files.push({ name: '3: 春リーグ レギュラー登録', url: raw.excel_url_reg, type: 'excel' });
+                                if (raw.receipt_url) this.detailModal.files.push({ name: '★ 振込明細画像', url: raw.receipt_url, type: 'image' });
+                            } 
+                            // ④〜⑨ 大会申込の場合
+                            else {
+                                const targetUrl = raw.excel_url || raw.excel_url_apply || raw.excel_url_reg;
+                                if (targetUrl) {
+                                    this.detailModal.type = 'entry'; 
+                                    this.detailModal.downloadUrl = targetUrl;
+                                    this.previewExcel(targetUrl); 
+                                } else {
+                                    this.detailModal.data = raw.join ? "参加予定（ファイル未提出）" : "不参加、またはデータなし";
+                                }
                             }
-                        }
-                        // ★追加：連盟登録の詳細表示（3つのファイルを表示）
-                        else if (key === 'reg_fee') {
-                            this.detailModal.type = 'simple';
-                            let html = '<div class="list-group text-start shadow-sm">';
-                            if (raw.excel_url) html += `<a href="${raw.excel_url}" target="_blank" class="list-group-item list-group-item-action text-primary">1: 春登録ファイル <i class="bi bi-box-arrow-up-right"></i></a>`;
-                            if (raw.excel_url_apply) html += `<a href="${raw.excel_url_apply}" target="_blank" class="list-group-item list-group-item-action text-primary">2: 春リーグ 申込ファイル <i class="bi bi-box-arrow-up-right"></i></a>`;
-                            if (raw.excel_url_reg) html += `<a href="${raw.excel_url_reg}" target="_blank" class="list-group-item list-group-item-action text-primary">3: 春リーグ レギュラー登録 <i class="bi bi-box-arrow-up-right"></i></a>`;
-
-                            // 振込明細もここに出すと親切です
-                            if (raw.receipt_url) html += `<a href="${raw.receipt_url}" target="_blank" class="list-group-item list-group-item-action text-success fw-bold">★ 振込明細画像 <i class="bi bi-image"></i></a>`;
-
-                            if (!raw.excel_url && !raw.excel_url_apply && !raw.excel_url_reg && !raw.receipt_url) {
-                                html += '<div class="list-group-item text-muted">ファイル未提出</div>';
-                            }
-                            html += '</div>';
-                            this.detailModal.data = html;
-                        }
-                       
-                        else {
-                            if (raw && raw.excel_url) {
-                                this.detailModal.type = 'entry';
-                                this.previewExcel(raw.excel_url);
-                            } else {
-                                this.detailModal.type = 'simple';
-                                this.detailModal.data = (raw && raw.join) ? '参加' : '不参加 / データなし';
-                            }
+                            
+                            // 最後に画面を表示する
+                            this.detailModal.show = true;
+                            console.log("=== モーダル展開成功 ===");
+                            
+                        } catch (e) {
+                            console.error("詳細画面の表示中にエラーが発生しました:", e);
+                            alert("データを開く際にエラーが発生しました。");
                         }
                     },
 
                     closeModal() {
                         this.modal.show = false;
                     },
+
+
                     getCategoryName(key) {
                         const names = {
                             reg_fee: '連盟登録',
