@@ -1096,18 +1096,21 @@ html, body {
                         <div class="card h-100 border-secondary">
                             <div class="card-body">
                                 <h6 class="card-title text-muted">フィルタ</h6>
-                                <div class="d-flex gap-3">
-                                    <div class="form-check"><input class="form-check-input" type="radio"
-                                            v-model="adminFilterType" value="all" id="af1"><label
-                                            class="form-check-label" for="af1">すべて</label></div>
-                                    <div class="form-check"><input class="form-check-input" type="radio"
-                                            v-model="adminFilterType" value="men" id="af2"><label
-                                            class="form-check-label" for="af2">男子 (1000番台)</label></div>
-                                    <div class="form-check"><input class="form-check-input" type="radio"
-                                            v-model="adminFilterType" value="women" id="af3"><label
-                                            class="form-check-label" for="af3">女子 (2000番台)</label></div>
-                                </div><input type="text" class="form-control form-control-sm mt-2"
-                                    v-model="adminSearchQuery" placeholder="大学名で検索...">
+                                <div class="d-flex flex-wrap gap-3 mb-2">
+                                    <div class="form-check"><input class="form-check-input" type="radio" v-model="adminFilterType" value="all" id="af1"><label class="form-check-label" for="af1">すべて</label></div>
+                                    <div class="form-check"><input class="form-check-input" type="radio" v-model="adminFilterType" value="men" id="af2"><label class="form-check-label" for="af2">男子 (1000番台)</label></div>
+                                    <div class="form-check"><input class="form-check-input" type="radio" v-model="adminFilterType" value="women" id="af3"><label class="form-check-label" for="af3">女子 (2000番台)</label></div>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2 mb-2 bg-light p-2 rounded">
+                                    <div class="form-check form-check-inline m-0"><input class="form-check-input" type="radio" v-model="adminFilterDivision" value="all" id="df_all"><label class="form-check-label small" for="df_all">全部</label></div>
+                                    <div class="form-check form-check-inline m-0"><input class="form-check-input" type="radio" v-model="adminFilterDivision" value="1" id="df_1"><label class="form-check-label small" for="df_1">1部</label></div>
+                                    <div class="form-check form-check-inline m-0"><input class="form-check-input" type="radio" v-model="adminFilterDivision" value="2" id="df_2"><label class="form-check-label small" for="df_2">2部</label></div>
+                                    <div class="form-check form-check-inline m-0"><input class="form-check-input" type="radio" v-model="adminFilterDivision" value="3" id="df_3"><label class="form-check-label small" for="df_3">3部</label></div>
+                                    <div class="form-check form-check-inline m-0"><input class="form-check-input" type="radio" v-model="adminFilterDivision" value="4" id="df_4"><label class="form-check-label small" for="df_4">4部</label></div>
+                                    <div class="form-check form-check-inline m-0"><input class="form-check-input" type="radio" v-model="adminFilterDivision" value="5" id="df_5"><label class="form-check-label small" for="df_5">5部</label></div>
+                                    <div class="form-check form-check-inline m-0"><input class="form-check-input" type="radio" v-model="adminFilterDivision" value="6" id="df_6"><label class="form-check-label small" for="df_6">6部</label></div>
+                                </div>
+                                <input type="text" class="form-control form-control-sm" v-model="adminSearchQuery" placeholder="大学名で検索...">
                             </div>
                         </div>
                     </div>
@@ -2628,7 +2631,7 @@ form: {
                             ],
                             
                         },
-                        adminFilterType: 'all', adminSearchQuery: '',
+                        adminFilterType: 'all', adminSearchQuery: '', adminFilterDivision: 'all', // ★追加
                         adminStatusKeys: [
                             'player_reg',       // ① 選手登録
                             'reg_fee',          // ② 連盟登録
@@ -2671,9 +2674,19 @@ form: {
                     adminRecords() { if (!this.savedRecords) return []; return this.savedRecords.map(r => this.processAdminRecord(r)); },
                     filteredAdminRecords() {
                         let list = this.adminRecords;
+                        
+                        // 1. 男子・女子のフィルタ
                         if (this.adminFilterType === 'men') list = list.filter(r => String(r.univ_id).startsWith('1'));
                         if (this.adminFilterType === 'women') list = list.filter(r => String(r.univ_id).startsWith('2'));
+                        
+                        // 2. 部（1〜6部）のフィルタを追加
+                        if (this.adminFilterDivision !== 'all') {
+                            list = list.filter(r => String(r.division) === this.adminFilterDivision);
+                        }
+
+                        // 3. テキスト検索
                         if (this.adminSearchQuery) list = list.filter(r => r.univ_name.includes(this.adminSearchQuery));
+                        
                         return list.sort((a, b) => a.univ_id - b.univ_id);
                     },
                     countMen() { return this.adminRecords.filter(r => String(r.univ_id).startsWith('1')).length; },
