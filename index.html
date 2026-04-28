@@ -1415,46 +1415,50 @@ html, body {
                                             <div class="payment-id">{{ entry.reg_fee.payment_id }}</div>
                                             <div class="mt-2 text-danger fw-bold">振込名義: {{ entry.reg_fee.payment_id }}
                                                 {{ form.univ_name }}</div>
-                                            <div class="receipt-area">
-                                                <h6 class="small fw-bold mb-3">振込明細の写真</h6>
-                                                <div v-if="entry.reg_fee.receipt_url"><span
-                                                        class="badge badge-uploaded mb-2"><i
-                                                            class="bi bi-check-circle-fill"></i> 登録済み</span>
-                                                    <div class="mb-3"><img :src="entry.reg_fee.receipt_url"
-                                                            class="receipt-preview"></div>
-                                                    <div class="d-flex justify-content-center gap-2 mb-2">
-    <a :href="entry.reg_fee.receipt_url" target="_blank" class="btn btn-sm btn-secondary">
-        <i class="bi bi-eye"></i> 拡大
-    </a>
-    <button class="btn btn-sm btn-outline-danger" @click="deleteReceipt('reg_fee')">
-        <i class="bi bi-trash"></i> 削除
-    </button>
-</div>
+                                           
+<div class="receipt-area">
+    <h6 class="small fw-bold mb-3">振込明細の写真</h6>
+    <div v-if="entry.reg_fee.receipt_url">
+        <span class="badge badge-uploaded mb-2"><i class="bi bi-check-circle-fill"></i> 登録済み</span>
+        
+        <!-- 複数画像のループ表示 -->
+        <div class="d-flex flex-wrap justify-content-center gap-3 mb-3">
+            <!-- url が空文字でない場合のみ表示する -->
+            <template v-for="(url, idx) in entry.reg_fee.receipt_url.split(',')" :key="idx">
+                <div v-if="url" class="text-center">
+                    <img :src="url" class="receipt-preview" style="max-height: 150px;">
+                    <div class="mt-1 d-flex justify-content-center gap-1">
+                        <a :href="url" target="_blank" class="btn btn-sm btn-secondary py-0"><i class="bi bi-eye"></i> 拡大</a>
+                        <button class="btn btn-sm btn-outline-danger py-0" @click="deleteSingleReceipt('reg_fee', idx)"><i class="bi bi-trash"></i> 削除</button>
+                    </div>
+                </div>
+            </template>
+        </div>
 
-<div class="mt-2 border-top pt-2">
-    <div class="small text-muted mb-1 text-center"><i class="bi bi-receipt"></i> 領収書を分割発行</div>
-    <div class="d-flex flex-wrap justify-content-center gap-1">
-        <button class="btn btn-sm btn-outline-dark" style="font-size: 0.75rem;" @click="openReceipt('reg_fee', 'all')">合計</button>
-        <button class="btn btn-sm btn-outline-dark" style="font-size: 0.75rem;" @click="openReceipt('reg_fee', 'count')">連盟登録</button>
-        <button class="btn btn-sm btn-outline-dark" style="font-size: 0.75rem;" @click="openReceipt('reg_fee', 'base')">年度初め</button>
-        <button class="btn btn-sm btn-outline-dark" style="font-size: 0.75rem;" @click="openReceipt('reg_fee', 'spring')">春季リーグ</button>
+        <div class="mt-2 border-top pt-2">
+            <div class="small text-muted mb-1 text-center"><i class="bi bi-receipt"></i> 領収書を分割発行</div>
+            <div class="d-flex flex-wrap justify-content-center gap-1">
+                <button class="btn btn-sm btn-outline-dark" style="font-size: 0.75rem;" @click="openReceipt('reg_fee', 'all')">合計</button>
+                <button class="btn btn-sm btn-outline-dark" style="font-size: 0.75rem;" @click="openReceipt('reg_fee', 'count')">連盟登録</button>
+                <button class="btn btn-sm btn-outline-dark" style="font-size: 0.75rem;" @click="openReceipt('reg_fee', 'base')">年度初め</button>
+                <button class="btn btn-sm btn-outline-dark" style="font-size: 0.75rem;" @click="openReceipt('reg_fee', 'spring')">春季リーグ</button>
+            </div>
+        </div>
     </div>
-</div></div>
-
-                                                <div v-else><span class="badge badge-missing mb-2">未登録</span>
-                                                    <div class="mt-2"><input type="file"
-                                                            class="form-control form-control-sm w-75 mx-auto"
-                                                            accept="image/*" @change="uploadReceipt($event, 'reg_fee')">
-                                                        <div v-if="isUploading"
-                                                            class="spinner-border spinner-border-sm mt-2"></div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+    <div v-else>
+        <span class="badge badge-missing mb-2">未登録</span>
+        <div>
+            <input type="file" multiple class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'reg_fee')">
+            <div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div>
+        </div>
+    </div>
+</div>                                    </div>
                                     </div>
-                                    <div class="save-area"><button @click="saveData" class="btn btn-primary btn-lg px-5"
-                                            :disabled="isSaving"><i class="bi bi-save"></i> {{ isSaving ? '保存中...' :
-                                            'データを保存する' }}</button></div>
+                                    <div class="save-area">
+                                        <button @click="saveData" class="btn btn-primary btn-lg px-5" :disabled="isSaving">
+                                            <i class="bi bi-save"></i> {{ isSaving ? '保存中...' : 'データを保存する' }}
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div v-if="activeTab === 'add_reg'">
@@ -1513,27 +1517,32 @@ html, body {
                                                     <div class="mt-2 text-danger fw-bold">振込名義: {{ app.payment_id }} {{
                                                         form.univ_name }}</div>
                                                     <div class="receipt-area mt-2 p-2 border-0 bg-transparent">
-                                                        <h6 class="small fw-bold mb-2">振込明細</h6>
-                                                        <div v-if="app.receipt_url">
-                                                            <div class="mb-2"><img :src="app.receipt_url"
-                                                                    class="receipt-preview" style="max-height:150px;">
-                                                            </div>
-                                                            <div class="d-flex justify-content-center gap-2">
-                                                                <a :href="app.receipt_url" target="_blank"
-                                                                    class="btn btn-sm btn-secondary">拡大</a>
-                                                                <button class="btn btn-sm btn-outline-danger"
-                                                                    @click="deleteReceiptArray(index)">削除</button>
-                                                                <button class="btn btn-sm btn-outline-dark"
-                                                                    @click="openReceiptArray(index)">領収書</button>
-                                                            </div>
-                                                        </div>
-                                                        <div v-else>
-                                                            <input type="file"
-                                                                class="form-control form-control-sm w-75 mx-auto"
-                                                                accept="image/*"
-                                                                @change="uploadReceiptArray($event, index)">
-                                                        </div>
-                                                    </div>
+    <h6 class="small fw-bold mb-2">振込明細</h6>
+    <div v-if="app.receipt_url">
+        <!-- ▼ ループ表示 ▼ -->
+        <div class="d-flex flex-wrap justify-content-center gap-3 mb-3">
+            <template v-for="(url, urlIdx) in app.receipt_url.split(',')" :key="urlIdx">
+                <div v-if="url" class="text-center">
+                    <img :src="url" class="receipt-preview" style="max-height:150px;">
+                    <div class="mt-1 d-flex justify-content-center gap-1">
+                        <a :href="url" target="_blank" class="btn btn-sm btn-secondary py-0">拡大</a>
+                        <!-- 追加登録用の個別削除メソッドを呼ぶ -->
+                        <button class="btn btn-sm btn-outline-danger py-0" @click="deleteSingleReceiptArray(index, urlIdx)">削除</button>
+                    </div>
+                </div>
+            </template>
+        </div>
+        <div class="d-flex justify-content-center gap-2">
+            <button class="btn btn-sm btn-outline-dark" @click="openReceiptArray(index)">領収書</button>
+        </div>
+    </div>
+    <div v-else>
+        <input type="file" multiple
+            class="form-control form-control-sm w-75 mx-auto"
+            accept="image/*"
+            @change="uploadReceiptArray($event, index)">
+    </div>
+</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1585,29 +1594,42 @@ html, body {
                                             <div class="payment-id">{{ entry.kanto_champ.payment_id }}</div>
                                             <div class="mt-2 text-danger fw-bold">振込名義: {{ entry.kanto_champ.payment_id
                                                 }} {{ form.univ_name }}</div>
-                                            <div class="receipt-area">
-                                                <h6 class="small fw-bold mb-3">振込明細</h6>
-                                                <div v-if="entry.kanto_champ.receipt_url"><img
-                                                        :src="entry.kanto_champ.receipt_url"
-                                                        class="receipt-preview"><br>
-                                                    <div class="d-flex justify-content-center gap-2 mt-2"><a
-                                                            :href="entry.kanto_champ.receipt_url" target="_blank"
-                                                            class="btn btn-sm btn-secondary"><i class="bi bi-eye"></i>
-                                                            拡大</a><button class="btn btn-sm btn-outline-danger"
-                                                            @click="deleteReceipt('kanto_champ')">削除</button><button
-                                                            class="btn btn-sm btn-outline-dark"
-                                                            @click="openReceipt('kanto_champ')">領収書</button></div>
-                                                </div>
-                                                <div v-else><input type="file"
-                                                        class="form-control form-control-sm w-75 mx-auto"
-                                                        accept="image/*" @change="uploadReceipt($event, 'kanto_champ')">
-                                                </div>
-                                            </div>
-                                        </div>
+                                            
+<div class="receipt-area">
+    <h6 class="small fw-bold mb-3">振込明細</h6>
+    <div v-if="entry.kanto_champ.receipt_url">
+        <!-- ▼ 複数画像のループ表示 ▼ -->
+        <div class="d-flex flex-wrap justify-content-center gap-3 mb-3">
+            <template v-for="(url, idx) in entry.kanto_champ.receipt_url.split(',')" :key="idx">
+                <div v-if="url" class="text-center">
+                    <img :src="url" class="receipt-preview" style="max-height: 150px;">
+                    <div class="mt-1 d-flex justify-content-center gap-1">
+                        <a :href="url" target="_blank" class="btn btn-sm btn-secondary py-0"><i class="bi bi-eye"></i> 拡大</a>
+                        <button class="btn btn-sm btn-outline-danger py-0" @click="deleteSingleReceipt('kanto_champ', idx)"><i class="bi bi-trash"></i> 削除</button>
+                    </div>
+                </div>
+            </template>
+        </div>
+        <!-- 領収書ボタン -->
+        <div class="mt-2 border-top pt-2">
+            <button class="btn btn-sm btn-outline-dark" @click="openReceipt('kanto_champ')">領収書</button>
+        </div>
+    </div>
+    <div v-else>
+        <!-- multiple属性ありのinput -->
+        <input type="file" multiple class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'kanto_champ')">
+        <!-- アップロード中表示 -->
+        <div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div>
+    </div>
+</div>
+
+</div>
                                     </div>
-                                    <div class="save-area"><button @click="saveData"
-                                            class="btn btn-primary btn-lg px-5">保存</button></div>
+                                    <div class="save-area">
+                                        <button @click="saveData" class="btn btn-primary btn-lg px-5">保存</button>
+                                    </div>
                                 </div>
+
                                 <div v-if="activeTab === 'east_japan'">
                                     <h4>⑤ 東日本大会</h4>
                                     <div class="excel-upload-area"><label
@@ -1649,26 +1671,36 @@ html, body {
                                             <div class="mt-2 text-danger fw-bold">振込名義: {{ entry.east_japan.payment_id
                                                 }} {{ form.univ_name }}</div>
                                             <div class="receipt-area">
-                                                <div v-if="entry.east_japan.receipt_url"><img
-                                                        :src="entry.east_japan.receipt_url" class="receipt-preview"><br>
-                                                    <div class="d-flex justify-content-center gap-2 mt-2"><a
-                                                            :href="entry.east_japan.receipt_url" target="_blank"
-                                                            class="btn btn-sm btn-secondary"><i class="bi bi-eye"></i>
-                                                            拡大</a><button class="btn btn-sm btn-outline-danger"
-                                                            @click="deleteReceipt('east_japan')">削除</button><button
-                                                            class="btn btn-sm btn-outline-dark"
-                                                            @click="openReceipt('east_japan')">領収書</button></div>
-                                                </div>
-                                                <div v-else><input type="file"
-                                                        class="form-control form-control-sm w-75 mx-auto"
-                                                        accept="image/*" @change="uploadReceipt($event, 'east_japan')">
-                                                </div>
-                                            </div>
-                                        </div>
+    <h6 class="small fw-bold mb-3">振込明細</h6>
+    <div v-if="entry.east_japan.receipt_url">
+        <div class="d-flex flex-wrap justify-content-center gap-3 mb-3">
+            <template v-for="(url, idx) in entry.east_japan.receipt_url.split(',')" :key="idx">
+                <div v-if="url" class="text-center">
+                    <img :src="url" class="receipt-preview" style="max-height: 150px;">
+                    <div class="mt-1 d-flex justify-content-center gap-1">
+                        <a :href="url" target="_blank" class="btn btn-sm btn-secondary py-0"><i class="bi bi-eye"></i> 拡大</a>
+                        <button class="btn btn-sm btn-outline-danger py-0" @click="deleteSingleReceipt('east_japan', idx)">削除</button>
+                    </div>
+                </div>
+            </template>
+        </div>
+        <div class="mt-2 border-top pt-2">
+            <button class="btn btn-sm btn-outline-dark" @click="openReceipt('east_japan')">領収書</button>
+        </div>
+    </div>
+    <div v-else>
+        <input type="file" multiple class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'east_japan')">
+        <div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div>
+    </div>
+</div>
+
+</div>
                                     </div>
-                                    <div class="save-area"><button @click="saveData"
-                                            class="btn btn-primary btn-lg px-5">保存</button></div>
+                                    <div class="save-area">
+                                        <button @click="saveData" class="btn btn-primary btn-lg px-5">保存</button>
+                                    </div>
                                 </div>
+
                                 <div v-if="activeTab === 'autumn_league'">
                                     <h4>⑥ 秋季リーグ</h4>
                                     <div class="excel-upload-area"><label
@@ -1703,28 +1735,38 @@ html, body {
                                             <div class="payment-id">{{ entry.autumn_league.payment_id }}</div>
                                             <div class="mt-2 text-danger fw-bold">振込名義: {{
                                                 entry.autumn_league.payment_id }} {{ form.univ_name }}</div>
-                                            <div class="receipt-area">
-                                                <div v-if="entry.autumn_league.receipt_url"><img
-                                                        :src="entry.autumn_league.receipt_url"
-                                                        class="receipt-preview"><br>
-                                                    <div class="d-flex justify-content-center gap-2 mt-2"><a
-                                                            :href="entry.autumn_league.receipt_url" target="_blank"
-                                                            class="btn btn-sm btn-secondary"><i class="bi bi-eye"></i>
-                                                            拡大</a><button class="btn btn-sm btn-outline-danger"
-                                                            @click="deleteReceipt('autumn_league')">削除</button><button
-                                                            class="btn btn-sm btn-outline-dark"
-                                                            @click="openReceipt('autumn_league')">領収書</button></div>
-                                                </div>
-                                                <div v-else><input type="file"
-                                                        class="form-control form-control-sm w-75 mx-auto"
-                                                        accept="image/*"
-                                                        @change="uploadReceipt($event, 'autumn_league')"></div>
-                                            </div>
-                                        </div>
+                                           
+ <div class="receipt-area">
+    <h6 class="small fw-bold mb-3">振込明細</h6>
+    <div v-if="entry.autumn_league.receipt_url">
+        <div class="d-flex flex-wrap justify-content-center gap-3 mb-3">
+            <template v-for="(url, idx) in entry.autumn_league.receipt_url.split(',')" :key="idx">
+                <div v-if="url" class="text-center">
+                    <img :src="url" class="receipt-preview" style="max-height: 150px;">
+                    <div class="mt-1 d-flex justify-content-center gap-1">
+                        <a :href="url" target="_blank" class="btn btn-sm btn-secondary py-0"><i class="bi bi-eye"></i> 拡大</a>
+                        <button class="btn btn-sm btn-outline-danger py-0" @click="deleteSingleReceipt('autumn_league', idx)">削除</button>
+                    </div>
+                </div>
+            </template>
+        </div>
+        <div class="mt-2 border-top pt-2">
+            <button class="btn btn-sm btn-outline-dark" @click="openReceipt('autumn_league')">領収書</button>
+        </div>
+    </div>
+    <div v-else>
+        <input type="file" multiple class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'autumn_league')">
+        <div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div>
+    </div>
+</div>
+
+</div>
                                     </div>
-                                    <div class="save-area"><button @click="saveData"
-                                            class="btn btn-primary btn-lg px-5">保存</button></div>
+                                    <div class="save-area">
+                                        <button @click="saveData" class="btn btn-primary btn-lg px-5">保存</button>
+                                    </div>
                                 </div>
+
                                 <div v-if="activeTab === 'all_japan_champ'">
                                     <h4>⑦ インカレ</h4>
                                     <div class="excel-upload-area"><label
@@ -1764,28 +1806,38 @@ html, body {
                                             <div class="payment-id">{{ entry.all_japan_champ.payment_id }}</div>
                                             <div class="mt-2 text-danger fw-bold">振込名義: {{
                                                 entry.all_japan_champ.payment_id }} {{ form.univ_name }}</div>
-                                            <div class="receipt-area">
-                                                <div v-if="entry.all_japan_champ.receipt_url"><img
-                                                        :src="entry.all_japan_champ.receipt_url"
-                                                        class="receipt-preview"><br>
-                                                    <div class="d-flex justify-content-center gap-2 mt-2"><a
-                                                            :href="entry.all_japan_champ.receipt_url" target="_blank"
-                                                            class="btn btn-sm btn-secondary"><i class="bi bi-eye"></i>
-                                                            拡大</a><button class="btn btn-sm btn-outline-danger"
-                                                            @click="deleteReceipt('all_japan_champ')">削除</button><button
-                                                            class="btn btn-sm btn-outline-dark"
-                                                            @click="openReceipt('all_japan_champ')">領収書</button></div>
-                                                </div>
-                                                <div v-else><input type="file"
-                                                        class="form-control form-control-sm w-75 mx-auto"
-                                                        accept="image/*"
-                                                        @change="uploadReceipt($event, 'all_japan_champ')"></div>
-                                            </div>
-                                        </div>
+                                            
+<div class="receipt-area">
+    <h6 class="small fw-bold mb-3">振込明細</h6>
+    <div v-if="entry.all_japan_champ.receipt_url">
+        <div class="d-flex flex-wrap justify-content-center gap-3 mb-3">
+            <template v-for="(url, idx) in entry.all_japan_champ.receipt_url.split(',')" :key="idx">
+                <div v-if="url" class="text-center">
+                    <img :src="url" class="receipt-preview" style="max-height: 150px;">
+                    <div class="mt-1 d-flex justify-content-center gap-1">
+                        <a :href="url" target="_blank" class="btn btn-sm btn-secondary py-0"><i class="bi bi-eye"></i> 拡大</a>
+                        <button class="btn btn-sm btn-outline-danger py-0" @click="deleteSingleReceipt('all_japan_champ', idx)">削除</button>
+                    </div>
+                </div>
+            </template>
+        </div>
+        <div class="mt-2 border-top pt-2">
+            <button class="btn btn-sm btn-outline-dark" @click="openReceipt('all_japan_champ')">領収書</button>
+        </div>
+    </div>
+    <div v-else>
+        <input type="file" multiple class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'all_japan_champ')">
+        <div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div>
+    </div>
+</div>
+
+</div>
                                     </div>
-                                    <div class="save-area"><button @click="saveData"
-                                            class="btn btn-primary btn-lg px-5">保存</button></div>
+                                    <div class="save-area">
+                                        <button @click="saveData" class="btn btn-primary btn-lg px-5">保存</button>
+                                    </div>
                                 </div>
+
                                 <div v-if="activeTab === 'all_japan_team'">
                                     <h4>⑧ 大学対抗戦</h4>
                                     <div class="card border-primary mb-4">
@@ -1823,31 +1875,39 @@ html, body {
                                                 <div class="payment-id">{{ entry.all_japan_team.payment_id }}</div>
                                                 <div class="mt-2 text-danger fw-bold">振込名義: {{
                                                     entry.all_japan_team.payment_id }} {{ form.univ_name }}</div>
-                                                <div class="receipt-area">
-                                                    <div v-if="entry.all_japan_team.receipt_url"><img
-                                                            :src="entry.all_japan_team.receipt_url"
-                                                            class="receipt-preview"><br>
-                                                        <div class="d-flex justify-content-center gap-2 mt-2"><a
-                                                                :href="entry.all_japan_team.receipt_url" target="_blank"
-                                                                class="btn btn-sm btn-secondary"><i
-                                                                    class="bi bi-eye"></i> 拡大</a><button
-                                                                class="btn btn-sm btn-outline-danger"
-                                                                @click="deleteReceipt('all_japan_team')">削除</button><button
-                                                                class="btn btn-sm btn-outline-dark"
-                                                                @click="openReceipt('all_japan_team')">領収書</button>
-                                                        </div>
-                                                    </div>
-                                                    <div v-else><input type="file"
-                                                            class="form-control form-control-sm w-75 mx-auto"
-                                                            accept="image/*"
-                                                            @change="uploadReceipt($event, 'all_japan_team')"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="save-area"><button @click="saveData"
-                                                class="btn btn-primary btn-lg px-5">保存</button></div>
+                                                
+<div class="receipt-area">
+    <h6 class="small fw-bold mb-3">振込明細</h6>
+    <div v-if="entry.all_japan_team.receipt_url">
+        <div class="d-flex flex-wrap justify-content-center gap-3 mb-3">
+            <template v-for="(url, idx) in entry.all_japan_team.receipt_url.split(',')" :key="idx">
+                <div v-if="url" class="text-center">
+                    <img :src="url" class="receipt-preview" style="max-height: 150px;">
+                    <div class="mt-1 d-flex justify-content-center gap-1">
+                        <a :href="url" target="_blank" class="btn btn-sm btn-secondary py-0"><i class="bi bi-eye"></i> 拡大</a>
+                        <button class="btn btn-sm btn-outline-danger py-0" @click="deleteSingleReceipt('all_japan_team', idx)">削除</button>
+                    </div>
+                </div>
+            </template>
+        </div>
+        <div class="mt-2 border-top pt-2">
+            <button class="btn btn-sm btn-outline-dark" @click="openReceipt('all_japan_team')">領収書</button>
+        </div>
+    </div>
+    <div v-else>
+        <input type="file" multiple class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'all_japan_team')">
+        <div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div>
+    </div>
+</div> 
+
+</div>
+                                    </div>
+                                    </div> <!-- ← これが v-if="join" を閉じるためのタグです -->
+                                    <div class="save-area">
+                                        <button @click="saveData" class="btn btn-primary btn-lg px-5">保存</button>
                                     </div>
                                 </div>
+                               
                                 <div v-if="activeTab === 'rookie'">
                                     <h4>⑨ 新人戦</h4>
                                     <div class="excel-upload-area"><label class="form-label fw-bold">申込Excel</label>
@@ -1871,7 +1931,9 @@ html, body {
 <div class="col-6"><label>ダブルス</label><input type="number" v-model.number="entry.rookie.count_d" class="form-control" :disabled="isCurrentTabExpired"></div>
                                         </div>
                                     </div>
-                                    <div class="payment-box">
+                                    
+
+<div class="payment-box">
                                         <div class="text-center">
                                             <h5>支払額: <strong>{{ formatMoney(calcRookie) }}</strong></h5>
                                             <div class="mb-2 fw-bold">ゆうちょ銀行　店名：029　当座　口座番号：0080708<br>名義：関東学生バドミントン連盟
@@ -1880,26 +1942,36 @@ html, body {
                                             <div class="payment-id">{{ entry.rookie.payment_id }}</div>
                                             <div class="mt-2 text-danger fw-bold">振込名義: {{ entry.rookie.payment_id }} {{
                                                 form.univ_name }}</div>
+                                            
                                             <div class="receipt-area">
-                                                <div v-if="entry.rookie.receipt_url"><img
-                                                        :src="entry.rookie.receipt_url" class="receipt-preview"><br>
-                                                    <div class="d-flex justify-content-center gap-2 mt-2"><a
-                                                            :href="entry.rookie.receipt_url" target="_blank"
-                                                            class="btn btn-sm btn-secondary"><i class="bi bi-eye"></i>
-                                                            拡大</a><button class="btn btn-sm btn-outline-danger"
-                                                            @click="deleteReceipt('rookie')">削除</button><button
-                                                            class="btn btn-sm btn-outline-dark"
-                                                            @click="openReceipt('rookie')">領収書</button></div>
+                                                <h6 class="small fw-bold mb-3">振込明細</h6>
+                                                <div v-if="entry.rookie.receipt_url">
+                                                    <div class="d-flex flex-wrap justify-content-center gap-3 mb-3">
+                                                        <template v-for="(url, idx) in entry.rookie.receipt_url.split(',')" :key="idx">
+                                                            <div v-if="url" class="text-center">
+                                                                <img :src="url" class="receipt-preview" style="max-height: 150px;">
+                                                                <div class="mt-1 d-flex justify-content-center gap-1">
+                                                                    <a :href="url" target="_blank" class="btn btn-sm btn-secondary py-0"><i class="bi bi-eye"></i> 拡大</a>
+                                                                    <button class="btn btn-sm btn-outline-danger py-0" @click="deleteSingleReceipt('rookie', idx)">削除</button>
+                                                                </div>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+                                                    <div class="mt-2 border-top pt-2">
+                                                        <button class="btn btn-sm btn-outline-dark" @click="openReceipt('rookie')">領収書</button>
+                                                    </div>
                                                 </div>
-                                                <div v-else><input type="file"
-                                                        class="form-control form-control-sm w-75 mx-auto"
-                                                        accept="image/*" @change="uploadReceipt($event, 'rookie')">
+                                                <div v-else>
+                                                    <input type="file" multiple class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'rookie')">
+                                                    <div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div>
                                                 </div>
                                             </div>
+
                                         </div>
                                     </div>
-                                    <div class="save-area"><button @click="saveData"
-                                            class="btn btn-primary btn-lg px-5">保存</button></div>
+                                    <div class="save-area">
+                                        <button @click="saveData" class="btn btn-primary btn-lg px-5">保存</button>
+                                    </div>
                                 </div>
 
                                 <div v-if="activeTab === 'player_reg'">
@@ -2192,16 +2264,15 @@ html, body {
                     <i class="bi bi-save"></i> ロゴ設定を保存する
                 </button>
             </div>
-        </div>
-    </div>
-    </div>
+                            </div> <!-- card-body 終了 -->
+                        </div> <!-- card 終了 -->
+                    </div> <!-- activeTab === 'account' 終了 -->
+                </div> <!-- main-content-card の card-body 終了 -->
+            </div> <!-- main-content-card 終了 -->
+        </div> <!-- col-md-9 終了 -->
+    </div> <!-- row 終了 -->
+</div> <!-- ユーザー画面全体 終了 -->
 
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-</div>
         <div v-if="showDeadlineModal" class="modal fade show d-block" style="background: rgba(0,0,0,0.5);"
             tabindex="-1">
             <div class="modal-dialog modal-dialog-centered">
@@ -2408,43 +2479,45 @@ html, body {
 </div>
 
             <div v-if="modal.show" class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
-                <div class="modal-dialog modal-lg modal-dialog-centered">
-
-
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">{{ modal.univName }} - {{ getCategoryName(modal.category) }}</h5>
-                            <button type="button" class="btn-close" @click="closeModal"></button>
-                        </div>
-                        <div class="modal-body text-center bg-light">
-                            <div v-if="modal.url">
-                                <div v-if="modal.url.includes('.xlsx') || modal.url.includes('.xls')">
-                                    <div class="py-5">
-                                        <i class="bi bi-file-earmark-excel fs-1 text-success"></i>
-                                        <p class="mt-3">Excelファイルが添付されています</p>
-                                        <a :href="modal.url" target="_blank" class="btn btn-success">
-                                            <i class="bi bi-download"></i> ファイルを開く
-                                        </a>
-                                    </div>
-                                </div>
-                                <div v-else>
-                                    <img :src="modal.url" class="receipt-modal-img">
-                                </div>
-                            </div>
-                            <div v-else class="py-5 text-muted">
-                                ファイルはありません。
-                            </div>
-                        </div>
-                        <div class="modal-footer justify-content-between">
-                            <a v-if="modal.url" :href="modal.url" target="_blank"
-                                class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-box-arrow-up-right"></i> 元ファイルを表示
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ modal.univName }} - {{ getCategoryName(modal.category) }}</h5>
+                <button type="button" class="btn-close" @click="closeModal"></button>
+            </div>
+            <div class="modal-body text-center bg-light">
+                <div v-if="modal.url">
+                    <div v-if="modal.url.includes('.xlsx') || modal.url.includes('.xls')">
+                        <div class="py-5">
+                            <i class="bi bi-file-earmark-excel fs-1 text-success"></i>
+                            <p class="mt-3">Excelファイルが添付されています</p>
+                            <a :href="modal.url" target="_blank" class="btn btn-success">
+                                <i class="bi bi-download"></i> ファイルを開く
                             </a>
-                            <button type="button" class="btn btn-secondary" @click="closeModal">閉じる</button>
+                        </div>
+                    </div>
+                    <div v-else>
+                        <!-- ▼ 複数画像対応：カンマで分割してループ表示 ▼ -->
+                        <div v-for="(url, idx) in modal.url.split(',').filter(u => u.trim() !== '')" :key="idx" class="mb-3 pb-3 border-bottom">
+                            <img :src="url" class="receipt-modal-img mb-2" style="max-width: 100%; height: auto;">
+                            <div>
+                                <a :href="url" target="_blank" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-box-arrow-up-right"></i> 元のサイズで表示
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
+                <div v-else class="py-5 text-muted">
+                    ファイルはありません。
+                </div>
             </div>
+            <div class="modal-footer justify-content-end">
+                <button type="button" class="btn btn-secondary" @click="closeModal">閉じる</button>
+            </div>
+        </div>
+    </div>
+</div>
 
              <div v-if="user || isAdmin">
             <div class="id-card-wrapper">
@@ -2992,34 +3065,96 @@ isCurrentTabExpired() {
                     },
 
                     // --- アップロード・削除・領収書 ---
-                    uploadReceipt(event, category) {
-                        const file = event.target.files[0];
-                        if (!file) return;
-                        this.isUploading = true;
-                        const path = `receipts/${this.form.univ_id}/${category}_${Date.now()}`;
-                        firebase.storage().ref().child(path).put(file).then(s => s.ref.getDownloadURL()).then(url => {
-                            this.entry[category].receipt_url = url;
-                            this.saveData(true);
-                            this.isUploading = false;
-                        }).catch(e => {
-                            alert("Error: " + e.message);
-                            this.isUploading = false;
-                        });
-                    },
-                    uploadReceiptArray(event, index) {
-                        const file = event.target.files[0];
-                        if (!file) return;
-                        this.isUploading = true;
-                        const path = `receipts/${this.form.univ_id}/add_reg_${index}_${Date.now()}`;
-                        firebase.storage().ref().child(path).put(file).then(s => s.ref.getDownloadURL()).then(url => {
-                            this.entry.add_reg[index].receipt_url = url;
-                            this.saveData(true);
-                            this.isUploading = false;
-                        }).catch(e => {
-                            alert("Error: " + e.message);
-                            this.isUploading = false;
-                        });
-                    },
+                   async uploadReceipt(event, category) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+    
+    this.isUploading = true;
+    
+    // 既存のURLがあれば配列として取得（空文字を除外）
+    let currentUrls = [];
+    if (this.entry[category].receipt_url) {
+        currentUrls = this.entry[category].receipt_url.split(',').filter(url => url.trim() !== '');
+    }
+
+    // 複数ファイルのアップロード処理を配列にする
+    const uploadPromises = Array.from(files).map(file => {
+        const path = `receipts/${this.form.univ_id}/${category}_${Date.now()}_${file.name}`;
+        return firebase.storage().ref().child(path).put(file).then(s => s.ref.getDownloadURL());
+    });
+
+    try {
+        const newUrls = await Promise.all(uploadPromises);
+        currentUrls.push(...newUrls);
+        
+        // カンマ区切りの文字列として保存
+        this.entry[category].receipt_url = currentUrls.join(',');
+        
+        this.saveData(true);
+    } catch (e) {
+        alert("アップロードエラー: " + e.message);
+    } finally {
+        this.isUploading = false;
+        event.target.value = ''; 
+    }
+},
+
+deleteSingleReceipt(category, index) {
+    if (!confirm("この画像を削除しますか？")) return;
+    
+    // 現在のURLリストを取得
+    let urls = this.entry[category].receipt_url.split(',').filter(url => url.trim() !== '');
+    
+    // 指定されたインデックスを削除
+    urls.splice(index, 1);
+    
+    // 再度文字列にして保存（空なら空文字になる）
+    this.entry[category].receipt_url = urls.join(',');
+    this.saveData(true);
+},
+
+
+                    async uploadReceiptArray(event, index) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+    
+    this.isUploading = true;
+    
+    // 既存のURLがあれば取得（空文字を除外）
+    let currentUrls = [];
+    if (this.entry.add_reg[index].receipt_url) {
+        currentUrls = this.entry.add_reg[index].receipt_url.split(',').filter(url => url.trim() !== '');
+    }
+
+    // 複数ファイルのアップロード処理を配列にする
+    const uploadPromises = Array.from(files).map(file => {
+        const path = `receipts/${this.form.univ_id}/add_reg_${index}_${Date.now()}_${file.name}`;
+        return firebase.storage().ref().child(path).put(file).then(s => s.ref.getDownloadURL());
+    });
+
+    try {
+        const newUrls = await Promise.all(uploadPromises);
+        currentUrls.push(...newUrls);
+        
+        // カンマ区切りで保存
+        this.entry.add_reg[index].receipt_url = currentUrls.join(',');
+        this.saveData(true);
+    } catch (e) {
+        alert("アップロードエラー: " + e.message);
+    } finally {
+        this.isUploading = false;
+        event.target.value = ''; 
+    }
+},
+
+deleteSingleReceiptArray(index, urlIdx) {
+    if (!confirm("この画像を削除しますか？")) return;
+    let urls = this.entry.add_reg[index].receipt_url.split(',').filter(url => url.trim() !== '');
+    urls.splice(urlIdx, 1);
+    this.entry.add_reg[index].receipt_url = urls.join(',');
+    this.saveData(true);
+},
+
                     deleteReceipt(category) {
                         if (!confirm("削除しますか？")) return;
                         this.entry[category].receipt_url = '';
