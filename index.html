@@ -3693,178 +3693,219 @@ printSingleID(player) {
 
                     // --- 管理者：ダウンロード機能 ---
                     async downloadAllParticipantsExcel() {
-    const key = this.selectedTournament;
-    const catName = this.getCategoryName(key);
-    if (!confirm(`【対象: ${catName}】\n\n表示中の全大学のExcelファイルから参加者データを抽出しますか？`)) return;
-    this.isGeneratingList = true;
-    let targets = [];
-    
-    // 対象ファイルの抽出処理 (既存のまま)
-    if (key === 'add_reg') {
-        this.filteredAdminRecords.forEach(r => {
-            if (Array.isArray(r.add_reg)) {
-                r.add_reg.forEach(item => {
-                    if (item.excel_url) targets.push({
-                        url: item.excel_url,
-                        univName: r.univ_name
+        const key = this.selectedTournament;
+        const catName = this.getCategoryName(key);
+        if (!confirm(`【対象: ${catName}】\n\n表示中の全大学のExcelファイルから参加者データを抽出しますか？`)) return;
+        this.isGeneratingList = true;
+        let targets = [];
+        
+        // 対象ファイルの抽出処理
+        if (key === 'add_reg') {
+            this.filteredAdminRecords.forEach(r => {
+                if (Array.isArray(r.add_reg)) {
+                    r.add_reg.forEach(item => {
+                        if (item.excel_url) targets.push({
+                            url: item.excel_url,
+                            univName: r.univ_name
+                        });
                     });
-                });
-            }
-        });
-    } else {
-        this.filteredAdminRecords.forEach(r => {
-            if (r[key] && r[key].rawObj && r[key].rawObj.excel_url) {
-                targets.push({
-                    url: r[key].rawObj.excel_url,
-                    univName: r.univ_name
-                });
-            }
-        });
-    }
-    
-    if (targets.length === 0) {
-        alert(`ファイルが見つかりませんでした。`);
-        this.isGeneratingList = false;
-        return;
-    }
-    
-    try {
-        // 出力用の10種類の配列を準備
-        const finalData = {
-            "男子Aシングルス": [],
-            "男子Aダブルス": [],
-            "男子Bシングルス": [],
-            "男子Bダブルス": [],
-            "女子Aシングルス": [],
-            "女子Aダブルス": [],
-            "女子Bシングルス": [],
-            "女子Bダブルス": [],
-            "混合複A": [],
-            "混合複B": []
-        };
-
-        const promises = targets.map(async (target) => {
-            try {
-                const res = await fetch(target.url);
-                if (!res.ok) throw new Error("Fetch failed");
-                const ab = await res.arrayBuffer();
-                const wb = XLSX.read(ab, { type: "array" });
-                
-                const localData = {
-                    "男子Aシングルス": [], "男子Aダブルス": [],
-                    "男子Bシングルス": [], "男子Bダブルス": [],
-                    "女子Aシングルス": [], "女子Aダブルス": [],
-                    "女子Bシングルス": [], "女子Bダブルス": [],
-                    "混合複A": [], "混合複B": []
-                };
-
-                wb.SheetNames.forEach(sheetName => {
-                    const ws = wb.Sheets[sheetName];
-                    const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
-                    
-                    // シート名から対象の配列を判定
-                    let targetSingle = null, targetDouble = null, targetMixed = null;
-
-                    if (sheetName.includes("個人戦申込A男子")) {
-                        targetSingle = localData["男子Aシングルス"]; targetDouble = localData["男子Aダブルス"];
-                    } else if (sheetName.includes("個人戦申込B男子")) {
-                        targetSingle = localData["男子Bシングルス"]; targetDouble = localData["男子Bダブルス"];
-                    } else if (sheetName.includes("個人戦申込A女子")) {
-                        targetSingle = localData["女子Aシングルス"]; targetDouble = localData["女子Aダブルス"];
-                    } else if (sheetName.includes("個人戦申込B女子")) {
-                        targetSingle = localData["女子Bシングルス"]; targetDouble = localData["女子Bダブルス"];
-                    } else if (sheetName.includes("混合複申込A")) {
-                        targetMixed = localData["混合複A"];
-                    } else if (sheetName.includes("混合複申込B")) {
-                        targetMixed = localData["混合複B"];
-                    } else {
-                        return; // 対象外シート
-                    }
-
-                    const startRow = 6; // データ開始行（配列のインデックスは6=7行目）
-
-                    // 【シングルス・ダブルス】の読み取り
-                    if (targetSingle || targetDouble) {
-                        for (let i = startRow; i < data.length; i += 2) {
-                            const row1 = data[i] || [];
-                            const row2 = data[i + 1] || [];
-                            
-                            // シングルス (B列〜D列) - 2行ごとに2人分読み取る
-                            if (targetSingle) {
-                                if (row1[1]) targetSingle.push({ "大学名": target.univName, "No": row1[0], "選手名": row1[1], "フリガナ": row1[2], "参加資格区分": row1[3] || "" });
-                                if (row2[1]) targetSingle.push({ "大学名": target.univName, "No": row2[0], "選手名": row2[1], "フリガナ": row2[2], "参加資格区分": row2[3] || "" });
-                            }
-                            // ダブルス (G列〜I列) - 2行で1ペア
-                            if (targetDouble && row1[6]) {
-                                targetDouble.push({
-                                    "大学名": target.univName,
-                                    "No": row1[5],
-                                    "選手1": row1[6], "フリガナ1": row1[7], "参加資格区分1": row1[8] || "",
-                                    "選手2": row2[6] || "", "フリガナ2": row2[7] || "", "参加資格区分2": row2[8] || ""
-                                });
-                            }
-                        }
-                    }
-                    
-                    // 【ミックス】の読み取り
-                    if (targetMixed) {
-                        for (let i = startRow; i < data.length; i += 2) {
-                            const row1 = data[i] || [];
-                            const row2 = data[i + 1] || [];
-                            
-                            if (row1[1]) {
-                                targetMixed.push({
-                                    "No": row1[0],
-                                    "男子選手": row1[1],
-                                    "男子フリガナ": row1[2],
-                                    "男子所属": row1[3] || target.univName,
-                                    "女子選手": row2[1] || "",
-                                    "女子フリガナ": row2[2] || "",
-                                    "女子所属": row2[3] || target.univName
-                                });
-                            }
-                        }
-                    }
-                });
-                return localData;
-            } catch (e) {
-                console.error(`Error loading ${target.univName}:`, e);
-                return null;
-            }
-        });
-        
-        const results = await Promise.all(promises);
-        results.forEach(res => {
-            if (res) {
-                Object.keys(finalData).forEach(k => {
-                    if (res[k] && res[k].length > 0) {
-                        finalData[k].push(...res[k]);
-                    }
-                });
-            }
-        });
-        
-        const totalCount = Object.values(finalData).reduce((sum, arr) => sum + arr.length, 0);
-        if (totalCount === 0) {
-            alert("有効な選手データが見つかりませんでした。");
-        } else {
-            // Excelブックの作成とシートの追加
-            const newWb = XLSX.utils.book_new();
-            Object.keys(finalData).forEach(k => {
-                if (finalData[k].length > 0) {
-                    XLSX.utils.book_append_sheet(newWb, XLSX.utils.json_to_sheet(finalData[k]), k);
                 }
             });
-            const wbout = XLSX.write(newWb, { bookType: 'xlsx', type: 'array' });
-            saveAs(new Blob([wbout], { type: "application/octet-stream" }), `関東選手権_一括名簿_${catName}.xlsx`);
+        } else {
+            this.filteredAdminRecords.forEach(r => {
+                if (r[key] && r[key].rawObj && r[key].rawObj.excel_url) {
+                    targets.push({
+                        url: r[key].rawObj.excel_url,
+                        univName: r.univ_name
+                    });
+                }
+            });
         }
-    } catch (e) {
-        console.error(e);
-        alert("エラーが発生しました。");
-    } finally {
-        this.isGeneratingList = false;
-    }
-},
+        
+        if (targets.length === 0) {
+            alert(`ファイルが見つかりませんでした。`);
+            this.isGeneratingList = false;
+            return;
+        }
+        
+        try {
+            // 出力用の10種類の配列を準備
+            const finalData = {
+                "男子Aシングルス": [],
+                "男子Aダブルス": [],
+                "男子Bシングルス": [],
+                "男子Bダブルス": [],
+                "女子Aシングルス": [],
+                "女子Aダブルス": [],
+                "女子Bシングルス": [],
+                "女子Bダブルス": [],
+                "混合複A": [],
+                "混合複B": []
+            };
+
+            const promises = targets.map(async (target) => {
+                try {
+                    const res = await fetch(target.url);
+                    if (!res.ok) throw new Error("Fetch failed");
+                    const ab = await res.arrayBuffer();
+                    const wb = XLSX.read(ab, { type: "array" });
+                    
+                    const localData = {
+                        "男子Aシングルス": [], "男子Aダブルス": [],
+                        "男子Bシングルス": [], "男子Bダブルス": [],
+                        "女子Aシングルス": [], "女子Aダブルス": [],
+                        "女子Bシングルス": [], "女子Bダブルス": [],
+                        "混合複A": [], "混合複B": []
+                    };
+
+                    wb.SheetNames.forEach(sheetName => {
+                        const ws = wb.Sheets[sheetName];
+                        const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+                        
+                        // シート名から対象の配列を判定
+                        let targetSingle = null, targetDouble = null, targetMixed = null;
+
+                        if (sheetName.includes("個人戦申込A男子")) {
+                            targetSingle = localData["男子Aシングルス"]; targetDouble = localData["男子Aダブルス"];
+                        } else if (sheetName.includes("個人戦申込B男子")) {
+                            targetSingle = localData["男子Bシングルス"]; targetDouble = localData["男子Bダブルス"];
+                        } else if (sheetName.includes("個人戦申込A女子")) {
+                            targetSingle = localData["女子Aシングルス"]; targetDouble = localData["女子Aダブルス"];
+                        } else if (sheetName.includes("個人戦申込B女子")) {
+                            targetSingle = localData["女子Bシングルス"]; targetDouble = localData["女子Bダブルス"];
+                        } else if (sheetName.includes("混合複申込A")) {
+                            targetMixed = localData["混合複A"];
+                        } else if (sheetName.includes("混合複申込B")) {
+                            targetMixed = localData["混合複B"];
+                        } else {
+                            return; // 対象外シート
+                        }
+
+                        const startRow = 6; // データ開始行
+
+                        // 【シングルス・ダブルス】の読み取り
+                        if (targetSingle || targetDouble) {
+                            for (let i = startRow; i < data.length; i += 2) {
+                                const row1 = data[i] || [];
+                                const row2 = data[i + 1] || [];
+                                
+                                // シングルス (B列〜D列)
+                                if (targetSingle) {
+                                    if (row1[1]) targetSingle.push({ "大学名": target.univName, "No": row1[0], "選手名": row1[1], "フリガナ": row1[2], "参加資格区分": row1[3] || "" });
+                                    if (row2[1]) targetSingle.push({ "大学名": target.univName, "No": row2[0], "選手名": row2[1], "フリガナ": row2[2], "参加資格区分": row2[3] || "" });
+                                }
+                                // ダブルス (G列〜I列)
+                                if (targetDouble && row1[6]) {
+                                    targetDouble.push({
+                                        "大学名": target.univName,
+                                        "No": row1[5],
+                                        "選手1": row1[6], "フリガナ1": row1[7], "参加資格区分1": row1[8] || "",
+                                        "選手2": row2[6] || "", "フリガナ2": row2[7] || "", "参加資格区分2": row2[8] || ""
+                                    });
+                                }
+                            }
+                        }
+                        
+                        // 【ミックス】の読み取り
+                        if (targetMixed) {
+                            for (let i = startRow; i < data.length; i += 2) {
+                                const row1 = data[i] || [];
+                                const row2 = data[i + 1] || [];
+                                
+                                if (row1[1]) {
+                                    targetMixed.push({
+                                        "No": row1[0],
+                                        "男子選手": row1[1],
+                                        "男子フリガナ": row1[2],
+                                        "男子所属": row1[3] || target.univName,
+                                        "女子選手": row2[1] || "",
+                                        "女子フリガナ": row2[2] || "",
+                                        "女子所属": row2[3] || target.univName
+                                    });
+                                }
+                            }
+                        }
+                    });
+                    return localData;
+                } catch (e) {
+                    console.error(`Error loading ${target.univName}:`, e);
+                    return null;
+                }
+            });
+            
+            const results = await Promise.all(promises);
+            results.forEach(res => {
+                if (res) {
+                    Object.keys(finalData).forEach(k => {
+                        if (res[k] && res[k].length > 0) {
+                            finalData[k].push(...res[k]);
+                        }
+                    });
+                }
+            });
+
+            // ==========================================
+            // ★ 重複データの排除・ソート処理
+            // ==========================================
+            Object.keys(finalData).forEach(k => {
+                if (finalData[k].length > 0) {
+                    const uniqueArray = [];
+                    const seen = new Set();
+                    
+                    finalData[k].forEach(row => {
+                        let keyStr = "";
+                        if (row["選手名"]) {
+                            // シングルス用キー
+                            keyStr = row["大学名"] + "_" + row["No"] + "_" + row["選手名"];
+                        } else if (row["選手1"]) {
+                            // ダブルス用キー
+                            keyStr = row["大学名"] + "_" + row["No"] + "_" + row["選手1"];
+                        } else if (row["男子選手"]) {
+                            // ミックス用キー
+                            keyStr = row["男子所属"] + "_" + row["No"] + "_" + row["男子選手"];
+                        } else {
+                            keyStr = JSON.stringify(row);
+                        }
+                        
+                        if (!seen.has(keyStr)) {
+                            seen.add(keyStr);
+                            uniqueArray.push(row);
+                        }
+                    });
+                    
+                    // 大学名順、No順にソートして見やすくする
+                    finalData[k] = uniqueArray.sort((a, b) => {
+                        const univA = a["大学名"] || a["男子所属"] || "";
+                        const univB = b["大学名"] || b["男子所属"] || "";
+                        if (univA !== univB) {
+                            return univA.localeCompare(univB, 'ja');
+                        }
+                        return (parseInt(a["No"]) || 0) - (parseInt(b["No"]) || 0);
+                    });
+                }
+            });
+            
+            const totalCount = Object.values(finalData).reduce((sum, arr) => sum + arr.length, 0);
+            if (totalCount === 0) {
+                alert("有効な選手データが見つかりませんでした。");
+            } else {
+                // Excelブックの作成とシートの追加
+                const newWb = XLSX.utils.book_new();
+                Object.keys(finalData).forEach(k => {
+                    if (finalData[k].length > 0) {
+                        XLSX.utils.book_append_sheet(newWb, XLSX.utils.json_to_sheet(finalData[k]), k);
+                    }
+                });
+                const wbout = XLSX.write(newWb, { bookType: 'xlsx', type: 'array' });
+                saveAs(new Blob([wbout], { type: "application/octet-stream" }), `関東選手権_一括名簿_${catName}.xlsx`);
+            }
+        } catch (e) {
+            console.error(e);
+            alert("エラーが発生しました。");
+        } finally {
+            this.isGeneratingList = false;
+        }
+    },
 
                     // ★追加: 選手登録名簿のCSVダウンロード
                     downloadPlayerRegList() {
