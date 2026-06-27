@@ -979,8 +979,9 @@ html, body {
                 <nav class="navbar navbar-dark bg-dark px-3 mb-3 rounded">
                     <span class="navbar-brand mb-0 h1"><i class="bi bi-speedometer2"></i> 管理者ダッシュボード</span>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-warning fw-bold text-dark" @click="showDeadlineModal = true"><i
-                                class="bi bi-calendar-event"></i> 期限設定</button>
+                        <button type="button" class="btn btn-sm btn-warning fw-bold text-dark" @click.prevent="openDeadlineModal">
+    <i class="bi bi-calendar-event"></i> 期限設定
+</button>
                         <button class="btn btn-sm btn-info fw-bold text-dark" @click="downloadPlayerRegList">
                             <i class="bi bi-people-fill"></i> 選手名簿DL
                         </button>
@@ -989,6 +990,31 @@ html, body {
                         <button class="btn btn-sm btn-danger" @click="logout">ログアウト</button>
                     </div>
                 </nav>
+
+<div v-if="showDeadlineModal" class="modal show d-block" style="background: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; opacity: 1 !important; visibility: visible !important;" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-warning">
+                                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-calendar-check"></i> 申込期限の設定</h5>
+                                <button type="button" class="btn-close" @click="showDeadlineModal = false"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-light border small"><i class="bi bi-info-circle"></i>
+                                    設定した日付はユーザー画面に表示されます。</div>
+                                <form @submit.prevent="saveDeadlines">
+                                    <div v-for="(label, key) in categoryLabels" :key="key" class="mb-2 row">
+                                        <label class="col-6 col-form-label col-form-label-sm fw-bold">{{ label }}</label>
+                                        <div class="col-6"><input type="date" class="form-control form-control-sm"
+                                                v-model="deadlines[key]"></div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer"><button type="button" class="btn btn-secondary"
+                                    @click="showDeadlineModal = false">キャンセル</button><button type="button"
+                                    class="btn btn-primary" @click="saveDeadlines">設定を保存</button></div>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="card mb-4 border-primary">
                     <div class="card-header bg-primary text-white fw-bold"><i class="bi bi-folder-fill"></i> 大会データ管理
@@ -2275,34 +2301,8 @@ html, body {
     </div> <!-- row 終了 -->
 </div> <!-- ユーザー画面全体 終了 -->
 
-        <div v-if="showDeadlineModal" class="modal fade show d-block" style="background: rgba(0,0,0,0.5);"
-            tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header bg-warning">
-                        <h5 class="modal-title fw-bold text-dark"><i class="bi bi-calendar-check"></i> 申込期限の設定</h5>
-                        <button type="button" class="btn-close" @click="showDeadlineModal = false"></button>
-                    </div>
+        
 
-
-                    <div class="modal-body">
-                        <div class="alert alert-light border small"><i class="bi bi-info-circle"></i>
-                            設定した日付はユーザー画面に表示されます。</div>
-                        <form @submit.prevent="saveDeadlines">
-                            <div v-for="(label, key) in categoryLabels" :key="key" class="mb-2 row">
-                                <label class="col-6 col-form-label col-form-label-sm fw-bold">{{ label }}</label>
-                                <div class="col-6"><input type="date" class="form-control form-control-sm"
-                                        v-model="deadlines[key]"></div>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer"><button type="button" class="btn btn-secondary"
-                            @click="showDeadlineModal = false">キャンセル</button><button type="button"
-                            class="btn btn-primary" @click="saveDeadlines">設定を保存</button></div>
-                </div>
-            </div>
-        </div>
-   
         <div v-if="detailModal.show" class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
             <div class="modal-dialog modal-dialog-scrollable">
                 <div class="modal-content">
@@ -2859,6 +2859,26 @@ isCurrentTabExpired() {
                 });
             });
     },
+
+openDeadlineModal() {
+    // ① 万が一 Firebaseのデータが空で undefined になっている場合のエラーを防ぐ
+    if (!this.deadlines) {
+        this.deadlines = {};
+    }
+    
+    // ② 各カテゴリのキーが存在しない場合は空文字で初期化する
+    for (const key in this.categoryLabels) {
+        if (this.deadlines[key] === undefined || this.deadlines[key] === null) {
+            this.deadlines[key] = '';
+        }
+    }
+    
+    // ③ 動作確認用のログ（F12キーで開発者ツールを開くと確認できます）
+    console.log("期限設定モーダルを起動します:", this.deadlines);
+    
+    // ④ モーダルを開くフラグをONにする
+    this.showDeadlineModal = true;
+},
 
    // --- 期限設定・共通 ---
                     saveDeadlines() {
