@@ -1678,7 +1678,7 @@ html, body {
         <strong>参加費ガイド：</strong><br>
         ・個人戦：シングルス 1人3,000円 ｜ ダブルス 1組6,000円 ｜ ミックス 1人3,000円<br>
         ・団体戦：1チーム 20,000円<br>
-        ・運営費：1人 2,000円
+        ・運営費：1人 1,000円
     </div>                                        <div class="row g-3">
                                             <div class="col-md-6"><label>団体チーム数</label><input type="number" v-model.number="entry.east_japan.team" class="form-control" :disabled="isCurrentTabExpired"></div>
                                             <div class="col-md-6"><label>運営費人数</label><input type="number" v-model.number="entry.east_japan.ops" class="form-control" :disabled="isCurrentTabExpired"></div>
@@ -2741,7 +2741,7 @@ form: {
                     calcAddReg() { return 4000 * this.addRegCount; },
                     calcAutumnLeague() { return this.entry.autumn_league.join ? this.getLeagueFee(this.form.division) : 0; },
                     calcKantoChamp() { const e = this.entry.kanto_champ; return ((e.count_s || 0) * 3000) + ((e.count_d || 0) * 6000) + ((e.count_m || 0) * 3000); },
-                    calcEastJapan() { const e = this.entry.east_japan; return ((e.team || 0) * 20000) + ((e.count_s || 0) * 3000) + ((e.count_d || 0) * 6000) + ((e.count_m || 0) * 3000) + ((e.ops || 0) * 2000); },
+                    calcEastJapan() { const e = this.entry.east_japan; return ((e.team || 0) * 20000) + ((e.count_s || 0) * 3000) + ((e.count_d || 0) * 6000) + ((e.count_m || 0) * 3000) + ((e.ops || 0) * 1000); },
                     calcAllJapanChamp() { const e = this.entry.all_japan_champ; return ((e.count_s || 0) * 3000) + ((e.count_d || 0) * 6000) + ((e.count_m || 0) * 3000) + ((e.ops_events || 0) * 1000); },
                     calcAllJapanTeam() { if (!this.entry.all_japan_team.join) return 0; return (this.entry.all_japan_team.team * 20000) + (this.entry.all_japan_team.ops * 3000); },
                     calcRookie() { const e = this.entry.rookie; const t = (e.team_a || 0) + (e.team_b || 0); return (t * 5000) + ((e.count_s || 0) * 3000) + ((e.count_d || 0) * 6000); },
@@ -4434,7 +4434,7 @@ openDetailModal(rec, key, addRegData = null) {
                             return ((raw.count_s || 0) * 3000) + ((raw.count_d || 0) * 6000) + ((raw.count_m || 0) * 3000);
                         }
                        if (key === 'east_japan') {
-    return ((raw.team || 0) * 20000) + ((raw.count_s || 0) * 3000) + ((raw.count_d || 0) * 6000) + ((raw.count_m || 0) * 3000) + ((raw.ops || 0) * 2000);
+    return ((raw.team || 0) * 20000) + ((raw.count_s || 0) * 3000) + ((raw.count_d || 0) * 6000) + ((raw.count_m || 0) * 3000) + ((raw.ops || 0) * 1000);
 }
                         if (key === 'autumn_league') {
                             return raw.join ? this.getLeagueFee(rec.division) : 0;
