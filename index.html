@@ -3761,8 +3761,12 @@ printSingleID(player) {
                         try {
                             // 出力用の配列を準備（大会キーによって分岐）
                             let finalData = {};
-                            if (key === 'east_japan') {
-                                finalData = {
+if (key === 'reg_fee') {
+    finalData = {
+        "春登録名簿": []
+    };
+} else if (key === 'east_japan') {
+    finalData = {
                                     "男子シングルス": [],
                                     "男子ダブルス": [],
                                     "女子シングルス": [],
@@ -3794,10 +3798,59 @@ printSingleID(player) {
                                     const ab = await res.arrayBuffer();
                                     const wb = XLSX.read(ab, { type: "array" });
                                     
-                                    const localData = {};
-                                    Object.keys(finalData).forEach(k => localData[k] = []);
+                                   const localData = {};
+                            Object.keys(finalData).forEach(k => localData[k] = []);
 
-                                    if (key === 'east_japan') {
+                            if (key === 'reg_fee') {
+                                // ★修正: 全シートをループし、「男子個人登録」または「女子個人登録」シートを抽出
+                                wb.SheetNames.forEach(sheetName => {
+                                    if (sheetName.includes('男子個人登録') || sheetName.includes('女子個人登録')) {
+                                        const ws = wb.Sheets[sheetName];
+                                        const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+                                        const startRow = 2; // 3行目 (インデックス2) から開始
+
+                                        for (let i = startRow; i < data.length; i++) {
+                                            const row = data[i] || [];
+                                            
+                                            const jbaId = row[1];
+                                            // const univ = row[2]; ← 使わないため削除または無視でOKです
+                                            const lastName = row[3];
+                                            const firstName = row[4];
+                                            const lastKana = row[5];
+                                            const firstKana = row[6];
+                                            const year = row[9];
+                                            const month = row[10];
+                                            const day = row[11];
+
+                                            // ★修正1: 姓・名のどちらかが空欄の行はスキップ（必須チェック）
+                                            if (!lastName || !firstName) continue;
+
+                                            // ★修正1: 姓や名が「数値のみ（合計人数の 6 など）」の場合は集計行とみなしてスキップ
+                                            if (!isNaN(String(lastName).trim()) || !isNaN(String(firstName).trim())) continue;
+
+                                            let dob = "";
+if (year && month && day) {
+    const y = String(year).trim();
+    const m = String(month).trim().padStart(2, '0');
+    const d = String(day).trim().padStart(2, '0');
+    // ★修正: 変数の間にスラッシュ(/)を入れて結合する
+    dob = `${y}/${m}/${d}`;
+}
+
+                                            localData["春登録名簿"].push({
+                                                "日本バドミントン協会の個人番号": jbaId || "",
+                                                // ★修正2: Excelの入力（2109など）を無視し、常に正しい大学名（target.univName）を使用する
+                                                "大学名": target.univName, 
+                                                "姓": String(lastName).trim(),
+                                                "名": String(firstName).trim(),
+                                                "セイ": lastKana ? String(lastKana).trim() : "",
+                                                "メイ": firstKana ? String(firstKana).trim() : "",
+                                                "生年月日": dob
+                                            });
+                                        }
+                                    }
+                                });
+} else if (key === 'east_japan') {
                                         // 【東日本大会専用の抽出ロジック】
                                         wb.SheetNames.forEach(sheetName => {
                                             const ws = wb.Sheets[sheetName];
@@ -3951,10 +4004,16 @@ printSingleID(player) {
                                     const uniqueArray = [];
                                     const seen = new Set();
                                     
-                                    finalData[k].forEach(row => {
-                                        let keyStr = "";
-                                        if (key === 'east_japan') {
-                                            if (row["選手名1"]) {
+                                   finalData[k].forEach(row => {
+    let keyStr = "";
+    if (key === 'reg_fee') {
+        if (row["姓"] || row["名"]) {
+            keyStr = row["大学名"] + "_" + row["姓"] + "_" + row["名"];
+        } else {
+            keyStr = JSON.stringify(row);
+        }
+    } else if (key === 'east_japan') {
+        if (row["選手名1"]) {
                                                 keyStr = row["大学名"] + "_" + row["選手名1"];
                                             } else if (row["選手名"]) {
                                                 keyStr = row["大学名"] + "_" + row["選手名"];
@@ -3980,17 +4039,19 @@ printSingleID(player) {
                                     });
                                     
                                     // 大学名順、No順にソートして見やすくする
-                                    finalData[k] = uniqueArray.sort((a, b) => {
-                                        const univA = a["大学名"] || a["男子所属"] || "";
-                                        const univB = b["大学名"] || b["男子所属"] || "";
-                                        if (univA !== univB) {
-                                            return univA.localeCompare(univB, 'ja');
-                                        }
-                                        if (a["No"] !== undefined && b["No"] !== undefined) {
-                                            return (parseInt(a["No"]) || 0) - (parseInt(b["No"]) || 0);
-                                        }
-                                        return 0;
-                                    });
+                                   finalData[k] = uniqueArray.sort((a, b) => {
+    // ★修正: String() で囲み、確実に文字列として扱うようにする
+    const univA = String(a["大学名"] || a["男子所属"] || "");
+    const univB = String(b["大学名"] || b["男子所属"] || "");
+    
+    if (univA !== univB) {
+        return univA.localeCompare(univB, 'ja');
+    }
+    if (a["No"] !== undefined && b["No"] !== undefined) {
+        return (parseInt(a["No"]) || 0) - (parseInt(b["No"]) || 0);
+    }
+    return 0;
+});
                                 }
                             });
                             
@@ -4688,9 +4749,10 @@ openDetailModal(rec, key, addRegData = null) {
                                 .map(r => {
                                     const url = r[key].rawObj.excel_url || r[key].rawObj.excel_url_apply;
                                     return {
-                                        name: `${r.univ_id}_${r.univ_name.replace(/[\\/:*?"<>|]/g, "_")}_${this.getCategoryName(key)}`,
-                                        url: url
-                                    };
+    name: `${r.univ_id}_${r.univ_name.replace(/[\\/:*?"<>|]/g, "_")}_${this.getCategoryName(key)}`,
+    url: url,
+    univName: r.univ_name
+};
                                 });
                         }
 
