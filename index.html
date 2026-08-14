@@ -1050,14 +1050,14 @@ html, body {
                     </div>
                     <div class="card-body">
                         <div class="row g-2">
-                            <div class="col-md-3"><input type="date" class="form-control" v-model="adminNews.date">
-                            </div>
-                            <div class="col-md-9"><input type="text" class="form-control" v-model="adminNews.title"
-                                    placeholder="タイトル"></div>
-                            <div class="col-12"><textarea class="form-control" v-model="adminNews.content" rows="3"
-                                    placeholder="本文"></textarea></div>
-                            <div class="col-12">
-                                <label class="form-label small fw-bold">
+                                            <div class="col-md-3"><input type="date" class="form-control" v-model="adminNews.date">
+                                            </div>
+                                            <div class="col-md-9"><input type="text" class="form-control" v-model="adminNews.title"
+                                                    placeholder="タイトル"></div>
+                                            <div class="col-12"><textarea class="form-control" v-model="adminNews.content" rows="10"
+                                                    placeholder="本文"></textarea></div>
+                                            <div class="col-12">
+                                                <label class="form-label small fw-bold">
                                     <i class="bi bi-paperclip"></i> 添付ファイル（複数選択可）
                                 </label>
                                 <input type="file" class="form-control form-control-sm" @change="uploadNewsFile"
@@ -2423,19 +2423,28 @@ html, body {
                         <div v-else>
                             <div v-if="detailModal.type === 'array_list'">
                                 <div class="list-group">
-                                    <div v-for="(item, idx) in detailModal.data" :key="idx" class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div v-for="(item, idx) in detailModal.data" :key="idx" class="list-group-item d-flex justify-content-between align-items-center flex-wrap">
                                         <div>
                                             <div class="fw-bold">申請日: {{ item.date }}</div>
                                             <div class="small">人数: {{ item.count }}名 / ID: {{ item.payment_id }}</div>
                                         </div>
-                                        <div>
+                                        <div class="d-flex align-items-center gap-1 mt-2 mt-md-0">
                                             <span v-if="item.confirmed" class="badge bg-success">承認済</span>
                                             <span v-else-if="item.receipt_url" class="badge bg-warning text-dark">確認中</span>
                                             <span v-else class="badge bg-secondary">未完</span>
                                             
-                                            <button v-if="item.excel_url" class="ms-2 btn btn-sm btn-info py-0 text-white" @click="previewExcel(item.excel_url)">プレビュー</button>
-                                            <a v-if="item.excel_url" :href="item.excel_url" target="_blank" class="ms-1 btn btn-sm btn-primary py-0"><i class="bi bi-download"></i> DL</a>
-                                            <button v-if="item.receipt_url" class="ms-1 btn btn-sm btn-outline-secondary py-0" @click="showReceipt({univ_name:detailModal.univName}, 'add_reg', item)">振込</button>
+                                            <button v-if="item.excel_url" class="btn btn-sm btn-info py-0 text-white" @click="previewExcel(item.excel_url)">プレビュー</button>
+                                            <a v-if="item.excel_url" :href="item.excel_url" target="_blank" class="btn btn-sm btn-primary py-0"><i class="bi bi-download"></i> DL</a>
+                                            
+                                            <!-- ▼ 修正箇所：画像確認ボタンをループで表示 ▼ -->
+                                            <template v-if="item.receiptUrlsArray && item.receiptUrlsArray.length > 0">
+                                                <a v-for="(url, urlIdx) in item.receiptUrlsArray" :key="urlIdx" 
+                                                   :href="url" target="_blank" 
+                                                   class="btn btn-sm btn-outline-primary py-0 ms-1">
+                                                    <i class="bi bi-image"></i> 画像{{ item.receiptUrlsArray.length > 1 ? (urlIdx + 1) : '' }}
+                                                </a>
+                                            </template>
+                                            <button v-if="item.receipt_url" class="btn btn-sm btn-outline-secondary py-0" @click="showReceipt({univ_name:detailModal.univName}, 'add_reg', item)">振込</button>
                                         </div>
                                     </div>
                                     <div v-if="!detailModal.data || detailModal.data.length === 0" class="text-center text-muted p-3">追加登録はありません。</div>
@@ -4506,50 +4515,62 @@ if (key === 'add_reg') {
 
 
 openDetailModal(rec, key, addRegData = null) {
-                        console.log("=== 詳細ボタンがクリックされました ===");
-                        console.log("対象の大学:", rec.univ_name, "カテゴリ:", key);
+    console.log("=== 詳細ボタンがクリックされました ===");
+    console.log("対象の大学:", rec.univ_name, "カテゴリ:", key);
 
-                        try {
-                            const catData = rec[key] || {};
-                            const raw = catData.rawObj || {};
-                            
-                            // 確実にデータをリセットしてからセットする
-                            this.detailModal.title = `${rec.univ_name} - ${this.getCategoryName(key)}`;
-                            this.detailModal.type = 'simple';
-                            this.detailModal.data = null;
-                            this.detailModal.files = [];
-                            this.detailModal.downloadUrl = null;
-                            this.detailModal.univName = rec.univ_name;
-                            this.detailModal.loading = false;
-                            this.detailModal.parsedData = [];
-                            this.detailModal.key = key;
-                            this.detailModal.record = rec;
+    try {
+        const catData = rec[key] || {};
+        const raw = catData.rawObj || {};
+        
+        // 確実にデータをリセットしてからセットする
+        this.detailModal.title = `${rec.univ_name} - ${this.getCategoryName(key)}`;
+        this.detailModal.type = 'simple';
+        this.detailModal.data = null;
+        this.detailModal.files = [];
+        this.detailModal.downloadUrl = null;
+        this.detailModal.univName = rec.univ_name;
+        this.detailModal.loading = false;
+        this.detailModal.parsedData = [];
+        this.detailModal.key = key;
+        this.detailModal.record = rec;
+        this.detailModal.receiptUrls = []; // ★追加：画像URL配列をリセット
 
-                            // ① 選手登録の場合
-                            if (key === 'player_reg') {
-                                this.detailModal.parsedData = Array.isArray(raw) ? raw.map((p, i) => ({
-                                    "No": i + 1,
-                                    "背番号": p.back_number || '',
-                                    "氏名": p.name,
-                                    "フリガナ": p.kana,
-                                    "学年": p.grade || '',
-                                    "出身県": p.pref || '',
-                                    "ジュニア": p.junior || '',
-                                    "中学校": p.jhs || '',
-                                    "高校": p.hs || '',
-                                    "会員番号": p.member_id,
-                                    "3級審判": p.is_referee,
-                                    "画像": p.receipt_url
-                                })) : [];
-                                if (this.detailModal.parsedData.length === 0) {
-                                    this.detailModal.data = "登録データはありません。";
-                                }
-                            } 
+        // ① 選手登録の場合
+        if (key === 'player_reg') {
+            this.detailModal.parsedData = Array.isArray(raw) ? raw.map((p, i) => ({
+                "No": i + 1,
+                "背番号": p.back_number || '',
+                "氏名": p.name,
+                "フリガナ": p.kana,
+                "学年": p.grade || '',
+                "出身県": p.pref || '',
+                "ジュニア": p.junior || '',
+                "中学校": p.jhs || '',
+                "高校": p.hs || '',
+                "会員番号": p.member_id,
+                "3級審判": p.is_referee,
+                "画像": p.receipt_url
+            })) : [];
+            if (this.detailModal.parsedData.length === 0) {
+                this.detailModal.data = "登録データはありません。";
+            }
+        }
+
                             // ③ 追加登録の場合
                             else if (key === 'add_reg') {
                                 this.detailModal.type = 'array_list';
-                                this.detailModal.data = addRegData || rec.add_reg || [];
-                            } 
+                                // receipt_url を配列形式に変換して画面でループしやすくする
+                                const rawList = addRegData || rec.add_reg || [];
+                                this.detailModal.data = rawList.map(item => {
+                                    // 複数画像カンマ区切りの文字列を配列にする
+                                    const urls = item.receipt_url ? item.receipt_url.split(',').filter(u => u.trim() !== '') : [];
+                                    return {
+                                        ...item,
+                                        receiptUrlsArray: urls // ★画面で使うための配列を新たに追加
+                                    };
+                                });
+                            }
+
                             // ② 連盟登録の場合（3つのファイルを表示）
                             else if (key === 'reg_fee' || key === 'autumn_league') {
     this.detailModal.type = 'reg_fee_list';
