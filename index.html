@@ -1086,18 +1086,28 @@ html, body {
                                 </div>
                             </div>
                         </div>
-                        <div class="mt-2">
-                            <button class="btn btn-info text-white fw-bold" @click="addNews"
-                                :disabled="isUploadingNews">投稿する</button>
+                       <div class="mt-2 d-flex gap-2">
+                            <button class="btn fw-bold" :class="editingNewsIndex !== null ? 'btn-warning text-dark' : 'btn-info text-white'" @click="saveNews" :disabled="isUploadingNews || isSaving">
+                                <i class="bi" :class="editingNewsIndex !== null ? 'bi-arrow-clockwise' : 'bi-send'"></i>
+                                {{ editingNewsIndex !== null ? '更新する' : '投稿する' }}
+                            </button>
+                            <button v-if="editingNewsIndex !== null" class="btn btn-outline-secondary fw-bold" @click="cancelEditNews">キャンセル</button>
                         </div>
                         <hr>
-                        <h6 class="text-muted small">投稿済みリスト</h6>
+                        <h6 class="text-muted small">投稿済みリスト (クリックで編集)</h6>
                         <ul class="list-group">
                             <li v-for="(n, i) in newsList" :key="i"
-                                class="list-group-item d-flex justify-content-between align-items-center py-1"><span
-                                    class="small">{{ new Date(n.date).toLocaleDateString() }} : {{ n.title
-                                    }}</span><button class="btn btn-sm btn-outline-danger"
-                                    @click="deleteNews(i)">削除</button></li>
+                                class="list-group-item d-flex justify-content-between align-items-center py-1"
+                                :class="{'bg-warning bg-opacity-10 border-warning': editingNewsIndex === i}">
+                                <span class="small" style="cursor: pointer; flex: 1;" @click="editNews(i)">
+                                    {{ new Date(n.date).toLocaleDateString() }} : 
+                                    <span :class="{'fw-bold text-primary': editingNewsIndex === i}">{{ n.title }}</span>
+                                </span>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-primary py-0 me-1" @click="editNews(i)" title="編集"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger py-0" @click="deleteNews(i)" title="削除"><i class="bi bi-trash"></i></button>
+                                </div>
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -2724,6 +2734,7 @@ firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION)
                           },
 
                         adminNews: { date: '', title: '', content: '', urls: [] }, isUploadingNews: false,
+editingNewsIndex: null,
                         account: { newEmail: '', newPass: '' }, isUploadingLogo: false,
 form: { 
     univ_id: '', 
@@ -4892,23 +4903,53 @@ openDetailModal(rec, key, addRegData = null) {
     }
 },
 
-async addNews() {
+// ニュースを編集フォームにセットする
+editNews(index) {
+    this.editingNewsIndex = index;
+    // 参照を切るためにディープコピーしてセット
+    this.adminNews = JSON.parse(JSON.stringify(this.newsList[index]));
+    // 画面の一番上（またはフォーム位置）にスクロールさせる
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+},
+
+// 編集をキャンセルして新規モードに戻す
+cancelEditNews() {
+    this.editingNewsIndex = null;
+    this.adminNews = { date: '', title: '', content: '', urls: [] };
+},
+
+// 新規投稿・更新の統合メソッド (従来の addNews に相当)
+async saveNews() {
     if (!this.adminNews.title && !this.adminNews.content) return;
-    const newMsg = {
+    
+    // 保存するデータ
+    const targetNews = {
         date: this.adminNews.date || new Date().toISOString(),
         title: this.adminNews.title,
         content: this.adminNews.content,
-        urls: JSON.parse(JSON.stringify(this.adminNews.urls || [])) // 参照を切るためにDeep Copy
+        urls: JSON.parse(JSON.stringify(this.adminNews.urls || []))
     };
-    this.newsList.unshift(newMsg);
+
+    let originalNews = null; // ロールバック用
+    
+    if (this.editingNewsIndex !== null) {
+        // 更新モード：リストの該当箇所を書き換え
+        originalNews = JSON.parse(JSON.stringify(this.newsList[this.editingNewsIndex]));
+        this.newsList.splice(this.editingNewsIndex, 1, targetNews);
+    } else {
+        // 新規モード：リストの先頭に追加
+        this.newsList.unshift(targetNews);
+    }
+
     this.isSaving = true;
     try {
         const payload = { action: 'update_news', news_list: this.newsList };
         const res = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify(payload) });
         const result = await res.json();
+        
         if (result.status === 'success') {
-            this.saveMessage = "ニュースを公開しました";
-            this.adminNews = { date: '', title: '', content: '', urls: [] };
+            this.saveMessage = this.editingNewsIndex !== null ? "ニュースを更新しました" : "ニュースを公開しました";
+            this.cancelEditNews(); // フォームをクリアして新規モードに戻す
             setTimeout(() => { this.saveMessage = ''; }, 3000);
         } else {
             throw new Error();
@@ -4916,7 +4957,12 @@ async addNews() {
     } catch (e) {
         console.error(e);
         alert("保存エラーが発生しました。");
-        this.newsList.shift();
+        // 失敗した場合はリストを元に戻す
+        if (this.editingNewsIndex !== null) {
+             this.newsList.splice(this.editingNewsIndex, 1, originalNews);
+        } else {
+             this.newsList.shift();
+        }
     } finally {
         this.isSaving = false;
     }
