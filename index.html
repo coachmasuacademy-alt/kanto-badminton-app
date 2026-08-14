@@ -2456,19 +2456,21 @@ html, body {
                                     <div v-for="file in detailModal.files" :key="file.name" class="list-group-item d-flex justify-content-between align-items-center">
                                         <span class="text-primary fw-bold">{{ file.name }}</span>
                                         <div>
-                                            <button v-if="file.type === 'excel'" class="btn btn-sm btn-info text-white me-2" @click="previewExcel(file.url)">プレビュー</button>
-                                            <a :href="file.url" target="_blank" class="btn btn-sm btn-primary"><i class="bi bi-download"></i> DL</a>
+                                            <template v-if="file.type === 'excel'">
+                                                <button class="btn btn-sm btn-info text-white me-2 py-0" @click="previewExcel(file.url)">プレビュー</button>
+                                                <a :href="file.url" target="_blank" class="btn btn-sm btn-primary py-0"><i class="bi bi-download"></i> DL</a>
+                                            </template>
+                                            <!-- ▼ 画像の場合は閲覧ボタンを出す ▼ -->
+                                            <template v-else-if="file.type === 'image'">
+                                                <a v-for="(imgUrl, idx) in file.urls" :key="idx" :href="imgUrl" target="_blank" class="btn btn-sm btn-outline-primary ms-1 py-0">
+                                                    <i class="bi bi-image"></i> 画像{{ file.urls.length > 1 ? (idx + 1) : '' }}
+                                                </a>
+                                            </template>
                                         </div>
                                     </div>
-                                    <div v-if="!detailModal.files || detailModal.files.length === 0" class="p-3 text-muted text-center">提出されたファイルはありません。</div>
-                                </div>
-                            </div>
-
-                            <div v-else-if="detailModal.type === 'entry'">
-                                <div class="text-center text-muted py-4">
-                                    <i class="bi bi-file-earmark-excel fs-1 text-secondary"></i>
-                                    <p class="mt-2">データが表示できませんでした。<br>直接ダウンロードして確認してください。</p>
-                                    <a v-if="detailModal.downloadUrl" :href="detailModal.downloadUrl" target="_blank" class="btn btn-success mt-2"><i class="bi bi-download"></i> ファイルをダウンロード</a>
+                                    <div v-if="!detailModal.files || detailModal.files.length === 0" class="p-3 text-muted text-center">
+                                        {{ detailModal.data || '提出されたファイルはありません。' }}
+                                    </div>
                                 </div>
                             </div>
 
@@ -4571,24 +4573,28 @@ openDetailModal(rec, key, addRegData = null) {
                                 });
                             }
 
-                            // ② 連盟登録の場合（3つのファイルを表示）
+                            // ② 連盟登録、⑥ 秋季リーグの場合
                             else if (key === 'reg_fee' || key === 'autumn_league') {
-    this.detailModal.type = 'reg_fee_list';
-    const prefix = key === 'reg_fee' ? '春' : '秋';
-    if (raw.excel_url) this.detailModal.files.push({ name: `1: ${prefix}登録ファイル`, url: raw.excel_url, type: 'excel' });
-    if (raw.excel_url_apply) this.detailModal.files.push({ name: `2: ${prefix}リーグ 申込ファイル`, url: raw.excel_url_apply, type: 'excel' });
-    if (raw.excel_url_reg) this.detailModal.files.push({ name: `3: ${prefix}リーグ レギュラー登録`, url: raw.excel_url_reg, type: 'excel' });
-    if (raw.receipt_url) this.detailModal.files.push({ name: '★ 振込明細画像', url: raw.receipt_url, type: 'image' });
-}
-                            // ④〜⑨ 大会申込の場合
+                                this.detailModal.type = 'reg_fee_list';
+                                const prefix = key === 'reg_fee' ? '春' : '秋';
+                                if (raw.excel_url) this.detailModal.files.push({ name: `1: ${prefix}登録ファイル`, url: raw.excel_url, type: 'excel' });
+                                if (raw.excel_url_apply) this.detailModal.files.push({ name: `2: ${prefix}リーグ 申込ファイル`, url: raw.excel_url_apply, type: 'excel' });
+                                if (raw.excel_url_reg) this.detailModal.files.push({ name: `3: ${prefix}リーグ レギュラー登録`, url: raw.excel_url_reg, type: 'excel' });
+                                if (raw.receipt_url) {
+                                    const urls = raw.receipt_url.split(',').filter(u => u.trim() !== '');
+                                    this.detailModal.files.push({ name: '★ 振込明細画像', urls: urls, type: 'image' });
+                                }
+                            }
+                            // ④〜⑨ その他の大会申込の場合
                             else {
-                                const targetUrl = raw.excel_url || raw.excel_url_apply || raw.excel_url_reg;
-                                if (targetUrl) {
-                                    this.detailModal.type = 'entry'; 
-                                    this.detailModal.downloadUrl = targetUrl;
-                                    this.previewExcel(targetUrl); 
-                                } else {
-                                    this.detailModal.data = raw.join ? "参加予定（ファイル未提出）" : "不参加、またはデータなし";
+                                this.detailModal.type = 'reg_fee_list'; // Excel・画像両方を出せるようにリスト形式に統一
+                                if (raw.excel_url) this.detailModal.files.push({ name: `申込ファイル (Excel)`, url: raw.excel_url, type: 'excel' });
+                                if (raw.receipt_url) {
+                                    const urls = raw.receipt_url.split(',').filter(u => u.trim() !== '');
+                                    this.detailModal.files.push({ name: '★ 振込明細画像', urls: urls, type: 'image' });
+                                }
+                                if (this.detailModal.files.length === 0) {
+                                    this.detailModal.data = raw.join === false ? "不参加" : "提出されたファイルはありません。";
                                 }
                             }
                             
