@@ -2373,120 +2373,89 @@ html, body {
     </div> <!-- row 終了 -->
 </div> <!-- ユーザー画面全体 終了 -->
 
-        
-
         <div v-if="detailModal.show" class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
-            <div class="modal-dialog modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header bg-light py-2">
-                        <h6 class="modal-title fw-bold">{{ detailModal.title }}</h6><button type="button"
-                            class="btn-close small" @click="detailModal.show = false"></button>
-                    </div>
-
-
-
-
-<div class="modal-body">
-                        <div v-if="detailModal.loading" class="text-center py-5">
-                            <div class="spinner-border text-primary" role="status"></div>
-                            <p class="mt-2 text-muted">ファイルを読み込んでいます...</p>
-                        </div>
-                        
-                        <div v-else-if="detailModal.parsedData && detailModal.parsedData.length > 0">
-                            <div class="alert alert-success small py-2 mb-2 d-flex justify-content-between align-items-center">
-                                <span><i class="bi bi-table"></i> 名簿プレビュー</span>
-                                <a v-if="detailModal.downloadUrl" :href="detailModal.downloadUrl" target="_blank" class="btn btn-sm btn-primary fw-bold"><i class="bi bi-download"></i> ExcelをDL</a>
-                            </div>
-                            <div class="table-responsive" style="max-height: 400px;">
-                                <table class="table table-sm table-bordered table-striped small mb-0 text-nowrap">
-                                    <thead class="table-light sticky-top">
-                                        <tr>
-                                            <th v-for="(val, k) in detailModal.parsedData[0]" :key="k">{{ k }}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="(row, idx) in detailModal.parsedData" :key="idx">
-                                            <td v-for="(val, k) in row" :key="k">
-                                                <div v-if="k === '画像'">
-                                                    <a v-if="val" :href="val" target="_blank" class="btn btn-sm btn-primary py-0" style="font-size: 0.8rem;"><i class="bi bi-card-image"></i> 画像確認</a>
-                                                    <span v-else class="text-muted small">-</span>
-                                                </div>
-                                                <span v-else>{{ val }}</span>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="text-center mt-3"><button class="btn btn-sm btn-secondary" @click="detailModal.parsedData = []">プレビューを閉じる</button></div>
+                <div class="modal-dialog modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header bg-light py-2">
+                            <h6 class="modal-title fw-bold">{{ detailModal.title }}</h6>
+                            <button type="button" class="btn-close small" @click="detailModal.show = false"></button>
                         </div>
 
-                        <div v-else>
-                            <div v-if="detailModal.type === 'array_list'">
-                                <div class="list-group">
-                                    <div v-for="(item, idx) in detailModal.data" :key="idx" class="list-group-item d-flex justify-content-between align-items-center flex-wrap">
-                                        <div>
-                                            <div class="fw-bold">申請日: {{ item.date }}</div>
-                                            <div class="small">人数: {{ item.count }}名 / ID: {{ item.payment_id }}</div>
-                                        </div>
-                                        <div class="d-flex align-items-center gap-1 mt-2 mt-md-0">
-                                            <span v-if="item.confirmed" class="badge bg-success">承認済</span>
-                                            <span v-else-if="item.receipt_url" class="badge bg-warning text-dark">確認中</span>
-                                            <span v-else class="badge bg-secondary">未完</span>
-                                            
-                                            <button v-if="item.excel_url" class="btn btn-sm btn-info py-0 text-white" @click="previewExcel(item.excel_url)">プレビュー</button>
-                                            <a v-if="item.excel_url" :href="item.excel_url" target="_blank" class="btn btn-sm btn-primary py-0"><i class="bi bi-download"></i> DL</a>
-                                            
-                                            <!-- ▼ 修正箇所：画像確認ボタンをループで表示 ▼ -->
-                                            <template v-if="item.receiptUrlsArray && item.receiptUrlsArray.length > 0">
-                                                <a v-for="(url, urlIdx) in item.receiptUrlsArray" :key="urlIdx" 
-                                                   :href="url" target="_blank" 
-                                                   class="btn btn-sm btn-outline-primary py-0 ms-1">
-                                                    <i class="bi bi-image"></i> 画像{{ item.receiptUrlsArray.length > 1 ? (urlIdx + 1) : '' }}
-                                                </a>
-                                            </template>
-                                            <button v-if="item.receipt_url" class="btn btn-sm btn-outline-secondary py-0" @click="showReceipt({univ_name:detailModal.univName}, 'add_reg', item)">振込</button>
-                                        </div>
-                                    </div>
-                                    <div v-if="!detailModal.data || detailModal.data.length === 0" class="text-center text-muted p-3">追加登録はありません。</div>
-                                </div>
+                        <div class="modal-body p-0">
+                            <div v-if="detailModal.loading" class="text-center py-5">
+                                <div class="spinner-border text-primary" role="status"></div>
+                                <p class="mt-2 text-muted">ファイルを読み込んでいます...</p>
                             </div>
                             
-                            <div v-else-if="detailModal.type === 'reg_fee_list'">
-                                <div class="list-group text-start shadow-sm">
-                                    <div v-for="file in detailModal.files" :key="file.name" class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span class="text-primary fw-bold">{{ file.name }}</span>
-                                        <div>
-                                            <template v-if="file.type === 'excel'">
-                                                <button class="btn btn-sm btn-info text-white me-2 py-0" @click="previewExcel(file.url)">プレビュー</button>
-                                                <a :href="file.url" target="_blank" class="btn btn-sm btn-primary py-0"><i class="bi bi-download"></i> DL</a>
-                                            </template>
-                                            <!-- ▼ 画像の場合は閲覧ボタンを出す ▼ -->
-                                            <template v-else-if="file.type === 'image'">
-                                                <a v-for="(imgUrl, idx) in file.urls" :key="idx" :href="imgUrl" target="_blank" class="btn btn-sm btn-outline-primary ms-1 py-0">
-                                                    <i class="bi bi-image"></i> 画像{{ file.urls.length > 1 ? (idx + 1) : '' }}
-                                                </a>
-                                            </template>
+                            <!-- 選手登録用プレビュー（そのまま維持） -->
+                            <div v-else-if="detailModal.parsedData && detailModal.parsedData.length > 0" class="p-3">
+                                <div class="alert alert-success small py-2 mb-2 d-flex justify-content-between align-items-center">
+                                    <span><i class="bi bi-table"></i> 名簿プレビュー</span>
+                                </div>
+                                <div class="table-responsive" style="max-height: 400px;">
+                                    <table class="table table-sm table-bordered table-striped small mb-0 text-nowrap">
+                                        <thead class="table-light sticky-top">
+                                            <tr><th v-for="(val, k) in detailModal.parsedData[0]" :key="k">{{ k }}</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="(row, idx) in detailModal.parsedData" :key="idx">
+                                                <td v-for="(val, k) in row" :key="k">
+                                                    <div v-if="k === '画像'">
+                                                        <a v-if="val" :href="val" target="_blank" class="btn btn-sm btn-primary py-0" style="font-size: 0.8rem;"><i class="bi bi-card-image"></i> 画像確認</a>
+                                                        <span v-else class="text-muted small">-</span>
+                                                    </div>
+                                                    <span v-else>{{ val }}</span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="text-center mt-3"><button class="btn btn-sm btn-secondary" @click="detailModal.parsedData = []">プレビューを閉じる</button></div>
+                            </div>
+
+                            <div v-else-if="detailModal.type === 'detail_dl'" class="bg-light p-4">
+                                <!-- Excel等のファイル -->
+                                <div v-if="detailModal.files && detailModal.files.length > 0" class="mb-4 text-center">
+                                    <h6 class="fw-bold border-bottom pb-2 mb-3">添付ファイル (Excel等)</h6>
+                                    <div class="d-flex flex-wrap justify-content-center gap-2 mt-2">
+                                        <a v-for="(file, idx) in detailModal.files" :key="idx" :href="file.url" target="_blank" class="btn btn-success">
+                                            <i class="bi bi-file-earmark-excel"></i> {{ file.name }}
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- 画像 -->
+                                <div v-if="detailModal.receiptUrls && detailModal.receiptUrls.length > 0" class="text-center">
+                                    <h6 class="fw-bold border-bottom pb-2 mb-3">振込明細・画像</h6>
+                                    <div v-for="(url, idx) in detailModal.receiptUrls" :key="idx" class="mb-4 pb-4 border-bottom border-secondary border-opacity-25">
+                                        <img :src="url" style="max-width: 100%; max-height: 60vh; object-fit: contain; border: 1px solid #ddd; padding: 5px; background: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                        <div class="mt-3">
+                                            <a :href="url" target="_blank" class="btn btn-primary fw-bold px-4">
+                                                <i class="bi bi-box-arrow-up-right"></i> 原寸大で表示
+                                            </a>
                                         </div>
                                     </div>
-                                    <div v-if="!detailModal.files || detailModal.files.length === 0" class="p-3 text-muted text-center">
-                                        {{ detailModal.data || '提出されたファイルはありません。' }}
-                                    </div>
+                                </div>
+                                
+                                <div v-if="(!detailModal.files || detailModal.files.length === 0) && (!detailModal.receiptUrls || detailModal.receiptUrls.length === 0)" class="py-5 text-center text-muted">
+                                    <i class="bi bi-folder-x fs-1 text-secondary opacity-50 mb-3" style="font-size: 3rem;"></i>
+                                    <h5 class="fw-bold text-dark">データがありません</h5>
                                 </div>
                             </div>
 
+                            <!-- その他エラー用 -->
                             <div v-else class="text-center py-4">
-                                <h5 class="text-muted">{{ detailModal.data }}</h5>
+                                <h5 class="text-muted">{{ detailModal.data || '表示するデータがありません' }}</h5>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="modal-footer py-1">
-                        <button type="button" class="btn btn-sm btn-secondary"
-                            @click="detailModal.show = false">閉じる</button>
+                        <div class="modal-footer py-1">
+                            <button type="button" class="btn btn-sm btn-secondary" @click="detailModal.show = false">閉じる</button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+
         <div v-if="receiptData.show" class="modal fade show d-block" id="receiptModal" tabindex="-1"
             style="background: rgba(0,0,0,0.5);">
             <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -2805,7 +2774,7 @@ form: {
                         ],
                         selectedTournament: 'reg_fee', isZipping: false, isGeneratingList: false,
                         modal: { show: false, univName: '', category: '', url: '', subRecord: null },
-                        detailModal: { show: false, title: '', type: '', data: null, files: [], downloadUrl: null, univName: '', loading: false, parsedData: [], key: '', record: null },
+                        detailModal: { show: false, title: '', type: '', data: null, files: [], downloadUrl: null, univName: '', loading: false, parsedData: [], key: '', record: null, receiptUrls: [] },
                         receiptData: { show: false, amount: 0, title: '' }, parsedMemberList: []
                     }
                 },
@@ -4524,7 +4493,7 @@ openDetailModal(rec, key, addRegData = null) {
         const catData = rec[key] || {};
         const raw = catData.rawObj || {};
         
-        // 確実にデータをリセットしてからセットする
+        // データをリセット
         this.detailModal.title = `${rec.univ_name} - ${this.getCategoryName(key)}`;
         this.detailModal.type = 'simple';
         this.detailModal.data = null;
@@ -4535,10 +4504,11 @@ openDetailModal(rec, key, addRegData = null) {
         this.detailModal.parsedData = [];
         this.detailModal.key = key;
         this.detailModal.record = rec;
-        this.detailModal.receiptUrls = []; // ★追加：画像URL配列をリセット
+        this.detailModal.receiptUrls = [];
 
         // ① 選手登録の場合
         if (key === 'player_reg') {
+            this.detailModal.title = `${rec.univ_name} - 選手登録名簿`;
             this.detailModal.parsedData = Array.isArray(raw) ? raw.map((p, i) => ({
                 "No": i + 1,
                 "背番号": p.back_number || '',
@@ -4556,57 +4526,44 @@ openDetailModal(rec, key, addRegData = null) {
             if (this.detailModal.parsedData.length === 0) {
                 this.detailModal.data = "登録データはありません。";
             }
+            this.detailModal.show = true;
+            return;
         }
 
-                            // ③ 追加登録の場合
-                            else if (key === 'add_reg') {
-                                this.detailModal.type = 'array_list';
-                                // receipt_url を配列形式に変換して画面でループしやすくする
-                                const rawList = addRegData || rec.add_reg || [];
-                                this.detailModal.data = rawList.map(item => {
-                                    // 複数画像カンマ区切りの文字列を配列にする
-                                    const urls = item.receipt_url ? item.receipt_url.split(',').filter(u => u.trim() !== '') : [];
-                                    return {
-                                        ...item,
-                                        receiptUrlsArray: urls // ★画面で使うための配列を新たに追加
-                                    };
-                                });
-                            }
+        // ② 大会の場合（詳細・DLモード）
+        this.detailModal.type = 'detail_dl';
+        let extractedUrls = [];
+        let extractedFiles = [];
 
-                            // ② 連盟登録、⑥ 秋季リーグの場合
-                            else if (key === 'reg_fee' || key === 'autumn_league') {
-                                this.detailModal.type = 'reg_fee_list';
-                                const prefix = key === 'reg_fee' ? '春' : '秋';
-                                if (raw.excel_url) this.detailModal.files.push({ name: `1: ${prefix}登録ファイル`, url: raw.excel_url, type: 'excel' });
-                                if (raw.excel_url_apply) this.detailModal.files.push({ name: `2: ${prefix}リーグ 申込ファイル`, url: raw.excel_url_apply, type: 'excel' });
-                                if (raw.excel_url_reg) this.detailModal.files.push({ name: `3: ${prefix}リーグ レギュラー登録`, url: raw.excel_url_reg, type: 'excel' });
-                                if (raw.receipt_url) {
-                                    const urls = raw.receipt_url.split(',').filter(u => u.trim() !== '');
-                                    this.detailModal.files.push({ name: '★ 振込明細画像', urls: urls, type: 'image' });
-                                }
-                            }
-                            // ④〜⑨ その他の大会申込の場合
-                            else {
-                                this.detailModal.type = 'reg_fee_list'; // Excel・画像両方を出せるようにリスト形式に統一
-                                if (raw.excel_url) this.detailModal.files.push({ name: `申込ファイル (Excel)`, url: raw.excel_url, type: 'excel' });
-                                if (raw.receipt_url) {
-                                    const urls = raw.receipt_url.split(',').filter(u => u.trim() !== '');
-                                    this.detailModal.files.push({ name: '★ 振込明細画像', urls: urls, type: 'image' });
-                                }
-                                if (this.detailModal.files.length === 0) {
-                                    this.detailModal.data = raw.join === false ? "不参加" : "提出されたファイルはありません。";
-                                }
-                            }
-                            
-                            // 最後に画面を表示する
-                            this.detailModal.show = true;
-                            console.log("=== モーダル展開成功 ===");
-                            
-                        } catch (e) {
-                            console.error("詳細画面の表示中にエラーが発生しました:", e);
-                            alert("データを開く際にエラーが発生しました。");
-                        }
-                    },
+        if (key === 'add_reg') {
+            const rawList = addRegData || rec.add_reg || [];
+            rawList.forEach((item, idx) => {
+                if (item.receipt_url) {
+                    extractedUrls = extractedUrls.concat(item.receipt_url.split(',').filter(u => u.trim() !== ''));
+                }
+                if (item.excel_url) {
+                    extractedFiles.push({ name: `追加登録Excel_${idx+1}`, url: item.excel_url });
+                }
+            });
+        } else {
+            if (raw.receipt_url) {
+                extractedUrls = raw.receipt_url.split(',').filter(u => u.trim() !== '');
+            }
+            // 各種Excelファイルも拾う
+            if (raw.excel_url) extractedFiles.push({ name: "申込Excel / 春登録", url: raw.excel_url });
+            if (raw.excel_url_apply) extractedFiles.push({ name: "リーグ申込", url: raw.excel_url_apply });
+            if (raw.excel_url_reg) extractedFiles.push({ name: "レギュラー登録", url: raw.excel_url_reg });
+        }
+
+        this.detailModal.receiptUrls = extractedUrls;
+        this.detailModal.files = extractedFiles;
+        this.detailModal.show = true;
+        
+    } catch (e) {
+        console.error("詳細画面の表示中にエラーが発生しました:", e);
+        alert("データを開く際にエラーが発生しました。");
+    }
+},
 
                     closeModal() {
                         this.modal.show = false;
