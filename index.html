@@ -3778,7 +3778,7 @@ printSingleID(player) {
 
 
                     // --- 管理者：ダウンロード機能 ---
-                    async downloadAllParticipantsExcel() {
+                   async downloadAllParticipantsExcel() {
                         const key = this.selectedTournament;
                         const catName = this.getCategoryName(key);
                         if (!confirm(`【対象: ${catName}】\n\n表示中の全大学のExcelファイルから参加者データを抽出しますか？`)) return;
@@ -3788,7 +3788,6 @@ printSingleID(player) {
                         // 対象ファイルの抽出処理
                         if (key === 'add_reg') {
                             this.filteredAdminRecords.forEach(r => {
-                                // ★修正: 大学名がない、またはアンダースコアのみ等無効な場合はスキップ
                                 if (!r.univ_name || r.univ_name.trim() === '' || r.univ_name.trim() === '_') return;
 
                                 if (Array.isArray(r.add_reg)) {
@@ -3802,7 +3801,6 @@ printSingleID(player) {
                             });
                         } else {
                             this.filteredAdminRecords.forEach(r => {
-                                // ★修正: 大学名がない、またはアンダースコアのみ等無効な場合はスキップ
                                 if (!r.univ_name || r.univ_name.trim() === '' || r.univ_name.trim() === '_') return;
 
                                 if (r[key] && r[key].rawObj && r[key].rawObj.excel_url) {
@@ -3823,12 +3821,16 @@ printSingleID(player) {
                         try {
                             // 出力用の配列を準備（大会キーによって分岐）
                             let finalData = {};
-if (key === 'reg_fee') {
-    finalData = {
-        "春登録名簿": []
-    };
-} else if (key === 'east_japan') {
-    finalData = {
+                            if (key === 'reg_fee') {
+                                finalData = {
+                                    "春登録名簿": []
+                                };
+                            } else if (key === 'autumn_league') { // ★追加：秋リーグの出力用シート名
+                                finalData = {
+                                    "秋登録名簿": []
+                                };
+                            } else if (key === 'east_japan') {
+                                finalData = {
                                     "男子シングルス": [],
                                     "男子ダブルス": [],
                                     "女子シングルス": [],
@@ -3852,7 +3854,6 @@ if (key === 'reg_fee') {
 
                             const promises = targets.map(async (target) => {
                                 try {
-                                    // ★追加: 念のため target.univName が空なら処理しない
                                     if(!target.univName) return null;
 
                                     const res = await fetch(target.url);
@@ -3863,8 +3864,9 @@ if (key === 'reg_fee') {
                                    const localData = {};
                             Object.keys(finalData).forEach(k => localData[k] = []);
 
-                            if (key === 'reg_fee') {
-                                // ★修正: 全シートをループし、「男子個人登録」または「女子個人登録」シートを抽出
+                            // ★修正: 春リーグ（reg_fee）と秋リーグ（autumn_league）で共通の抽出処理を利用
+                            if (key === 'reg_fee' || key === 'autumn_league') {
+                                const listName = key === 'reg_fee' ? "春登録名簿" : "秋登録名簿"; // ★追加
                                 wb.SheetNames.forEach(sheetName => {
                                     if (sheetName.includes('男子個人登録') || sheetName.includes('女子個人登録')) {
                                         const ws = wb.Sheets[sheetName];
@@ -3884,24 +3886,19 @@ if (key === 'reg_fee') {
                                             const month = row[10];
                                             const day = row[11];
 
-                                            // ★修正1: 姓・名のどちらかが空欄の行はスキップ（必須チェック）
                                             if (!lastName || !firstName) continue;
-
-                                            // ★修正1: 姓や名が「数値のみ（合計人数の 6 など）」の場合は集計行とみなしてスキップ
                                             if (!isNaN(String(lastName).trim()) || !isNaN(String(firstName).trim())) continue;
 
                                             let dob = "";
-if (year && month && day) {
-    const y = String(year).trim();
-    const m = String(month).trim().padStart(2, '0');
-    const d = String(day).trim().padStart(2, '0');
-    // ★修正: 変数の間にスラッシュ(/)を入れて結合する
-    dob = `${y}/${m}/${d}`;
-}
+                                            if (year && month && day) {
+                                                const y = String(year).trim();
+                                                const m = String(month).trim().padStart(2, '0');
+                                                const d = String(day).trim().padStart(2, '0');
+                                                dob = `${y}/${m}/${d}`;
+                                            }
 
-                                            localData["春登録名簿"].push({
+                                            localData[listName].push({ // ★修正: 変数で動的に振り分け
                                                 "日本バドミントン協会の個人番号": jbaId || "",
-                                                // ★修正2: Excelの入力（2109など）を無視し、常に正しい大学名（target.univName）を使用する
                                                 "大学名": target.univName, 
                                                 "姓": String(lastName).trim(),
                                                 "名": String(firstName).trim(),
@@ -3912,7 +3909,7 @@ if (year && month && day) {
                                         }
                                     }
                                 });
-} else if (key === 'east_japan') {
+                            } else if (key === 'east_japan') {
                                         // 【東日本大会専用の抽出ロジック】
                                         wb.SheetNames.forEach(sheetName => {
                                             const ws = wb.Sheets[sheetName];
@@ -4068,7 +4065,8 @@ if (year && month && day) {
                                     
                                    finalData[k].forEach(row => {
     let keyStr = "";
-    if (key === 'reg_fee') {
+    // ★修正: 春(reg_fee)と秋(autumn_league)の重複チェックを共通化
+    if (key === 'reg_fee' || key === 'autumn_league') {
         if (row["姓"] || row["名"]) {
             keyStr = row["大学名"] + "_" + row["姓"] + "_" + row["名"];
         } else {
@@ -4102,7 +4100,6 @@ if (year && month && day) {
                                     
                                     // 大学名順、No順にソートして見やすくする
                                    finalData[k] = uniqueArray.sort((a, b) => {
-    // ★修正: String() で囲み、確実に文字列として扱うようにする
     const univA = String(a["大学名"] || a["男子所属"] || "");
     const univB = String(b["大学名"] || b["男子所属"] || "");
     
