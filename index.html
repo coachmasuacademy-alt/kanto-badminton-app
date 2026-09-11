@@ -1165,9 +1165,8 @@ html, body {
                                 <th>④関東選手権</th>
                                 <th>⑤東日本</th>
                                 <th>⑥秋季L</th>
-                                <th>⑦インカレ</th>
-                                <th>⑧大学対抗戦</th>
-                                <th>⑨新人戦</th>
+                                <th>⑦インカレ・対抗戦</th>
+                                <th>⑧新人戦</th>
                                 <th>備考・連絡</th>
                             </tr>
                         </thead>
@@ -1866,7 +1865,7 @@ html, body {
                                 </div>
 
                                 <div v-if="activeTab === 'all_japan_champ'">
-                                    <h4>⑦ インカレ</h4>
+                                    <h4>⑦ インカレ・大学対抗戦</h4>
                                     <div class="excel-upload-area"><label
                                             class="form-label fw-bold">申込ファイル(Excel)</label>
                                         <div v-if="entry.all_japan_champ.excel_url" class="mt-3">
@@ -1887,18 +1886,25 @@ html, body {
         <i class="bi bi-info-circle-fill"></i>
         <strong>参加費ガイド：</strong><br>
         ・個人戦：シングルス 1人3,000円 ｜ ダブルス 1組6,000円 ｜ ミックス 1人3,000円<br>
-        ・運営費：1種目につき 1人1,000円
-    </div>                                        <div class="row g-3">
-                                            <div class="col-md-6"><label>運営費種目数</label><input type="number" v-model.number="entry.all_japan_champ.ops_events" class="form-control" :disabled="isCurrentTabExpired"></div>
+        ・団体戦(大学対抗戦)：1チーム 20,000円
+    </div>                                        
+                                        <div class="row g-3 align-items-end">
 <div class="col-md-4"><label>シングルス</label><input type="number" v-model.number="entry.all_japan_champ.count_s" class="form-control" :disabled="isCurrentTabExpired"></div>
 <div class="col-md-4"><label>ダブルス</label><input type="number" v-model.number="entry.all_japan_champ.count_d" class="form-control" :disabled="isCurrentTabExpired"></div>
 <div class="col-md-4"><label>ミックス</label><input type="number" v-model.number="entry.all_japan_champ.count_m" class="form-control" :disabled="isCurrentTabExpired"></div>
+                                        </div>
+
+                                        <div class="row g-3 align-items-end mt-2 border-top pt-3">
+                                            <div class="col-md-4">
+                                                <label class="form-label small fw-bold">大学対抗戦 チーム数</label>
+                                                <input type="number" v-model.number="entry.all_japan_team.team" class="form-control" min="0" :disabled="isCurrentTabExpired">
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="payment-box">
                                         <div class="text-center">
                                             <h5>支払額: <strong>{{ formatMoney(calcAllJapanChamp) }}</strong></h5>
-                                            <div class="mb-2 fw-bold">ゆうちょ銀行　店名：029　当座　口座番号：0080708<br>名義：関東学生バドミントン連盟
+                                            <div class="mb-2 fw-bold">ゆうちょ銀行 店名：029 当座 口座番号：0080708<br>名義：関東学生バドミントン連盟
                                             </div>
                                             <p class="mb-2 text-muted small">下記番号を振込名義の前に入力してください</p>
                                             <div class="payment-id">{{ entry.all_japan_champ.payment_id }}</div>
@@ -1928,86 +1934,17 @@ html, body {
         <div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div>
     </div>
 </div>
-
 </div>
-                                    </div>
+</div>
+
                                     <div class="save-area">
                                         <button @click="saveData" class="btn btn-primary btn-lg px-5">保存</button>
                                     </div>
                                 </div>
 
-                                <div v-if="activeTab === 'all_japan_team'">
-                                    <h4>⑧ 大学対抗戦</h4>
-                                    <div class="card border-primary mb-4">
-                                        <div class="card-body">
-                                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" v-model="entry.all_japan_team.join" :disabled="isCurrentTabExpired"><label
-                                                    class="form-check-label fw-bold">参加する</label></div>
-                                        </div>
-                                    </div>
-                                    <div v-if="entry.all_japan_team.join">
-                                        <div class="excel-upload-area"><label class="form-label fw-bold">申込Excel</label>
-                                            <div v-if="entry.all_japan_team.excel_url" class="mt-3">
-                                                <div class="d-flex align-items-center justify-content-center gap-2">
-                                                    <span class="badge bg-success">UP済み</span><a
-                                                        :href="entry.all_japan_team.excel_url" target="_blank"
-                                                        class="btn btn-sm btn-primary"><i class="bi bi-search"></i>
-                                                        確認</a><button class="btn btn-sm btn-outline-danger"
-                                                        @click="deleteExcel('all_japan_team')"><i
-                                                            class="bi bi-trash"></i> 削除</button>
-                                                </div>
-                                            </div>
-                                            <div v-else><input type="file" class="form-control w-75 mx-auto"
-                                                    accept=".xlsx, .xls"
-                                                    @change="uploadExcel($event, 'all_japan_team')"></div>
-                                        </div>
-                                        <div class="row g-3">
-                                            <div class="col-6"><label>チーム数</label><input type="number" v-model.number="entry.all_japan_team.team" class="form-control" :disabled="isCurrentTabExpired"></div>
-                                            <div class="col-6"><label>運営費</label><input type="number" v-model.number="entry.all_japan_team.ops" class="form-control" :disabled="isCurrentTabExpired"></div>
-                                        </div>
-                                        <div class="payment-box">
-                                            <div class="text-center">
-                                                <h5>支払額: <strong>{{ formatMoney(calcAllJapanTeam) }}</strong></h5>
-                                                <div class="mb-2 fw-bold">
-                                                    ゆうちょ銀行　店名：029　当座　口座番号：0080708<br>名義：関東学生バドミントン連盟</div>
-                                                <p class="mb-2 text-muted small">下記番号を振込名義の前に入力してください</p>
-                                                <div class="payment-id">{{ entry.all_japan_team.payment_id }}</div>
-                                                <div class="mt-2 text-danger fw-bold">振込名義: {{
-                                                    entry.all_japan_team.payment_id }} {{ form.univ_name }}</div>
-                                                
-<div class="receipt-area">
-    <h6 class="small fw-bold mb-3">振込明細</h6>
-    <div v-if="entry.all_japan_team.receipt_url">
-        <div class="d-flex flex-wrap justify-content-center gap-3 mb-3">
-            <template v-for="(url, idx) in entry.all_japan_team.receipt_url.split(',')" :key="idx">
-                <div v-if="url" class="text-center">
-                    <img :src="url" class="receipt-preview" style="max-height: 150px;">
-                    <div class="mt-1 d-flex justify-content-center gap-1">
-                        <a :href="url" target="_blank" class="btn btn-sm btn-secondary py-0"><i class="bi bi-eye"></i> 拡大</a>
-                        <button class="btn btn-sm btn-outline-danger py-0" @click="deleteSingleReceipt('all_japan_team', idx)">削除</button>
-                    </div>
-                </div>
-            </template>
-        </div>
-        <div class="mt-2 border-top pt-2">
-            <button class="btn btn-sm btn-outline-dark" @click="openReceipt('all_japan_team')">領収書</button>
-        </div>
-    </div>
-    <div v-else>
-        <input type="file" multiple class="form-control form-control-sm w-75 mx-auto" accept="image/*" @change="uploadReceipt($event, 'all_japan_team')">
-        <div v-if="isUploading" class="spinner-border spinner-border-sm mt-2"></div>
-    </div>
-</div> 
-
-</div>
-                                    </div>
-                                    </div> <!-- ← これが v-if="join" を閉じるためのタグです -->
-                                    <div class="save-area">
-                                        <button @click="saveData" class="btn btn-primary btn-lg px-5">保存</button>
-                                    </div>
-                                </div>
-                               
+                                                               
                                 <div v-if="activeTab === 'rookie'">
-                                    <h4>⑨ 新人戦</h4>
+                                    <h4>⑧ 新人戦</h4>
                                     <div class="excel-upload-area"><label class="form-label fw-bold">申込Excel</label>
                                         <div v-if="entry.rookie.excel_url" class="mt-3">
                                             <div class="d-flex align-items-center justify-content-center gap-2"><span
@@ -2246,14 +2183,9 @@ html, body {
                                                     <td class="col-price">{{ formatMoney(calcAutumnLeague) }}</td>
                                                 </tr>
                                                 <tr>
-                                                    <td>インカレ</td>
-                                                    <td>個人</td>
+                                                    <td>インカレ・対抗戦</td>
+                                                    <td>個人 / 対抗戦: {{ entry.all_japan_team.team > 0 ? (entry.all_japan_team.team + 'チーム') : 'なし' }}</td>
                                                     <td class="col-price">{{ formatMoney(calcAllJapanChamp) }}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>大学対抗戦</td>
-                                                    <td>{{ entry.all_japan_team.join ? '参加' : '不参加' }}</td>
-                                                    <td class="col-price">{{ formatMoney(calcAllJapanTeam) }}</td>
                                                 </tr>
                                                 <tr>
                                                     <td>新人戦</td>
@@ -2701,16 +2633,15 @@ firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION)
                        
                         // --- 期限管理 ---
                         deadlines: {}, showDeadlineModal: false,
-                        categoryLabels: {
-                            player_reg: '① 選手登録', // ← 先頭へ移動
+                       categoryLabels: {
+                            player_reg: '① 選手登録',
                             reg_fee: '② 連盟登録',
                             add_reg: '③ 追加登録',
                             kanto_champ: '④ 関東選手権',
                             east_japan: '⑤ 東日本',
                             autumn_league: '⑥ 秋季リーグ',
-                            all_japan_champ: '⑦ インカレ',
-                            all_japan_team: '⑧ 大学対抗戦',
-                            rookie: '⑨ 新人戦',
+                            all_japan_champ: '⑦ インカレ・対抗戦',
+                            rookie: '⑧ 新人戦',
                           },
 
                         adminNews: { date: '', title: '', content: '', urls: [] }, isUploadingNews: false,
@@ -2751,7 +2682,7 @@ form: {
                             kanto_champ: { excel_url: '', count_s: 0, count_d: 0, count_m: 0, payment_id: '', receipt_url: '' },
                             east_japan: { excel_url: '', team: 0, ops: 0, count_s: 0, count_d: 0, count_m: 0, payment_id: '', receipt_url: '' },
                             all_japan_champ: { excel_url: '', ops_events: 0, count_s: 0, count_d: 0, count_m: 0, payment_id: '', receipt_url: '' },
-                            all_japan_team: { join: false, excel_url: '', team: 1, ops: 1, payment_id: '', receipt_url: '' },
+                            all_japan_team: { excel_url: '', team: 0, payment_id: '', receipt_url: '' },
                             rookie: { excel_url: '', team_a: 0, team_b: 0, count_s: 0, count_d: 0, payment_id: '', receipt_url: '' },
 
                             player_reg: [
@@ -2767,10 +2698,8 @@ form: {
                             'kanto_champ',      // ④ 関東選手権
                             'east_japan',       // ⑤ 東日本
                             'autumn_league',    // ⑥ 秋季L
-                            'all_japan_champ',  // ⑦ インカレ
-                            'all_japan_team',   // ⑧ 大学対抗戦
-                            'rookie'           // ⑨ 新人戦
-                            
+                            'all_japan_champ',  // ⑦ インカレ・対抗戦
+                            'rookie'           // ⑧ 新人戦
                         ],
                         selectedTournament: 'reg_fee', isZipping: false, isGeneratingList: false,
                         modal: { show: false, univName: '', category: '', url: '', subRecord: null },
@@ -2795,10 +2724,17 @@ form: {
                     calcAutumnLeague() { return this.entry.autumn_league.join ? this.getLeagueFee(this.form.division) : 0; },
                     calcKantoChamp() { const e = this.entry.kanto_champ; return ((e.count_s || 0) * 3000) + ((e.count_d || 0) * 6000) + ((e.count_m || 0) * 3000); },
                     calcEastJapan() { const e = this.entry.east_japan; return ((e.team || 0) * 20000) + ((e.count_s || 0) * 3000) + ((e.count_d || 0) * 6000) + ((e.count_m || 0) * 3000) + ((e.ops || 0) * 1000); },
-                    calcAllJapanChamp() { const e = this.entry.all_japan_champ; return ((e.count_s || 0) * 3000) + ((e.count_d || 0) * 6000) + ((e.count_m || 0) * 3000) + ((e.ops_events || 0) * 1000); },
-                    calcAllJapanTeam() { if (!this.entry.all_japan_team.join) return 0; return (this.entry.all_japan_team.team * 20000) + (this.entry.all_japan_team.ops * 3000); },
+                   calcAllJapanChamp() { 
+                        const e = this.entry.all_japan_champ;
+                        const t = this.entry.all_japan_team;
+                        let total = ((e.count_s || 0) * 3000) + ((e.count_d || 0) * 6000) + ((e.count_m || 0) * 3000);
+                        if (t) {
+                            total += ((t.team || 0) * 20000);
+                        }
+                        return total;
+                    },
                     calcRookie() { const e = this.entry.rookie; const t = (e.team_a || 0) + (e.team_b || 0); return (t * 5000) + ((e.count_s || 0) * 3000) + ((e.count_d || 0) * 6000); },
-                    grandTotal() { return this.calcRegAndSpring + this.calcAddReg + this.calcAutumnLeague + this.calcKantoChamp + this.calcEastJapan + this.calcAllJapanChamp + this.calcAllJapanTeam + this.calcRookie; },
+                    grandTotal() { return this.calcRegAndSpring + this.calcAddReg + this.calcAutumnLeague + this.calcKantoChamp + this.calcEastJapan + this.calcAllJapanChamp + this.calcRookie; },
                     adminRecords() { if (!this.savedRecords) return []; return this.savedRecords.map(r => this.processAdminRecord(r)); },
                     filteredAdminRecords() {
                         let list = this.adminRecords;
@@ -3307,7 +3243,6 @@ deleteSingleReceiptArray(index, urlIdx) {
                         if (key === 'east_japan') return this.calcEastJapan;
                         if (key === 'autumn_league') return this.calcAutumnLeague;
                         if (key === 'all_japan_champ') return this.calcAllJapanChamp;
-                        if (key === 'all_japan_team') return this.calcAllJapanTeam;
                         if (key === 'rookie') return this.calcRookie;
                         return 0;
                     },
@@ -4207,10 +4142,8 @@ const activeAddReg = aReg.filter(item => item.count > 0 || item.excel_url || ite
                         if (totalAddCount > 0) details.push(`追加(計${totalAddCount}名): ¥${(totalAddCount * 4000).toLocaleString()}`);
                         if (sLig.join) details.push(`春リーグ: ¥${this.getLeagueFee(raw.division).toLocaleString()}`);
                         if (aLig.join) details.push(`秋リーグ: ¥${this.getLeagueFee(raw.division).toLocaleString()}`);
-                        if (ajTeam.join) {
-                            const fee = (ajTeam.team || 0) * 20000 + (ajTeam.ops || 0) * 3000;
-                            if (fee > 0) details.push(`大学対抗戦: ¥${fee.toLocaleString()}`);
-                        }
+                        const ajTeamFee = (ajTeam.team || 0) * 20000;
+                        if (ajTeamFee > 0) details.push(`大学対抗戦(${ajTeam.team}チーム): ¥${ajTeamFee.toLocaleString()}`);
                         if (rFee.excel_url) details.push(`連盟登録: Excelあり`);
                         if (aReg.some(r => r.excel_url)) details.push(`追加登録: Excelあり`);
                         
@@ -4577,31 +4510,24 @@ openDetailModal(rec, key, addRegData = null) {
                             kanto_champ: '関東選手権',
                             east_japan: '東日本',
                             autumn_league: '秋季リーグ',
-                            all_japan_champ: 'インカレ',
-                            all_japan_team: '大学対抗戦',
+                            all_japan_champ: 'インカレ・対抗戦',
                             rookie: '新人戦',
                             player_reg: '選手登録'
-                            
                         };
                         return names[key] || key;
                     },
 
                     downloadAllCSV() {
-                        // CSVのヘッダー：経理処理に必要な項目を列挙
                         let csv = "\uFEFF大学ID,大学名,部,代表者名,合計請求額," +
-                            "②連盟登録費,④関東選手権,⑤東日本,⑥秋季リーグ,⑦インカレ,⑧大学対抗戦,⑨新人戦,備考・メモ\n";
+                            "②連盟登録費,④関東選手権,⑤東日本,⑥秋季リーグ,⑦インカレ・対抗戦,⑧新人戦,備考・メモ\n";
 
                         this.filteredAdminRecords.forEach(r => {
-                            // 各項目の金額を計算（未入力なら0）
                             const regFee = this.calculateCategoryTotalForCSV(r, 'reg_fee');
                             const kanto = this.calculateCategoryTotalForCSV(r, 'kanto_champ');
                             const east = this.calculateCategoryTotalForCSV(r, 'east_japan');
                             const autumn = this.calculateCategoryTotalForCSV(r, 'autumn_league');
                             const allJapan = this.calculateCategoryTotalForCSV(r, 'all_japan_champ');
-                            const teamMatch = this.calculateCategoryTotalForCSV(r, 'all_japan_team');
                             const rookie = this.calculateCategoryTotalForCSV(r, 'rookie');
-
-                            // メモの改行をスペースに置換
                             const cleanMemo = r.memo ? r.memo.replace(/[\r\n]/g, " ") : "";
 
                             const row = [
@@ -4609,15 +4535,14 @@ openDetailModal(rec, key, addRegData = null) {
                                 `"${r.univ_name}"`,
                                 `"${r.division}部"`,
                                 `"${r.raw_data.user_name || ''}"`,
-                                r.total_cost,    // 合計金額
-                                regFee,          // 連盟登録
-                                kanto,           // 関東選手権
-                                east,            // 東日本
-                                autumn,          // 秋季L
-                                allJapan,        // インカレ
-                                teamMatch,       // 大学対抗
-                                rookie,          // 新人戦
-                                `"${cleanMemo}"` // 備考
+                                r.total_cost,    
+                                regFee,          
+                                kanto,           
+                                east,            
+                                autumn,          
+                                allJapan,        
+                                rookie,          
+                                `"${cleanMemo}"` 
                             ];
                             csv += row.join(",") + "\n";
                         });
@@ -4645,11 +4570,12 @@ openDetailModal(rec, key, addRegData = null) {
                             return raw.join ? this.getLeagueFee(rec.division) : 0;
                         }
                         if (key === 'all_japan_champ') {
-    return ((raw.count_s || 0) * 3000) + ((raw.count_d || 0) * 6000) + ((raw.count_m || 0) * 3000) + ((raw.ops_events || 0) * 1000);
-}
-                        if (key === 'all_japan_team') {
-                            if (!raw.join) return 0;
-                            return (raw.team * 20000) + (raw.ops * 3000);
+                            const rawTeam = rec['all_japan_team'] ? rec['all_japan_team'].rawObj : null;
+                            let total = ((raw.count_s || 0) * 3000) + ((raw.count_d || 0) * 6000) + ((raw.count_m || 0) * 3000);
+                            if (rawTeam) {
+                                total += ((rawTeam.team || 0) * 20000);
+                            }
+                            return total;
                         }
                         if (key === 'rookie') {
                             const t = (raw.team_a || 0) + (raw.team_b || 0);
@@ -4670,8 +4596,7 @@ openDetailModal(rec, key, addRegData = null) {
                         else if (key === 'kanto_champ') header = "大学ID,大学名,シングルス数,ダブルス数,ミックス数,参加費合計";
                         else if (key === 'east_japan') header = "大学ID,大学名,チーム数,運営費人数,S数,D数,M数,参加費合計";
                         else if (key === 'autumn_league') header = "大学ID,大学名,部,秋季L参加費";
-                        else if (key === 'all_japan_champ') header = "大学ID,大学名,運営費種目数,S数,D数,M数,参加費合計";
-                        else if (key === 'all_japan_team') header = "大学ID,大学名,チーム数,運営費人数,参加費合計";
+                        else if (key === 'all_japan_champ') header = "大学ID,大学名,S数,D数,M数,チーム数,参加費合計";
                         else if (key === 'rookie') header = "大学ID,大学名,団体A,団体B,S数,D数,参加費合計";
                         
 
@@ -4719,11 +4644,8 @@ openDetailModal(rec, key, addRegData = null) {
                             }
                             else if (key === 'all_japan_champ') {
                                 const total = this.calculateCategoryTotalForCSV(r, key);
-                                line = `${base},${raw.ops_events || 0},${raw.count_s || 0},${raw.count_d || 0},${raw.count_m || 0},${total}`;
-                            }
-                            else if (key === 'all_japan_team') {
-                                const total = raw.join ? (raw.team * 20000 + raw.ops * 3000) : 0;
-                                line = `${base},${raw.team || 0},${raw.ops || 0},${total}`;
+                                const tRaw = r['all_japan_team'] ? r['all_japan_team'].rawObj : {};
+                                line = `${base},${raw.count_s || 0},${raw.count_d || 0},${raw.count_m || 0},${tRaw.team || 0},${total}`;
                             }
                             else if (key === 'rookie') {
                                 const total = this.calculateCategoryTotalForCSV(r, key);
