@@ -3509,8 +3509,17 @@ this.form.coach2 = d.coach2 || '';
                         const mergeData = (key, jsonStr) => {
                             try {
                                 const saved = jsonStr ? JSON.parse(jsonStr) : {};
-                                // 初期値に保存データを重ねる
-                                this.entry[key] = { ...this.entry[key], ...saved };
+                                const merged = { ...this.entry[key], ...saved };
+                                
+                                // ★追加：過去に「空欄」や「null」で保存されたデータがある場合、強制的に「0」に戻す
+                                const numFields = ['count_s', 'count_d', 'count_m', 'team', 'team_a', 'team_b', 'ops'];
+                                numFields.forEach(f => {
+                                    if (f in merged && (merged[f] === "" || merged[f] === null || merged[f] === undefined)) {
+                                        merged[f] = 0;
+                                    }
+                                });
+                                
+                                this.entry[key] = merged;
                             } catch (e) {
                                 console.error(`Data Load Error (${key}):`, e);
                             }
