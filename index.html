@@ -988,12 +988,97 @@ html, body {
                         <button class="btn btn-sm btn-outline-light" @click="downloadAllCSV"><i
                                 class="bi bi-file-earmark-spreadsheet"></i> 全データCSV</button>
 
-<button class="btn btn-sm btn-danger fw-bold text-white shadow" @click="migrateToFirebase">
-    <i class="bi bi-database-fill-up"></i> Firebaseへデータ移行
-</button>
+<button class="btn btn-sm btn-secondary fw-bold text-white shadow" @click.prevent="openAdminModal">
+                            <i class="bi bi-tools"></i> マスタ管理
+                        </button>
+
                         <button class="btn btn-sm btn-danger" @click="logout">ログアウト</button>
                     </div>
                 </nav>
+
+<!-- ★マスタ管理モーダル -->
+                <div v-if="adminModal.show" class="modal show d-block" style="background: rgba(0,0,0,0.7); position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; opacity: 1 !important; visibility: visible !important;" tabindex="-1">
+                    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-dark text-white">
+                                <h5 class="modal-title fw-bold"><i class="bi bi-tools"></i> システム・マスタ管理</h5>
+                                <button type="button" class="btn-close btn-close-white" @click="closeAdminModal"></button>
+                            </div>
+                            <div class="modal-body bg-light">
+                                <ul class="nav nav-tabs mb-3 fw-bold">
+                                    <li class="nav-item">
+                                        <a class="nav-link" :class="{active: adminModal.tab === 'passwords'}" href="#" @click.prevent="adminModal.tab = 'passwords'"><i class="bi bi-key-fill"></i> パスワード設定</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" :class="{active: adminModal.tab === 'univs'}" href="#" @click.prevent="adminModal.tab = 'univs'"><i class="bi bi-building"></i> 大学マスタ管理</a>
+                                    </li>
+                                </ul>
+
+                                <!-- 【タブ1】パスワード設定 -->
+                                <div v-if="adminModal.tab === 'passwords'">
+                                    <div class="alert alert-warning small fw-bold">
+                                        <i class="bi bi-info-circle-fill"></i> 大会運営システムのスコア入力をロック解除するパスワードを設定します。
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-md-3 col-sm-4 col-6" v-for="key in allPasswordKeys" :key="key">
+                                            <label class="form-label small fw-bold mb-1 text-primary">{{ key }}</label>
+                                            <input type="text" class="form-control form-control-sm border-primary" v-model="adminModal.passwords[key]" placeholder="パスワード未設定">
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 text-end">
+                                        <button class="btn btn-primary px-4 fw-bold" @click="saveAdminPasswords"><i class="bi bi-save"></i> 一括保存する</button>
+                                    </div>
+                                </div>
+
+                                <!-- 【タブ2】大学マスタ管理 -->
+                                <div v-if="adminModal.tab === 'univs'">
+                                    <div class="card mb-4 shadow-sm border-success">
+                                        <div class="card-header bg-success text-white py-2 fw-bold"><i class="bi bi-plus-circle"></i> 新規大学の追加</div>
+                                        <div class="card-body py-2">
+                                            <div class="row g-2 align-items-center">
+                                                <div class="col-auto"><input type="number" class="form-control" v-model="adminModal.newUnivId" placeholder="大学ID (例: 1000)"></div>
+                                                <div class="col"><input type="text" class="form-control" v-model="adminModal.newUnivName" placeholder="大学名"></div>
+                                                <div class="col-auto"><button class="btn btn-success fw-bold" @click="addNewUniv">追加する</button></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- 一覧・編集パネル -->
+                                    <div class="table-responsive bg-white border rounded shadow-sm" style="max-height: 50vh;">
+                                        <table class="table table-sm table-hover align-middle m-0 text-center text-nowrap">
+                                            <thead class="table-dark sticky-top">
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>大学名</th>
+                                                    <th>代表者</th>
+                                                    <th>メールアドレス</th>
+                                                    <th>パスワード</th>
+                                                    <th>操作</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr v-for="(u, idx) in adminModal.univs" :key="u.univ_id">
+                                                    <td class="fw-bold">{{ u.univ_id }}</td>
+                                                    <td style="min-width: 150px;">
+                                                        <input type="text" class="form-control form-control-sm text-center" v-model="u.univ_name">
+                                                    </td>
+                                                    <td class="small text-start">{{ u.user_name || '-' }}</td>
+                                                    <td class="small text-start">{{ u.email || '-' }}</td>
+                                                    <td class="small font-monospace">{{ u.password || '-' }}</td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-primary me-1 py-0 fw-bold" @click="saveUniv(u)">更新</button>
+                                                        <button class="btn btn-sm btn-outline-danger py-0 fw-bold" @click="deleteUniv(idx)">削除</button>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
 
 <div v-if="showDeadlineModal" class="modal show d-block" style="background: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; opacity: 1 !important; visibility: visible !important;" tabindex="-1">
                     <div class="modal-dialog modal-dialog-centered">
@@ -2706,12 +2791,37 @@ form: {
                             'rookie'           // ⑧ 新人戦
                         ],
                         selectedTournament: 'reg_fee', isZipping: false, isGeneratingList: false,
-                        modal: { show: false, univName: '', category: '', url: '', subRecord: null },
+                       modal: { show: false, univName: '', category: '', url: '', subRecord: null },
                         detailModal: { show: false, title: '', type: '', data: null, files: [], downloadUrl: null, univName: '', loading: false, parsedData: [], key: '', record: null, receiptUrls: [] },
-                        receiptData: { show: false, amount: 0, title: '' }, parsedMemberList: []
+                        receiptData: { show: false, amount: 0, title: '' }, 
+                        
+                        // ▼▼▼ もともとあった行の末尾にカンマ「,」を追加します ▼▼▼
+                        parsedMemberList: [], 
+                        
+                        // ▼▼▼ ここに貼り付けます ▼▼▼
+                        divisionPasswords: {}, // ★追加
+                        adminModal: {          // ★追加
+                            show: false,
+                            tab: 'passwords',
+                            passwords: {},
+                            univs: [],
+                            newUnivId: '',
+                            newUnivName: ''
+                        }
+                        // ▲▲▲ ここまで ▲▲▲
                     }
                 },
                 computed: {
+allPasswordKeys() {
+                        const divs = ['1部', '2部', '3部A', '3部B', '4部A', '4部B', '4部C', '4部D', '5部A', '5部B', '5部C', '5部D', '6部A', '6部B', '6部C', '6部D'];
+                        const keys = [];
+                        divs.forEach(d => {
+                            if (d !== '6部D') keys.push(d + '男子');
+                            if (!['6部A', '6部B', '6部C', '6部D'].includes(d)) keys.push(d + '女子');
+                        });
+                        return keys;
+                    },
+
                     filteredUnivList() {
                         if (!this.masterData.length) return [];
                         let list = this.masterData.filter(m => String(m.univ_id).startsWith(this.regGender));
@@ -2798,17 +2908,23 @@ isCurrentTabExpired() {
 });
 
 // 2. データの取得 (Firebase Firestoreから直接取得)
-                    Promise.all([
+                   Promise.all([
                         db.collection('master').get(),
                         db.collection('records').get(),
-                        db.collection('news').get()
-                    ]).then(([masterSnap, recordsSnap, newsSnap]) => {
+                        db.collection('news').get(),
+                        db.collection('config').doc('passwords').get() // ★追加：パスワードも取得
+                    ]).then(([masterSnap, recordsSnap, newsSnap, passDoc]) => { // ★ passDoc を引数に追加
                         
                         this.masterData = masterSnap.docs.map(doc => doc.data());
                         this.savedRecords = recordsSnap.docs.map(doc => doc.data());
                         
                         // ニュースは日付が新しい順に並び替えてセット
                         this.newsList = newsSnap.docs.map(doc => doc.data()).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                        // ★追加：取得したパスワードを変数にセット
+                        if (passDoc && passDoc.exists) {
+                            this.divisionPasswords = passDoc.data() || {};
+                        }
 
                         this.isLoading = false;
 
@@ -2822,10 +2938,94 @@ isCurrentTabExpired() {
                         this.isLoading = false;
                         alert("データの読み込みに失敗しました。通信環境を確認してください。");
                     });
-                    
-                },
+},
 
                 methods: {
+
+// ★マスタ管理用メソッド
+                    openAdminModal() {
+                        this.adminModal.passwords = JSON.parse(JSON.stringify(this.divisionPasswords));
+                        
+                        // ★修正：masterData（大学一覧）に、records（登録データ）のアカウント情報をくっつける
+                        const mergedUnivs = this.masterData.map(master => {
+                            const rec = this.savedRecords.find(r => String(r.univ_id) === String(master.univ_id));
+                            return {
+                                ...master,
+                                user_name: rec && rec.user_name ? rec.user_name : '',
+                                email: rec && rec.email ? rec.email : '',
+                                password: rec && rec.password ? rec.password : ''
+                            };
+                        });
+                        
+                        // くっつけたデータをID順に並び替えてモーダルへ渡す
+                        this.adminModal.univs = JSON.parse(JSON.stringify(mergedUnivs)).sort((a,b) => Number(a.univ_id) - Number(b.univ_id));
+                        this.adminModal.show = true;
+                    },
+                    closeAdminModal() {
+                        this.adminModal.show = false;
+                    },
+                    async saveAdminPasswords() {
+                        if (!confirm("パスワードを更新しますか？")) return;
+                        try {
+                            await db.collection('config').doc('passwords').set(this.adminModal.passwords);
+                            this.divisionPasswords = JSON.parse(JSON.stringify(this.adminModal.passwords));
+                            alert("パスワードを更新しました。");
+                        } catch(e) {
+                            alert("エラーが発生しました: " + e.message);
+                        }
+                    },
+                    async saveUniv(univ) {
+                        try {
+                            await db.collection('master').doc(String(univ.univ_id)).set({
+                                univ_id: univ.univ_id,
+                                univ_name: univ.univ_name
+                            }, { merge: true });
+                            
+                            const index = this.masterData.findIndex(u => String(u.univ_id) === String(univ.univ_id));
+                            if(index !== -1) {
+                                this.masterData[index].univ_name = univ.univ_name;
+                            }
+                            alert(`${univ.univ_name} を更新しました。`);
+                        } catch(e) {
+                            alert("エラー: " + e.message);
+                        }
+                    },
+                    async deleteUniv(index) {
+                        const univ = this.adminModal.univs[index];
+                        if(!confirm(`「${univ.univ_name}」を完全に削除しますか？`)) return;
+                        
+                        try {
+                            await db.collection('master').doc(String(univ.univ_id)).delete();
+                            this.adminModal.univs.splice(index, 1);
+                            this.masterData = this.masterData.filter(u => String(u.univ_id) !== String(univ.univ_id));
+                            alert("削除しました。");
+                        } catch(e) {
+                            alert("エラー: " + e.message);
+                        }
+                    },
+                    async addNewUniv() {
+                        if(!this.adminModal.newUnivId || !this.adminModal.newUnivName) {
+                            alert("大学IDと大学名を入力してください。");
+                            return;
+                        }
+                        const newU = {
+                            univ_id: this.adminModal.newUnivId,
+                            univ_name: this.adminModal.newUnivName,
+                            division: '6',
+                            logo_url: ''
+                        };
+                        try {
+                            await db.collection('master').doc(String(newU.univ_id)).set(newU, { merge: true });
+                            this.adminModal.univs.push(newU);
+                            this.adminModal.univs.sort((a,b) => Number(a.univ_id) - Number(b.univ_id));
+                            this.masterData.push(newU);
+                            alert(`「${newU.univ_name}」を追加しました。`);
+                            this.adminModal.newUnivId = '';
+                            this.adminModal.newUnivName = '';
+                        } catch(e) {
+                            alert("エラー: " + e.message);
+                        }
+                    },
                  
 // 大学リストから選択した時の処理
     selectAdminChat(rec) {
@@ -3475,52 +3675,6 @@ if (!this.form.univ_id) {
                         }
                     },
 
-async migrateToFirebase() {
-                        if(!confirm("【管理者専用】\n現在のスプレッドシートの全データをFirebase (Firestore) にコピーします。\nよろしいですか？")) return;
-                        this.isLoading = true;
-                        try {
-                            // 1. 現在のGASから最新データを取得
-                            const res = await fetch(GAS_API_URL + "?t=" + new Date().getTime());
-                            const d = await res.json();
-
-                            // 2. 登録データ(records)のコピー
-                            const batch1 = db.batch();
-                            d.records.forEach(rec => {
-                                if(rec.univ_id) {
-                                    const docRef = db.collection('records').doc(String(rec.univ_id));
-                                    batch1.set(docRef, rec);
-                                }
-                            });
-                            await batch1.commit();
-
-                            // 3. マスタ(master)のコピー
-                            const batch2 = db.batch();
-                            d.master.forEach(m => {
-                                if(m.univ_id) {
-                                    const docRef = db.collection('master').doc(String(m.univ_id));
-                                    batch2.set(docRef, m);
-                                }
-                            });
-                            await batch2.commit();
-
-                            // 4. ニュース(news)のコピー
-                            const batch3 = db.batch();
-                            d.news.forEach((n, idx) => {
-                                // ドキュメントIDをタイムスタンプにする
-                                const docId = String(new Date(n.date).getTime() || Date.now() + idx);
-                                const docRef = db.collection('news').doc(docId);
-                                batch3.set(docRef, n);
-                            });
-                            await batch3.commit();
-
-                            alert("✅ Firebaseへの全データ移行が完了しました！\nFirebaseコンソールの「Firestore Database」を開き、データが入っているか確認してください。");
-                        } catch(e) {
-                            console.error(e);
-                            alert("移行エラー: " + e.message);
-                        } finally {
-                            this.isLoading = false;
-                        }
-                    },
 
                     // --- データ初期化 ---
                     initUserData(em) {
