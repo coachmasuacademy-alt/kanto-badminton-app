@@ -987,6 +987,10 @@ html, body {
                         </button>
                         <button class="btn btn-sm btn-outline-light" @click="downloadAllCSV"><i
                                 class="bi bi-file-earmark-spreadsheet"></i> 全データCSV</button>
+
+<button class="btn btn-sm btn-danger fw-bold text-white shadow" @click="migrateToFirebase">
+    <i class="bi bi-database-fill-up"></i> Firebaseへデータ移行
+</button>
                         <button class="btn btn-sm btn-danger" @click="logout">ログアウト</button>
                     </div>
                 </nav>
@@ -2793,31 +2797,32 @@ isCurrentTabExpired() {
     }
 });
 
-                    // 2. データの取得 (GAS API)
-                    fetch(GAS_API_URL + "?t=" + new Date().getTime())
-                        .then(r => r.json())
-                        .then(d => {
-                            this.masterData = d.master;
-                            this.savedRecords = d.records;
+// 2. データの取得 (Firebase Firestoreから直接取得)
+                    Promise.all([
+                        db.collection('master').get(),
+                        db.collection('records').get(),
+                        db.collection('news').get()
+                    ]).then(([masterSnap, recordsSnap, newsSnap]) => {
+                        
+                        this.masterData = masterSnap.docs.map(doc => doc.data());
+                        this.savedRecords = recordsSnap.docs.map(doc => doc.data());
+                        
+                        // ニュースは日付が新しい順に並び替えてセット
+                        this.newsList = newsSnap.docs.map(doc => doc.data()).sort((a, b) => new Date(b.date) - new Date(a.date));
 
-                            // ★ここを追加：GASから返ってきたニュースデータをVueの変数にセットする
-                            if (d.news) {
-                                this.newsList = d.news;
-                            }
+                        this.isLoading = false;
 
-                            this.isLoading = false;
-
-                            // ログイン済みの場合の初期化
-                            if (this.user) {
-                                this.initUserData(this.user.email);
-                            }
-
-                            
-                        })
-                        .catch(e => {
-                            console.error(e);
-                            this.isLoading = false;
-                        });
+                        // ログイン済みの場合の初期化
+                        if (this.user) {
+                            this.initUserData(this.user.email);
+                        }
+                        
+                    }).catch(e => {
+                        console.error("Firebaseデータ取得エラー:", e);
+                        this.isLoading = false;
+                        alert("データの読み込みに失敗しました。通信環境を確認してください。");
+                    });
+                    
                 },
 
                 methods: {
@@ -3470,6 +3475,53 @@ if (!this.form.univ_id) {
                         }
                     },
 
+async migrateToFirebase() {
+                        if(!confirm("【管理者専用】\n現在のスプレッドシートの全データをFirebase (Firestore) にコピーします。\nよろしいですか？")) return;
+                        this.isLoading = true;
+                        try {
+                            // 1. 現在のGASから最新データを取得
+                            const res = await fetch(GAS_API_URL + "?t=" + new Date().getTime());
+                            const d = await res.json();
+
+                            // 2. 登録データ(records)のコピー
+                            const batch1 = db.batch();
+                            d.records.forEach(rec => {
+                                if(rec.univ_id) {
+                                    const docRef = db.collection('records').doc(String(rec.univ_id));
+                                    batch1.set(docRef, rec);
+                                }
+                            });
+                            await batch1.commit();
+
+                            // 3. マスタ(master)のコピー
+                            const batch2 = db.batch();
+                            d.master.forEach(m => {
+                                if(m.univ_id) {
+                                    const docRef = db.collection('master').doc(String(m.univ_id));
+                                    batch2.set(docRef, m);
+                                }
+                            });
+                            await batch2.commit();
+
+                            // 4. ニュース(news)のコピー
+                            const batch3 = db.batch();
+                            d.news.forEach((n, idx) => {
+                                // ドキュメントIDをタイムスタンプにする
+                                const docId = String(new Date(n.date).getTime() || Date.now() + idx);
+                                const docRef = db.collection('news').doc(docId);
+                                batch3.set(docRef, n);
+                            });
+                            await batch3.commit();
+
+                            alert("✅ Firebaseへの全データ移行が完了しました！\nFirebaseコンソールの「Firestore Database」を開き、データが入っているか確認してください。");
+                        } catch(e) {
+                            console.error(e);
+                            alert("移行エラー: " + e.message);
+                        } finally {
+                            this.isLoading = false;
+                        }
+                    },
+
                     // --- データ初期化 ---
                     initUserData(em) {
     if (!em || em.trim().toLowerCase() === ADMIN_ID.toLowerCase()) {
@@ -3586,23 +3638,22 @@ this.form.coach2 = d.coach2 || '';
 
                     // --- データ保存 ---
                     saveDataPayload(password = null) {
-                        // --- 追加：データのクリーニング処理 ---
-                        // ID、氏名、メールから改行や不要な空白を完全に取り除きます
+                        // --- データのクリーニング処理 ---
                         const cleanUnivId = String(this.form.univ_id || '').replace(/[\r\n\s]/g, "").trim();
                         const cleanUserName = String(this.form.user_name || '').replace(/[\r\n]/g, "").trim();
                         const cleanEmail = String(this.user ? this.user.email : '').replace(/[\r\n]/g, "").trim();
 
                         const p = {
-                            univ_id: cleanUnivId,      // 綺麗にしたIDを使用
-                            email: cleanEmail,        // 綺麗にしたメールを使用
+                            univ_id: cleanUnivId,
+                            email: cleanEmail,
                             univ_name: this.form.univ_name,
-                            user_name: cleanUserName, // 綺麗にした氏名を使用
+                            user_name: cleanUserName,
                             division: this.form.division,
-logo_url: this.form.logo_url,
-president: this.form.president,
-    manager: this.form.manager,
-    coach1: this.form.coach1,
-    coach2: this.form.coach2,
+                            logo_url: this.form.logo_url,
+                            president: this.form.president,
+                            manager: this.form.manager,
+                            coach1: this.form.coach1,
+                            coach2: this.form.coach2,
                             memo: this.memo,
                             reg_fee: this.entry.reg_fee,
                             add_reg: this.entry.add_reg,
@@ -3614,17 +3665,20 @@ president: this.form.president,
                             all_japan_team: this.entry.all_japan_team,
                             rookie: this.entry.rookie,
                             player_reg: this.entry.player_reg,
-                            total_cost: this.grandTotal
+                            total_cost: this.grandTotal,
+                            updated_at: new Date().toISOString()
                         };
 
                         if (password) {
                             p.password = password;
                         }
 
-                        return fetch(GAS_API_URL, {
-                            method: 'POST',
-                            body: JSON.stringify(p)
-                        }).then(r => r.json());
+                        // ★ 修正：GASへの送信をやめ、Firebase (Firestore) に直接保存する
+                        return db.collection('records').doc(cleanUnivId).set(p, { merge: true })
+                            .then(() => {
+                                // 成功時はダミーのレスポンスを返してあげる（既存の処理を壊さないため）
+                                return { status: 'success' };
+                            });
                     },
 
 printSingleID(player) {
@@ -4318,13 +4372,12 @@ if (key === 'add_reg') {
                     },
 
                     saveTargetRecord(rec) {
-                        // 1. スプレッドシートの元の行データをコピー
+                        // 1. 保存用データの構築
                         const payload = { ...rec.raw_data };
 
                         // 2. 保存すべき各キー（reg_fee, player_reg等）をループ処理
                         this.adminStatusKeys.forEach(key => {
                             let dataToSave = null;
-
                             if (key === 'add_reg') {
                                 dataToSave = rec.add_reg;
                             } else if (key === 'player_reg') {
@@ -4334,7 +4387,6 @@ if (key === 'add_reg') {
                                 dataToSave = rec[key].rawObj || rec[key];
                             }
 
-                            // --- 重要：二重シリアライズとProxyの除去ロジック ---
                             if (dataToSave) {
                                 // もしデータがすでに文字列（"{...}"）なら、一度オブジェクトに戻す
                                 if (typeof dataToSave === 'string') {
@@ -4347,32 +4399,31 @@ if (key === 'add_reg') {
                                 }
 
                                 // Vue 3のProxy（監視オブジェクト）を純粋な連想配列（JSON）に変換する
-                                // これにより "0","1","2" とバラバラになるのを防ぎます
                                 try {
                                     dataToSave = JSON.parse(JSON.stringify(dataToSave));
                                 } catch (e) {
                                     dataToSave = {};
                                 }
                             }
-
-                            // スプレッドシート送信用に、最後に一度だけJSON文字列にする
-                            payload[key] = JSON.stringify(dataToSave || {});
+                            
+                            // ★ 修正：文字列化(JSON.stringify)せず、オブジェクトのままセットする
+                            payload[key] = dataToSave || {};
                         });
 
-                        // 数値や文字列データを確実にセット
                         payload.total_cost = Number(rec.total_cost) || 0;
                         payload.memo = rec.memo || "";
-                        // 管理者が上書きした際にメールアドレスが管理者のものに変わらないように固定
                         payload.email = rec.raw_data.email;
+                        payload.updated_at = new Date().toISOString();
 
-                        return fetch(GAS_API_URL, {
-                            method: 'POST',
-                            body: JSON.stringify(payload)
-                        })
-                            .then(r => r.json())
+                        // ★ 修正：GASへの送信をやめ、Firebase (Firestore) に直接保存する
+                        const docId = String(rec.univ_id);
+                        return db.collection('records').doc(docId).set(payload, { merge: true })
+                            .then(() => {
+                                return { status: 'success' };
+                            })
                             .catch(e => {
                                 console.error("Save Error:", e);
-                                alert("スプレッドシートの保存に失敗しました。");
+                                alert("Firebaseの保存に失敗しました。");
                             });
                     },
 
