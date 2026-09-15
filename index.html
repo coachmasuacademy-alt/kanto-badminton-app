@@ -988,6 +988,9 @@ html, body {
                         <button class="btn btn-sm btn-outline-light" @click="downloadAllCSV"><i
                                 class="bi bi-file-earmark-spreadsheet"></i> 全データCSV</button>
 
+<button class="btn btn-sm btn-secondary fw-bold text-white shadow opacity-50" disabled>
+    <i class="bi bi-database-fill-up"></i> Firebaseへデータ移行（完了済）
+</button>
 <button class="btn btn-sm btn-secondary fw-bold text-white shadow" @click.prevent="openAdminModal">
                             <i class="bi bi-tools"></i> マスタ管理
                         </button>
@@ -2942,6 +2945,72 @@ isCurrentTabExpired() {
 
                 methods: {
 
+async migrateToFirebase(event) {
+    if (!confirm("スプレッドシートからすべての登録・申込データを取得し、Firebaseへ一括移行しますか？\n※全大学の全データが最新のスプレッドシートの内容で更新されます。")) return;
+    
+    const btn = event ? event.currentTarget : null;
+    if (btn) {
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 移行中...';
+        btn.disabled = true;
+    }
+
+    try {
+        // 1. GASから全大学の全データを取得
+        const response = await fetch(GAS_API_URL);
+        const data = await response.json();
+        
+        const records = Array.isArray(data) ? data : (data.records || data.data || []);
+
+        if (records.length === 0) {
+            throw new Error("スプレッドシートからデータを取得できませんでした。");
+        }
+
+        // 2. 各大会・申込データのキーリスト
+        const jsonKeys = [
+            'reg_fee', 'add_reg', 'spring_league', 'kanto_champ', 
+            'east_japan', 'autumn_league', 'all_japan_champ', 
+            'all_japan_team', 'rookie', 'player_reg'
+        ];
+
+        // 3. 100件ずつ分割して確実にFirestoreへ書き込む
+        const chunkSize = 100;
+        for (let i = 0; i < records.length; i += chunkSize) {
+            const chunk = records.slice(i, i + chunkSize);
+            const batch = db.batch();
+
+            chunk.forEach(rec => {
+                if (!rec.univ_id) return;
+                
+                const docRef = db.collection('records').doc(String(rec.univ_id));
+                const payload = { ...rec };
+
+                // 文字列ではなくオブジェクト/配列になっているものは文字列化（JSON）して保存
+                jsonKeys.forEach(key => {
+                    if (payload[key] !== undefined && payload[key] !== null && typeof payload[key] !== 'string') {
+                        payload[key] = JSON.stringify(payload[key]);
+                    }
+                });
+
+                batch.set(docRef, payload, { merge: true });
+            });
+
+            await batch.commit();
+        }
+        
+        alert(`全 ${records.length} 件の大学データ（選手・申込・ファイル等）の移行が完了しました！\n画面を再読み込みします。`);
+        location.reload();
+
+    } catch (error) {
+        console.error("移行エラー:", error);
+        alert("データ移行に失敗しました:\n" + error.message);
+    } finally {
+        if (btn) {
+            btn.innerHTML = '<i class="bi bi-database-fill-up"></i> Firebaseへデータ移行';
+            btn.disabled = false;
+        }
+    }
+},
+
 // ★マスタ管理用メソッド
                     openAdminModal() {
                         this.adminModal.passwords = JSON.parse(JSON.stringify(this.divisionPasswords));
@@ -3712,10 +3781,14 @@ this.form.coach2 = d.coach2 || '';
                         // 2. データ復元用のヘルパー関数
                         // 初期値(...this.entry[key])に対して、保存データ(...saved)を上書きマージします。
                         // これにより、保存データがない場合でも初期値（0など）が消えず、計算機能が維持されます。
-                        const mergeData = (key, jsonStr) => {
-                            try {
-                                const saved = jsonStr ? JSON.parse(jsonStr) : {};
-                                const merged = { ...this.entry[key], ...saved };
+                        const mergeData = (key, savedData) => {
+    try {
+        let saved = {};
+        if (savedData) {
+            // 文字列ならパース、既にオブジェクトならそのまま使用
+            saved = typeof savedData === 'string' ? JSON.parse(savedData) : savedData;
+        }
+        const merged = { ...this.entry[key], ...saved };
                                 
                                 // ★追加：過去に「空欄」や「null」で保存されたデータがある場合、強制的に「0」に戻す
                                 const numFields = ['count_s', 'count_d', 'count_m', 'team', 'team_a', 'team_b', 'ops'];
@@ -3745,7 +3818,12 @@ this.form.coach2 = d.coach2 || '';
                         // 4. 配列データ（追加登録・選手登録）の特別処理
                         // 追加登録
                         try {
-                            const savedArray = d.add_reg ? JSON.parse(d.add_reg) : [];
+                            let savedArray = [];
+                            if (d.add_reg) {
+                                // 文字列ならパース、すでに配列ならそのまま使用
+                                savedArray = typeof d.add_reg === 'string' ? JSON.parse(d.add_reg) : d.add_reg;
+                            }
+
                             if (Array.isArray(savedArray)) {
                                 // 重要：現在の add_reg（5枠）に対して、保存されていたデータを1つずつ流し込む
                                 savedArray.forEach((item, idx) => {
@@ -3764,7 +3842,12 @@ this.form.coach2 = d.coach2 || '';
 
                         // 選手登録
                         try {
-                            const pr = d.player_reg ? JSON.parse(d.player_reg) : [];
+                            let pr = [];
+                            if (d.player_reg) {
+                                // 文字列ならパース、すでに配列ならそのまま使用
+                                pr = typeof d.player_reg === 'string' ? JSON.parse(d.player_reg) : d.player_reg;
+                            }
+
                             if (Array.isArray(pr) && pr.length > 0) {
                                 this.entry.player_reg = pr;
                             }
@@ -4310,13 +4393,16 @@ printSingleID(player) {
 
                     // --- データ加工・表示用 ---
                     processAdminRecord(raw) {
-                        const safeParse = (json, def) => {
-                            try {
-                                return json ? JSON.parse(json) : def;
-                            } catch (e) {
-                                return def;
-                            }
-                        };
+    const safeParse = (data, def) => {
+        if (!data) return def;
+        // 既にオブジェクトの場合はそのまま返す
+        if (typeof data === 'object') return data;
+        try {
+            return JSON.parse(data);
+        } catch (e) {
+            return def;
+        }
+    };
                         const rFee = safeParse(raw.reg_fee, {});
                         
                         let aReg = safeParse(raw.add_reg, []);
