@@ -985,6 +985,9 @@ html, body {
                         <button class="btn btn-sm btn-info fw-bold text-dark" @click="downloadPlayerRegList">
                             <i class="bi bi-people-fill"></i> 選手名簿DL
                         </button>
+<button class="btn btn-sm btn-success fw-bold text-white shadow-sm" @click="downloadManovasu">
+                            <i class="bi bi-file-earmark-excel"></i> MANOVASU
+                        </button>
                         <button class="btn btn-sm btn-outline-light" @click="downloadAllCSV"><i
                                 class="bi bi-file-earmark-spreadsheet"></i> 全データCSV</button>
 
@@ -3711,15 +3714,21 @@ if (!this.form.univ_id) {
                     },
 
                     resetPassword() {
-                        if (!this.authEmail) {
-                            alert("「メールアドレス」欄に入力してください。");
-                            return;
-                        }
-                        if (!confirm("パスワード再設定メールを送信しますか？")) return;
-                        firebase.auth().sendPasswordResetEmail(this.authEmail)
-                            .then(() => alert("パスワード再設定用のメールを送信しました。メールを確認してください。"))
-                            .catch((e) => alert("エラー: " + e.message));
-                    },
+    if (!this.authEmail) {
+        alert("「メールアドレス」欄に入力してください。");
+        return;
+    }
+    if (!confirm("パスワード再設定メールを送信しますか？")) return;
+    firebase.auth().sendPasswordResetEmail(this.authEmail)
+        .then(() => alert("パスワード再設定用のメールを送信しました。メールを確認してください。"))
+        .catch((e) => {
+            if (e.code === 'auth/user-not-found') {
+                alert("エラー: 入力されたメールアドレスは登録されていません。");
+            } else {
+                alert("エラー: " + e.message);
+            }
+        });
+},
                     register() {
                         if (!this.authName) {
                             alert("氏名を入力してください");
@@ -3874,11 +3883,13 @@ this.form.coach2 = d.coach2 || '';
                     },
 
                     // --- データ保存 ---
-                    saveDataPayload(password = null) {
-                        // --- データのクリーニング処理 ---
-                        const cleanUnivId = String(this.form.univ_id || '').replace(/[\r\n\s]/g, "").trim();
-                        const cleanUserName = String(this.form.user_name || '').replace(/[\r\n]/g, "").trim();
-                        const cleanEmail = String(this.user ? this.user.email : '').replace(/[\r\n]/g, "").trim();
+                   saveDataPayload(password = null) {
+    // --- データのクリーニング処理 ---
+    const cleanUnivId = String(this.form.univ_id || '').replace(/[\r\n\s]/g, "").trim();
+    const cleanUserName = String(this.form.user_name || '').replace(/[\r\n]/g, "").trim();
+    // 変更しようとしている新しいメールアドレスがあればそれを優先する
+    const targetEmail = (this.account && this.account.newEmail) ? this.account.newEmail : (this.user ? this.user.email : '');
+    const cleanEmail = String(targetEmail).replace(/[\r\n]/g, "").trim();
 
                         const p = {
                             univ_id: cleanUnivId,
@@ -4389,6 +4400,58 @@ printSingleID(player) {
                         });
                         const blob = new Blob([csv], { type: "text/csv" });
                         saveAs(blob, `全大学_選手登録名簿_${new Date().toLocaleDateString().replace(/\//g, '')}.csv`);
+                    },
+
+downloadManovasu() {
+                        if (!confirm("MANOVASU用の選手登録データ（男女別シート）をダウンロードしますか？")) return;
+
+                        // ヘッダー行 (A列:大学名, B列:選手名, C列:フリガナ, D列:学年)
+                        const menData = [["大学名", "選手名", "フリガナ", "学年"]];
+                        const womenData = [["大学名", "選手名", "フリガナ", "学年"]];
+
+                        // 全大学のデータをループして抽出
+                        this.adminRecords.forEach(rec => {
+                            // 大学IDの先頭文字で男女を判定（1:男子, 2:女子）
+                            const isMen = String(rec.univ_id).startsWith('1');
+                            const isWomen = String(rec.univ_id).startsWith('2');
+
+                            // 選手登録の配列を取得
+                            const players = Array.isArray(rec.player_reg.rawObj) ? rec.player_reg.rawObj : [];
+                            
+                            players.forEach(p => {
+                                // 選手名が入力されていない空の行はスキップ
+                                if (!p.name || p.name.trim() === '') return;
+
+                                // 出力用の行データを作成 (D列、E列には空文字を入れてF列に学年を配置)
+                                const rowData = [
+                                    rec.univ_name || '', // A列: 大学名
+                                    p.name || '',        // B列: 選手名
+                                    p.kana || '',        // C列: フリガナ
+                                    p.grade || ''        // D列: 学年
+                                 ];
+
+                                // 男女別に配列へ追加
+                                if (isMen) {
+                                    menData.push(rowData);
+                                } else if (isWomen) {
+                                    womenData.push(rowData);
+                                }
+                            });
+                        });
+
+                        // ワークブックを作成
+                        const wb = XLSX.utils.book_new();
+                        
+                        // 男子シートと女子シートを作成して追加
+                        const wsMen = XLSX.utils.aoa_to_sheet(menData);
+                        XLSX.utils.book_append_sheet(wb, wsMen, "男子");
+
+                        const wsWomen = XLSX.utils.aoa_to_sheet(womenData);
+                        XLSX.utils.book_append_sheet(wb, wsWomen, "女子");
+
+                        // Excelファイルとしてダウンロード実行
+                        const dateStr = new Date().toLocaleDateString().replace(/\//g, '');
+                        XLSX.writeFile(wb, `MANOVASU_選手データ_${dateStr}.xlsx`);
                     },
 
                     // --- データ加工・表示用 ---
